@@ -46,15 +46,15 @@
 
 ### **Summary**
 
-Sum up your game idea in 2 sentences. A kind of elevator pitch. Keep it simple!
+A tower offense game with raid mechanics where you control a hero with subtroops that defend a hero and try to destroy the enemy emplacements.
 
 ### **Gameplay**
 
-What should the gameplay be like? What is the goal of the game, and what kind of obstacles are in the way? What tactics should the player use to overcome them?
+The gameplay will start with the player placing a hero in the map who will try to destroy the emplacements on the map with "subtroops" that will aid the hero absorbing damage and doing damage to the emplacements themselves, the player will be able to unlock new more powerfull heroes and subtroops as the progress. The goal of the game is that the player can advance as much as possible in a semi-infinite game and achieve a points highscore. The player can use multiple variables in the way they play the game like hero-subtroop combination, placement, abilities and timing to destroy the emplacements.
 
 ### **Mindset**
 
-What kind of mindset do you want to provoke in the player? Do you want them to feel powerful, or weak? Adventurous, or nervous? Hurried, or calm? How do you intend to provoke those emotions?
+The player will have a psychological reward in our progression based system where at the start they will be relatively weak so that as gameplay time advances they get stronger and manage to advance in power. We aim to make the player feel hurried with the game as time passes in a "raid" difficulty will increase but good players will be rewarded by staying calm. The main resource for that will be difficulty progression.
 
 ## _Technical_
 
@@ -63,22 +63,59 @@ What kind of mindset do you want to provoke in the player? Do you want them to f
 ### **Screens**
 
 1. Title Screen
-    1. Options
-2. Level Select
-3. Game
-    1. Inventory
-    2. Assessment / Next Level
-4. End Credits
-
-_(example)_
+    1. Start Game
+    2. Options
+    3. Credits
+    4. Exit
+2. Difficulty Selection
+    1. Easy
+    2. Medium
+    3. Hard
+3. Loadout
+    1. Hero Selection
+    2. Subtroop Selection
+    3. Troops Unlocked Overview
+    4. Store (Unlock Heroes/Subtroops/Abilities)
+    5. Start Raid
+4. Pause Screen
+    1. Resume
+    2. End Run
+    3. Settings
+    4. Leave to Menu
+5. Game Over Screen
+    1. Final Score
+    2. High Score
+    3. Rewards
+    4. Retry
+    5. Return to Hub
+6. Credits
+    1. Dev Team
+    2. Music/Art credits
 
 ### **Controls**
 
-How will the player interact with the game? Will they be able to choose the controls? What kind of in-game events are they going to be able to trigger, and how? (e.g. pressing buttons, opening doors, etc.)
+1. Input Type
+    1. Mouse + keyboard
+
+2. Mouse Controls
+    1. Left Click
+        1. Place Hero on the map
+        2. Place Subtroops on the map
+        3. Activate Abilities
+    2. Right Click
+        1. Cancel Drop
+    3. Keyboard
+        1. WASD
+            1. Move Hero after Placement
+        2. Esc
+            1. Pause Game
+
 
 ### **Mechanics**
 
-Are there any interesting mechanics? If so, how are you going to accomplish them? Physics, algorithms, etc.
+The game will have an automatic targeting system for enemies and subtroops where the enemies attack will be based on distance and troop type for example subtroops will draw the attacks to them even if they are farther away from the emplacement but in range and the subtroops auto-attack will work in a similar principle but if the hero recieves damage from an emplacement while in an effective "detection range" they will switch to a defend behaviour where they will attack the emplacement that is targeting the hero which also has automatic damaga selection but it will be purely based on distance and aggro to a hero can drop if a subtroop is actively attacking the emplacement and the emplacement looses a percentage of health.
+
+The difficulty progression works similar to other rougelite systems where it is based on time so that the player is incentivised to act recklessly but rewarded for acting calm. When completing a stage the player will be rewarded with a selection of randomized upgrade cards drawn from a predefined pool. The player chooses a card that will modify their stats for the remainder of the run. The cards can enchance Hero stats, improve subtroops, abilities or introduce risk reward tradoffs for hyperspecialization in runs. These upgrades do not persist between runs encouraging replayability. 
 
 ## _Level Design_
 
