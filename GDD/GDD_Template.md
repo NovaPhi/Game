@@ -256,40 +256,47 @@ _(example)_
 
 ### **Style Attributes**
 
-Again, consistency is key. Define that consistency here. What kind of instruments do you want to use in your music? Any particular tempo, key? Influences, genre? Mood?
+The Game will feature dark, militaristic, tension driven sound that blends tactical military atmosphere with the zombie element combined with the semi tactical nature of the game pressure our players and introduce stress through sound forcing errors and increasing tension
 
-Stylistically, what kind of sound effects are you looking for? Do you want to exaggerate actions with lengthy, cartoony sounds (e.g. mario&#39;s jump), or use just enough to let the player know something happened (e.g. mega man&#39;s landing)? Going for realism? You can use the music style as a bit of a reference too.
+The music is influenced by other games with similar scores like ready or not, modern war movie scores and subtle horror textures
 
- Remember, auditory feedback should stand out from the music and other sound effects so the player hears it well. Volume, panning, and frequency/pitch are all important aspects to consider in both music _and_ sounds - so plan accordingly!
+The instruments we are using are Drums, Snares, brass, war horns, bass strings sub bass pulses and electronic elements,
+
+some elements will be metalic hits, industrial ambiance and synth drones
+
 
 ### **Sounds Needed**
 
 1. Effects
-    1. Soft Footsteps (dirt floor)
-    2. Sharper Footsteps (stone floor)
-    3. Soft Landing (low vertical velocity)
-    4. Hard Landing (high vertical velocity)
-    5. Glass Breaking
-    6. Chest Opening
-    7. Door Opening
+    1. Hero Sounds
+        1. Wet heavy footsteps
+        2. low growls
+        3. impact sounds during attack
+    2. Enemy Sounds
+        1. Boots hitting ground
+        2. Reload clicks
+        3. Radio Chatter
+        4. gunfire
+
 2. Feedback
-    1. Relieved &quot;Ahhhh!&quot; (health)
-    2. Shocked &quot;Ooomph!&quot; (attacked)
-    3. Happy chime (extra life)
-    4. Sad chime (died)
+    1. rising tone (health)
+    2. muffled hit (attacked)
+    3. Harmonica (Upgrade Selected)
+    4. Low Brass Drop + music cut(died)
 
 _(example)_
 
 ### **Music Needed**
 
-1. Slow-paced, nerve-racking &quot;forest&quot; track
-2. Exciting &quot;castle&quot; track
-3. Creepy, slow &quot;dungeon&quot; track
-4. Happy ending credits track
-5. Rick Astley&#39;s hit #1 single &quot;Never Gonna Give You Up&quot;
+1. Main Menu Theme - Luis Arias
+    1.5 Loadout Theme
+2. Early Game Track
+    2.5 Mid Game Track
+3. Late Game Track
+4. Game Over Theme
+5. Credits Theme
 
-_(example)_
-
+(All the music is made in house and the 5 themes will be our minimum target with possibility to raising it to 7 if time is available)
 
 ## _Schedule_
 
