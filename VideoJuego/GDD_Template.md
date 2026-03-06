@@ -223,13 +223,9 @@ _(example)_
         2. TroopRanged (absorbs damage, ranged attack)
         3. TroopUnlockable (unlocked via store)
     3. Enemy
-        1. Guard (PatrolAI, AggroAI, ranged attack)
-        2. Commander (PatrolAI, AggroAI, EnemyCardTrigger)
-        3. EnemyWolf (AggroAI, melee)
-        4. EnemyGoblin (AggroAI, melee)
-        5. EnemyGiantRat (AggroAI, melee)
+        1. Guard (Aggro, ranged attack)
+        2. Commander (EnemyCardTrigger)
 
-2. Card
     1. BuffCard
         1. AbilityCard (grants/upgrades hero ability)
         2. StatCard (modifies hero/troop stats)
@@ -238,8 +234,8 @@ _(example)_
     4. EnemyEventCard (triggered on Base damage)
 
 3. Outpost
-    1. OutpostForest (Forest theme, Wolf/Goblin enemies)
-    2. OutpostCastle (Castle theme, Guard/GiantRat enemies)
+    1. OutpostHouse (House theme, Civilian enemies)
+    2. OutpostMilitary (Military theme, Guard/soldier enemies)
     3. Base (takes damage, triggers EnemyEventCard)
     4. CaptureZone (clear condition trigger)
     5. SpawnPoint (enemy + troop spawn location)
