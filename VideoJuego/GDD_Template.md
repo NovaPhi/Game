@@ -176,7 +176,6 @@ _(example)_
         2. Troop
         3. Enemy
             1. Guard
-            2. Commander
 2. Physics
     1. Movement
     2. Collision
@@ -185,9 +184,8 @@ _(example)_
     2. Projectile
     3. Hitbox
 4. AI
-    1. AggroAI
-    2. PatrolAI
-    3. TroopAI
+    1. Aggro
+    3. Troop
 5. Card
     1. BuffCard
         1. AbilityCard
