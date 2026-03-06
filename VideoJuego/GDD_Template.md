@@ -1,4 +1,4 @@
-# **Z attack**
+# **Game Name Here**
 
 ## _Game Design Document_
 
@@ -170,39 +170,98 @@ _(example)_
 
 ### **Abstract Classes / Components**
 
-1. BasePhysics
-    1. BasePlayer
-    2. BaseEnemy
-    3. BaseObject
-2. BaseObstacle
-3. BaseInteractable
+1. Entity
+    1. Character
+        1. Player
+        2. Troop
+        3. Enemy
+            1. Guard
+            2. Commander
+2. Physics
+    1. Movement
+    2. Collision
+3. Combat
+    1. Weapon
+    2. Projectile
+    3. Hitbox
+4. AI
+    1. AggroAI
+    2. PatrolAI
+    3. TroopAI
+5. Card
+    1. BuffCard
+        1. AbilityCard
+        2. StatCard
+    2. TroopCard
+    3. MinMaxCard
+    4. EnemyEventCard
+6. CardSystem
+    1. PlayerCardDraft
+    2. EnemyCardTrigger
+7. Outpost
+    1. SpawnPoint
+    2. CaptureZone
+    3. Base
+8. Obstacle
+    1. Cover
+    2. Gate
+9. Interactable
+    1. Pickup
+    2. Trigger
+10. UI
+    1. HUD
+    2. Minimap
+    3. CardDraftScreen
 
-_(example)_
 
 ### **Derived Classes / Component Compositions**
 
-1. BasePlayer
-    1. PlayerMain
-    2. PlayerUnlockable
-2. BaseEnemy
-    1. EnemyWolf
-    2. EnemyGoblin
-    3. EnemyGuard (may drop key)
-    4. EnemyGiantRat
-    5. EnemyPrisoner
-3. BaseObject
-    1. ObjectRock (pick-up-able, throwable)
-    2. ObjectChest (pick-up-able, throwable, spits gold coins with key)
-    3. ObjectGoldCoin (cha-ching!)
-    4. ObjectKey (pick-up-able, throwable)
-4. BaseObstacle
-    1. ObstacleWindow (destroyed with rock)
-    2. ObstacleWall
-    3. ObstacleGate (watches to see if certain buttons are pressed)
-5. BaseInteractable
-    1. InteractableButton
+1. Character
+    1. Player
+        1. PlayerHero (base controllable hero)
+        2. PlayerHeroUnlockable (unlocked via store)
+    2. Troop
+        1. TroopMelee (absorbs damage, close range attack)
+        2. TroopRanged (absorbs damage, ranged attack)
+        3. TroopUnlockable (unlocked via store)
+    3. Enemy
+        1. Guard (PatrolAI, AggroAI, ranged attack)
+        2. Commander (PatrolAI, AggroAI, EnemyCardTrigger)
+        3. EnemyWolf (AggroAI, melee)
+        4. EnemyGoblin (AggroAI, melee)
+        5. EnemyGiantRat (AggroAI, melee)
 
-_(example)_
+2. Card
+    1. BuffCard
+        1. AbilityCard (grants/upgrades hero ability)
+        2. StatCard (modifies hero/troop stats)
+    2. TroopCard (spawns additional subtroops)
+    3. MinMaxCard (high risk/reward trade-off)
+    4. EnemyEventCard (triggered on Base damage)
+
+3. Outpost
+    1. OutpostForest (Forest theme, Wolf/Goblin enemies)
+    2. OutpostCastle (Castle theme, Guard/GiantRat enemies)
+    3. Base (takes damage, triggers EnemyEventCard)
+    4. CaptureZone (clear condition trigger)
+    5. SpawnPoint (enemy + troop spawn location)
+
+4. Obstacle
+    1. ObstacleWall (static, blocks movement)
+    2. ObstacleGate (opened via Trigger)
+    3. ObstacleCover (reduces incoming damage)
+
+5. Interactable
+    1. InteractablePickup (on-field loot, applies BuffCard)
+    2. InteractableTrigger (activates Gates, CaptureZones)
+
+6. UI
+    1. HUDHero (hero HP, ability cooldowns)
+    2. HUDTroops (troop count, status)
+    3. MinimapOutpost (outpost layout, enemy positions)
+    4. CardDraftScreen (post-stage 3-card selection)
+    5. CardDraftEnemyAlert (enemy card activation notice)
+
 
 ## _Graphics_
 
