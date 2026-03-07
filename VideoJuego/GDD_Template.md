@@ -46,11 +46,11 @@
 
 ### **Summary**
 
-A zombie themed tower offense game with raid mechanics where you control a hero with subtroops that defend a hero and try to destroy the enemy emplacements.
+A tower offense game with raid mechanics where you control a hero with subtroops that defend a hero and try to destroy the enemy emplacements, you can also use cards such as power ups, change stats, change the environment, etc.
 
 ### **Gameplay**
 
-The gameplay will start with the player placing a hero in the map who will try to destroy the emplacements on the map with "subtroops" that will aid the hero absorbing damage and doing damage to the emplacements themselves, the player will be able to unlock new more powerfull heroes and subtroops as the progress. The goal of the game is that the player can advance as much as possible in a semi-infinite game and achieve a points highscore. The player can use multiple variables in the way they play the game like hero-subtroop combination, placement, abilities and timing to destroy the emplacements.
+The gameplay will start with the player choosing a hero and getting a random set of cards the can include subtroops, power ups and stage changes. Once in the run the player will be able to display his subtroops on the field as he pleases and they will attack nearby enemies or camps, including the main one. The player can also use his cards to power up a subtroop for that stage or his main hero or use one of the stage changing cards to make it so that the terrain affect the enemies or helps the player. Every three stages the player will be able to with the money earned, he can improve a hero stat for the rest of the run, get more powerups or more stage changing cards. Then the player will start again for other three stages but with higher difficulty.
 
 ### **Mindset**
 
@@ -67,25 +67,21 @@ The player will have a psychological reward in our progression based system wher
     2. Options
     3. Credits
     4. Exit
-2. Difficulty Selection
-    1. Easy
-    2. Medium
-    3. Hard
-3. Loadout
+2. Loadout
     1. Hero Selection
-    2. Subtroop Selection
-    3. Troops Unlocked Overview
-    4. Store (Unlock Heroes/Subtroops/Abilities)
+    2. Cards Selected Overview
+    3. Store(Power ups, Environment cards)
+    4. Stats Improve
     5. Start Raid
-4. Pause Screen
+3. Pause Screen
     1. Resume
     2. End Run
     3. Settings
     4. Leave to Menu
-5. Game Over Screen
+4. Game Over Screen
     1. Final Score
     2. High Score
-    3. Rewards
+    3. Rewards(Total money you end up with)
     4. Retry
     5. Return to Hub
 6. Credits
@@ -101,13 +97,15 @@ The player will have a psychological reward in our progression based system wher
     1. Left Click
         1. Place Hero on the map
         2. Place Subtroops on the map
-        3. Activate Abilities
+        3. Drag power up card to hero/subtroop to apply it
     2. Right Click
         1. Cancel Drop
     3. Keyboard
         1. WASD
             1. Move Hero after Placement
-        2. Esc
+        2. Space
+            1. Attack(Hero)
+        3. Esc
             1. Pause Game
 
 
@@ -115,7 +113,7 @@ The player will have a psychological reward in our progression based system wher
 
 The game will have an automatic targeting system for enemies and subtroops where the enemies attack will be based on distance and troop type for example subtroops will draw the attacks to them even if they are farther away from the emplacement but in range and the subtroops auto-attack will work in a similar principle but if the hero recieves damage from an emplacement while in an effective "detection range" they will switch to a defend behaviour where they will attack the emplacement that is targeting the hero which also has automatic damaga selection but it will be purely based on distance and aggro to a hero can drop if a subtroop is actively attacking the emplacement and the emplacement looses a percentage of health.
 
-The difficulty progression works similar to other rougelite systems where it is based on time so that the player is incentivised to act recklessly but rewarded for acting calm. When completing a stage the player will be rewarded with a selection of randomized upgrade cards drawn from a predefined pool. The player chooses a card that will modify their stats for the remainder of the run. The cards can enchance Hero stats, improve subtroops, abilities or introduce risk reward tradoffs for hyperspecialization in runs. These upgrades do not persist between runs encouraging replayability. 
+The difficulty progression works similar to other rougelite systems where it is based on time so that the player is incentivised to act recklessly but rewarded for acting calm. When completing a run the player will be rewarded with a selection of randomized upgrade cards drawn from a predefined pool. The player chooses a card that will modify their stats for the remainder of the run. The cards can enchance Hero stats, improve subtroops, be power ups for use in the remaining of the run and be stage modifiers that benefits the player or affects the enemy on a stage. These upgrades do not persist between runs encouraging replayability. 
 
 ## _Level Design_
 
