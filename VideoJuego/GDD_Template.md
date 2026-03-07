@@ -1,4 +1,4 @@
-# **Game Name Here**
+# **Z Attack**
 
 ## _Game Design Document_
 
@@ -46,7 +46,7 @@
 
 ### **Summary**
 
-A tower offense game with raid mechanics where you control a hero with subtroops that defend a hero and try to destroy the enemy emplacements.
+A zombie themed tower offense game with raid mechanics where you control a hero with subtroops that defend a hero and try to destroy the enemy emplacements.
 
 ### **Gameplay**
 
@@ -263,42 +263,36 @@ _(example)_
 
 ### **Style Attributes**
 
-What kinds of colors will you be using? Do you have a limited palette to work with? A post-processed HSV map/image? Consistency is key for immersion.
+2D Pixel art game, taking inspiration from different zombie games such as Project Zomboid. An above-view camera angle during the gameplay, similar to a Clash of Clans attack. Heroes will be larger in size than subtroops, and will have more complex designs, making them easy to identify and diferentiate form NPCs. Enemies will have a red outline, making them easy to identify and clasify as the target to be attacked. Make sure to check out the picture found in the Game Presentation (also in this GitHub repository) for a more visual representation of our vision.
 
-What kind of graphic style are you going for? Cartoony? Pixel-y? Cute? How, specifically? Solid, thick outlines with flat hues? Non-black outlines with limited tints/shades? Emphasize smooth curvatures over sharp angles? Describe a set of general rules depicting your style here.
-
-Well-designed feedback, both good (e.g. leveling up) and bad (e.g. being hit), are great for teaching the player how to play through trial and error, instead of scripting a lengthy tutorial. What kind of visual feedback are you going to use to let the player know they&#39;re interacting with something? That they \*can\* interact with something?
 
 ### **Graphics Needed**
 
 1. Characters
-    1. Human-like
-        1. Goblin (idle, walking, throwing)
-        2. Guard (idle, walking, stabbing)
-        3. Prisoner (walking, running)
-    2. Other
-        1. Wolf (idle, walking, running)
-        2. Giant Rat (idle, scurrying)
-2. Blocks
-    1. Dirt
-    2. Dirt/Grass
-    3. Stone Block
-    4. Stone Bricks
-    5. Tiled Floor
-    6. Weathered Stone Block
-    7. Weathered Stone Bricks
+    1. Zombies
+        1. Base heroe
+        2. Hero type 2 - Tank
+        3. Hero type 3 - Long range
+        4. Regular subtroop
+        5. Brute subtroop
+        6. Long range subtroop
+    2. Humans
+        1. Soldiers
+        2. Strong soldiers
+2. Bases
+    1. Center base (main)
+    2. Center base walls
+    3. Outposts
 3. Ambient
-    1. Tall Grass
-    2. Rodent (idle, scurrying)
-    3. Torch
-    4. Armored Suit
-    5. Chains (matching Weathered Stone Bricks)
-    6. Blood stains (matching Weathered Stone Bricks)
+    1. Grass
+    2. Trees
+    3. Rocks
+    4. Barricades
+    5. TCG terrain elements
 4. Other
-    1. Chest
-    2. Door (matching Stone Bricks)
-    3. Gate
-    4. Button (matching Weathered Stone Bricks)
+    1. Blood
+    2. Weapons
+    3. TCG Cards illustrations
 
 _(example)_
 
