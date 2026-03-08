@@ -1,4 +1,4 @@
-# **Z Attack**
+# **Z attack**
 
 ## _Game Design Document_
 
