@@ -1,17 +1,31 @@
 /*
   Base Assault - Prototype
   Luis Arias
-  15-Marzo-26
+  29-Marzo-26
 */
 
 "use strict";
 
 const canvasWidth  = 1000;
 const canvasHeight = 750;
-const PLAYER_SPEED = 10;
+const PLAYER_SPEED = 6;
 const PLAYER_DMG   = 100;
 
-const OUTPOST_COUNT = 5;
+const OUTPOST_COUNT = 50;
+
+let playerStats = {
+    speedMod: 1.0,
+    maxHp: 100,
+    bonuses: [],
+    level: 0,
+    stage: 0,
+    xp: 0
+};
+
+function getDifficultyMult(){
+    const doublings = Math.floor(playerStats.level / 3);
+    return Math.pow(2,doublings);
+}
 
 let ctx;
 let game;
@@ -20,7 +34,7 @@ let game;
 // Player — a box controlled with WASD
 // ─────────────────────────────────────────────
 class Player {
-    constructor() {
+    constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
         this.width  = 28;
         this.height = 28;
         this.x = 0;
@@ -37,6 +51,10 @@ class Player {
 
         this.maxHp = 100;
         this.hp    = this.maxHp;
+
+        this.speedMod = stats.speedMod;
+        this.maxHp = stats.maxHp;
+        this.hp = this.maxHp;
     }
 
     update(walls) {
@@ -161,9 +179,16 @@ class WallSegment {
         this.width  = 32;
         this.height = 32;
         this.maxHp  = maxHp;
-        this.hp     = maxHp;
-        this.shootCooldown    = Math.floor(Math.random() * 60); // stagger so they don't all fire at once
-        this.shootCooldownMax = 60; // 1 shot/sec at 60fps
+        this.hp     = maxHp; 
+        const mult   = getDifficultyMult();
+        const cdMin  = Math.max(Math.floor(60  / mult), 10);
+        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1);
+
+        this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
+        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);        
+        this.shootRange = 300;
+        this.side = "top";
+        
     }
 
     get alive() { return this.hp > 0; }
@@ -177,8 +202,18 @@ class WallSegment {
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
 
+
         // Don't shoot if player is within one player-length
         if (dist < player.width) return null;
+        if (dist > this.shootRange) return null;
+
+        const outside = 
+                this.side === "top" ? py < cy :
+                this.side === "bottom" ? py > cy:
+                this.side === "left" ? px < cx: 
+                this.side === "right" ? px > cx: true;
+        
+        if(!outside) return null;
 
         if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
 
@@ -229,7 +264,15 @@ class MainBase {
                 if (!isEdge) continue;
                 const x = startX + col * step;
                 const y = startY + row * step;
-                this.segments.push(new WallSegment(x, y, 100));
+                const seg = (new WallSegment(x, y, 100));
+
+                
+                if (row === 0)        seg.side = "top";
+                if (row === rows - 1) seg.side = "bottom";
+                if (col === 0)        seg.side = "left";
+                if (col === cols - 1) seg.side = "right";
+
+                this.segments.push(seg);
             }
         }
     }
@@ -272,8 +315,14 @@ class Outpost {
         this.height = 40;
         this.maxHp  = 99;
         this.hp     = this.maxHp;
-        this.shootCooldown    = Math.floor(Math.random() * 60);
-        this.shootCooldownMax = 60; // 3 shots/sec at 60fps
+        const mult   = getDifficultyMult();
+        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
+        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
+
+        this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
+        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
+
+        this.shootRange = 200;
     }
 
     get alive() { return this.hp > 0; }
@@ -289,6 +338,7 @@ class Outpost {
 
         // Don't shoot if player is within one player-length
         if (dist < player.width) return null;
+        if (dist > this.shootRange) return null;
 
         if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
 
@@ -331,6 +381,7 @@ class Game {
         this.won      = false;
         this.waiting  = true;
         this._died    = false;
+        this.outpostCount = Math.floor(Math.random() * 11) + 10
 
         this.randomEventActive    = false;
         this.randomEventTriggered = false;
@@ -340,6 +391,8 @@ class Game {
         this.spawnOutposts();
         this.spawnPlayer();
         this.createEventListeners();
+        this._rewardGranted = false;
+        this.lastReward = null;
     }
 
     spawnPlayer() {
@@ -360,23 +413,60 @@ class Game {
     }
 
     spawnOutposts() {
-        const margin  = 80;
-        const safeRad = 160;
-        const cx = canvasWidth / 2, cy = canvasHeight / 2;
+    const margin  = 80;
+    const cx = canvasWidth / 2, cy = canvasHeight / 2;
 
-        for (let i = 0; i < OUTPOST_COUNT; i++) {
-            let x, y;
-            let attempts = 0;
-            do {
-                x = margin + Math.random() * (canvasWidth  - margin * 2 - 40);
-                y = margin + Math.random() * (canvasHeight - margin * 2 - 40);
-                attempts++;
-            } while (
-                Math.hypot(x - cx, y - cy) < safeRad && attempts < 100
-            );
+    // Main base bounding box with a padding buffer
+    const basePad = 60;
+    const baseW   = 7 * (32 + 2) - 2; // matches buildWall math
+    const baseH   = baseW;
+    const baseX   = cx - baseW / 2 - basePad;
+    const baseY   = cy - baseH / 2 - basePad;
+    const baseBW  = baseW + basePad * 2;
+    const baseBH  = baseH + basePad * 2;
+
+    const outW    = 40; // Outpost.width
+    const outH    = 40; // Outpost.height
+    const minGap  = 30; // minimum clearance between outpost edges
+
+    const placed  = []; // list of { x, y, width, height } already accepted
+
+    const overlaps = (ax, ay, aw, ah, bx, by, bw, bh, gap = 0) =>
+        ax < bx + bw + gap &&
+        ax + aw + gap > bx &&
+        ay < by + bh + gap &&
+        ay + ah + gap > by;
+
+    const mult = getDifficultyMult();
+    const count = Math.min(
+        Math.floor((Math.floor(Math.random() * 11 ) + 10 ) * mult )
+        ,60
+    );
+
+    for (let i = 0; i < this.outpostCount; i++) {
+        let x, y, attempts = 0, valid = false;
+
+        while (!valid && attempts < 200) {
+            attempts++;
+            x = margin + Math.random() * (canvasWidth  - margin * 2 - outW);
+            y = margin + Math.random() * (canvasHeight - margin * 2 - outH);
+
+            // Reject if overlapping the main base (with buffer)
+            if (overlaps(x, y, outW, outH, baseX, baseY, baseBW, baseBH)) continue;
+
+            // Reject if overlapping any already-placed outpost (with gap)
+            if (placed.some(p => overlaps(x, y, outW, outH, p.x, p.y, p.width, p.height, minGap))) continue;
+
+            valid = true;
+        }
+
+        if (valid) {
+            placed.push({ x, y, width: outW, height: outH });
             this.outposts.push(new Outpost(x, y));
         }
+        // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
     }
+}
 
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
@@ -398,7 +488,7 @@ class Game {
 
     startOrRestart() {
         if (this.waiting || this.won) {
-            this.player   = new Player();
+            this.player   = new Player(playerStats)
             this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
             this.outposts = [];
             this.bullets  = [];
@@ -410,6 +500,39 @@ class Game {
             this.notifTimer           = 0;
             this.spawnOutposts();
             this.spawnPlayer();
+            this._rewardGranted = false;
+            this.lastReward = false;
+        }
+    }
+
+   
+    grantReward() {
+        if (this._rewardGranted) return;
+        this._rewardGranted = true;
+
+        playerStats.level += 1;
+        playerStats.stage = Math.floor(playerStats.level / 3)
+
+        if (playerStats.level % 3 === 0) {
+            playerStats.xp += 300;
+            this.lastStageReward = true;
+        } else {
+            this.lastStageReward = false;
+        }
+
+        const roll = Math.random();
+        if (roll < 0.5) {
+            // Speed reward — +15% per level
+            const bonus = 0.15;
+            playerStats.speedMod = +(playerStats.speedMod + bonus).toFixed(2);
+            playerStats.bonuses.push(`Speed +15%  -> ${(playerStats.speedMod * 100).toFixed(0)}%`);
+            this.lastReward = "SPEED +15%";
+        } else {
+            // HP reward — +25 max HP per level
+            const bonus = 25;
+            playerStats.maxHp += bonus;
+            playerStats.bonuses.push(`Max HP +25   ->  ${playerStats.maxHp}`);
+            this.lastReward = "MAX HP +25";
         }
     }
 
@@ -442,7 +565,10 @@ class Game {
             this.player.y + this.player.height  > iz.y &&
             this.player.y                       < iz.y + iz.height
         );
-        if (playerInside) this.won = true;
+        if (playerInside){
+            this.grantReward();
+            this.won = true;
+        }
 
         // Random event — fires once when any wall segment drops below 50% HP
         if (!this.randomEventTriggered && this.outpostsCleared) {
@@ -483,10 +609,12 @@ class Game {
 
         // Game over when player HP hits 0
         if (this.player.hp <= 0) {
+            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0}; // wipe on death
             this.won     = false;
             this.waiting = true;
             this._died   = true;
         }
+
     }
 
     draw(ctx) {
@@ -517,7 +645,7 @@ class Game {
         if (this.notifTimer > 0) this.drawEventNotif(ctx);
 
         if (this.waiting && this._died) {
-            this.drawOverlay("YOU DIED", "PRESS SPACE TO TRY AGAIN", "#f44");
+            this.drawDeathScreen();
         } else if (this.waiting) {
             this.drawOverlay("BASE ASSAULT", "PRESS SPACE TO START", "#4af");
         } else if (this.won) {
@@ -536,6 +664,10 @@ class Game {
 
     drawHUD(ctx) {
         ctx.font      = "14px monospace";
+        const mult = getDifficultyMult();  
+        ctx.fillStyle = mult >= 4 ? "#f44" : mult >= 2 ? "#fa0" : "#aaa";  
+        ctx.textAlign = "right";   
+        ctx.fillText(`level ${playerStats.level + 1}   ×${mult} difficulty`, canvasWidth - 12, 22);
         ctx.textAlign = "left";
 
         const outpostsLeft = this.outposts.filter(o => o.alive).length;
@@ -553,33 +685,10 @@ class Game {
             ctx.fillText("✓  Outposts cleared — attack the main base!", 12, 64);
         }
 
-        // Debug panel top-right
-        const dps       = (this.player.damage / this.player.attackCooldownMax * 60).toFixed(1);
-        const attacking = this.player.isAttacking;
-        const targetHp  = this.player.targetHp !== null ? this.player.targetHp : "—";
-        const panelX    = canvasWidth - 200;
-        const lineH     = 22;
-
-        ctx.fillStyle = "rgba(0,0,0,0.55)";
-        ctx.fillRect(panelX - 8, 8, 196, 78);
-
-        ctx.font      = "13px monospace";
-        ctx.textAlign = "left";
-
-        ctx.fillStyle = "#888";
-        ctx.fillText("attacking :",  panelX, 28);
-        ctx.fillText("dps       :",  panelX, 28 + lineH);
-        ctx.fillText("target hp :",  panelX, 28 + lineH * 2);
-
-        ctx.fillStyle = attacking ? "lime" : "#f66";
-        ctx.fillText(`${attacking}`, panelX + 100, 28);
-        ctx.fillStyle = "#fff";
-        ctx.fillText(`${dps}`,       panelX + 100, 28 + lineH);
-        ctx.fillText(`${targetHp}`,  panelX + 100, 28 + lineH * 2);
-
+        
         if (this.randomEventActive) {
             ctx.fillStyle = "#fa0";
-            ctx.fillText("⚡ RANDOM EVENT ACTIVE — Speed -30%  Attack rate -50%", 12, 86);
+            ctx.fillText("RANDOM EVENT ACTIVE — Speed -30%  Attack rate -50%", 12, 86);
         }
 
         // Player HP bar
@@ -611,17 +720,52 @@ class Game {
         ctx.fillText("Player speed -30% and attack rate -50%", canvasWidth / 2, canvasHeight / 2 + 16);
     }
 
+        drawDeathScreen() {
+        ctx.fillStyle = "rgba(0,0,0,0.75)";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.textAlign = "center";
+
+        ctx.fillStyle = "#f44";
+        ctx.font      = "56px monospace";
+        ctx.fillText("YOU DIED", canvasWidth / 2, canvasHeight / 2 - 80);
+
+        ctx.fillStyle = "#ffdd57";
+        ctx.font      = "32px monospace";
+        ctx.fillText(`TOTAL XP: ${playerStats.xp}`, canvasWidth / 2, canvasHeight / 2 - 20);
+
+        ctx.fillStyle = "#aaa";
+        ctx.font      = "18px monospace";
+        ctx.fillText(`Reached Level ${playerStats.level}  —  Stage ${playerStats.stage}`, canvasWidth / 2, canvasHeight / 2 + 20);
+
+        ctx.fillStyle = "#fff";
+        ctx.font      = "22px monospace";
+        ctx.fillText("PRESS SPACE TO TRY AGAIN", canvasWidth / 2, canvasHeight / 2 + 60);
+    }
+
     drawOverlay(title, subtitle, color) {
         ctx.fillStyle = "rgba(0,0,0,0.65)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.textAlign = "center";
         ctx.fillStyle = color;
         ctx.font      = "56px monospace";
-        ctx.fillText(title, canvasWidth / 2, canvasHeight / 2 - 20);
+        ctx.fillText(title, canvasWidth / 2, canvasHeight / 2 - 60);
+
+        if (this.won && this.lastReward) {
+            ctx.fillStyle = "#ffdd57";
+            ctx.font      = "28px monospace";
+            ctx.fillText(`REWARD: ${this.lastReward}`, canvasWidth / 2, canvasHeight / 2 - 10);
+
+            if (this.lastStageReward) {
+                ctx.fillStyle = "#4f4";
+                ctx.font      = "22px monospace";
+                ctx.fillText(`STAGE COMPLETE — +300 XP  (total: ${playerStats.xp})`, canvasWidth / 2, canvasHeight / 2 + 24);
+            }
+        }
+
         ctx.fillStyle = "#fff";
         ctx.font      = "22px monospace";
-        ctx.fillText(subtitle, canvasWidth / 2, canvasHeight / 2 + 30);
-    }
+        ctx.fillText(subtitle, canvasWidth / 2, canvasHeight / 2 + 60);
+    }    
 }
 
 function main() {
