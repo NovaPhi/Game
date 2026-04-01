@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     const images = [
-        "url('download.jpeg')",
-        "url('images.jpeg')"
+        "url('HTML-FrontEnd/MangaCafeEva/download.jpeg')",
+        "url('HTML-FrontEnd/MangaCafeEva/images.jpeg')"
     ];
 
     const wordColor = [
@@ -15,6 +15,49 @@ document.addEventListener("DOMContentLoaded", function () {
         "#fbe6e5"
     ];
 
+    const mangas = [
+        {
+            title: "One Piece",
+            genre: "Adventure, Fantasy",
+            author: "Eiichiro Oda",
+            volumes: 108,
+            description: "Monkey D. Luffy sets sail to find the legendary One Piece treasure and become King of the Pirates.",
+            price: "$5 / week"
+        },
+        {
+            title: "Attack on Titan",
+            genre: "Action, Dark Fantasy",
+            author: "Hajime Isayama",
+            volumes: 34,
+            description: "Humanity fights for survival against giant humanoid creatures called Titans behind massive walls.",
+            price: "$5 / week"
+        },
+        {
+            title: "One Punch Man",
+            genre: "Action, Comedy",
+            author: "ONE, Yusuke Murata",
+            volumes: 30,
+            description: "Saitama is a hero who can defeat any enemy with a single punch, but struggles to find a worthy challenge.",
+            price: "$5 / week"
+        },
+        {
+            title: "Demon Slayer",
+            genre: "Action, Supernatural",
+            author: "Koyoharu Gotouge",
+            volumes: 23,
+            description: "Tanjiro becomes a demon slayer after his family is slaughtered and his sister is turned into a demon.",
+            price: "$5 / week"
+        },
+        {
+            title: "Fullmetal Alchemist",
+            genre: "Adventure, Fantasy",
+            author: "Hiromu Arakawa",
+            volumes: 27,
+            description: "Two brothers search for the Philosopher's Stone after a failed alchemical ritual costs them dearly.",
+            price: "$5 / week"
+        }
+    ]
+
     const selectDia = document.getElementById("dia");
 
     selectDia.addEventListener("change", function () {
@@ -25,8 +68,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const button = document.getElementById("changeBtn");
     const header = document.querySelector(".Header"); 
-    const body = document.querySelector(".Content")
+    const body = document.querySelector(".Content");
+    const mangaButton = document.getElementById("mangasBtn");
+    const mangaSection = document.getElementById("mangaSection");
+    const prevButton = document.getElementById("prevBtn");
+    const nextButton = document.getElementById("nextBtn");
 
+    //Change background function
     button.addEventListener("click", function () {
         document.body.style.backgroundImage = images[index];
         document.body.style.color = wordColor[index];
@@ -35,6 +83,30 @@ document.addEventListener("DOMContentLoaded", function () {
         body.style.borderColor = BordeColor[index];
 
         index = (index + 1) % images.length;
+    });
+
+    //Display manga function
+    function renderManga(manga) {
+        document.getElementById("mangaTitle").innerHTML = manga.title;
+        document.getElementById("mangaGenre").innerHTML = manga.genre;
+        document.getElementById("mangaAuthor").innerHTML = manga.author;
+        document.getElementById("mangaVolumes").innerHTML = manga.volumes;
+        document.getElementById("mangaDesc").innerHTML = manga.description;
+        document.getElementById("mangaPrice").innerHTML = manga.price;
+    }
+
+    //Manga button event listener
+    mangaButton.addEventListener("click", function (){
+        if (mangaSection.style.display === "none" && prevButton.style.display === "none" && nextButton.style.display === "none") {
+            mangaSection.style.display = "block";
+            prevButton.style.display = "block";
+            nextButton.style.display = "block";
+            renderManga(mangas[0]);
+        } else {
+            mangaSection.style.display = "none";
+            prevButton.style.display = "none";
+            nextButton.style.display = "none";
+        }
     });
 
 });
@@ -194,6 +266,8 @@ function cambiarMenu(dia) {
         `;
     }
 }
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
 
