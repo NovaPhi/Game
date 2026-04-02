@@ -22,7 +22,8 @@ document.addEventListener("DOMContentLoaded", function () {
             author: "Eiichiro Oda",
             volumes: 108,
             description: "Monkey D. Luffy sets sail to find the legendary One Piece treasure and become King of the Pirates.",
-            price: "$5 / week"
+            price: "$5 / week",
+            cover: "one_piece.jpg"
         },
         {
             title: "Attack on Titan",
@@ -30,7 +31,8 @@ document.addEventListener("DOMContentLoaded", function () {
             author: "Hajime Isayama",
             volumes: 34,
             description: "Humanity fights for survival against giant humanoid creatures called Titans behind massive walls.",
-            price: "$5 / week"
+            price: "$5 / week",
+            cover: "aot.jpg"
         },
         {
             title: "One Punch Man",
@@ -38,7 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
             author: "ONE, Yusuke Murata",
             volumes: 30,
             description: "Saitama is a hero who can defeat any enemy with a single punch, but struggles to find a worthy challenge.",
-            price: "$5 / week"
+            price: "$5 / week",
+            cover: "opm.jpg"
         },
         {
             title: "Demon Slayer",
@@ -46,7 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
             author: "Koyoharu Gotouge",
             volumes: 23,
             description: "Tanjiro becomes a demon slayer after his family is slaughtered and his sister is turned into a demon.",
-            price: "$5 / week"
+            price: "$5 / week",
+            cover: "demon_slayer.jpg"
         },
         {
             title: "Fullmetal Alchemist",
@@ -54,7 +58,8 @@ document.addEventListener("DOMContentLoaded", function () {
             author: "Hiromu Arakawa",
             volumes: 27,
             description: "Two brothers search for the Philosopher's Stone after a failed alchemical ritual costs them dearly.",
-            price: "$5 / week"
+            price: "$5 / week",
+            cover: "fmab.jpg"
         }
     ]
 
@@ -65,12 +70,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     let index = 0;
+    let mangaIndex = 0;
 
     const button = document.getElementById("changeBtn");
     const header = document.querySelector(".Header"); 
     const body = document.querySelector(".Content");
     const mangaButton = document.getElementById("mangasBtn");
     const mangaSection = document.getElementById("mangaSection");
+    const mangaNavDiv = document.getElementById("mangaNavDiv");
     const prevButton = document.getElementById("prevBtn");
     const nextButton = document.getElementById("nextBtn");
 
@@ -93,21 +100,47 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("mangaVolumes").innerHTML = manga.volumes;
         document.getElementById("mangaDesc").innerHTML = manga.description;
         document.getElementById("mangaPrice").innerHTML = manga.price;
+        document.getElementById("mangaCover").src = manga.cover;
     }
+
 
     //Manga button event listener
     mangaButton.addEventListener("click", function (){
-        if (mangaSection.style.display === "none" && prevButton.style.display === "none" && nextButton.style.display === "none") {
+        if (mangaSection.style.display === "none") {
             mangaSection.style.display = "block";
-            prevButton.style.display = "block";
-            nextButton.style.display = "block";
-            renderManga(mangas[0]);
+            mangaNavDiv.style.display = "flex";
+            renderManga(mangas[mangaIndex]);
         } else {
             mangaSection.style.display = "none";
-            prevButton.style.display = "none";
-            nextButton.style.display = "none";
+            mangaNavDiv.style.display = "none";
         }
     });
+
+    nextButton.addEventListener("click", function (){
+        console.log("Antes: ", mangaIndex);
+        if (mangaIndex < 4){
+            mangaIndex ++;
+            renderManga(mangas[mangaIndex]);
+        }
+        else{
+            mangaIndex = 0;
+            renderManga(mangas[mangaIndex]);
+        }
+        console.log("Después: ", mangaIndex);
+    })
+
+    prevButton.addEventListener("click", function (){
+        console.log("Antes: ", mangaIndex);
+        if (mangaIndex > 0){
+            mangaIndex --;
+            renderManga(mangas[mangaIndex]);
+        }
+        else{
+            mangaIndex = 4;
+            renderManga(mangas[mangaIndex]);
+        }
+        console.log("Después: ", mangaIndex);
+    })
 
 });
 
