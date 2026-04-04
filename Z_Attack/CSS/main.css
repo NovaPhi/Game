@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0a0a0a;
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(30, 80, 20, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(80, 10, 10, 0.1) 0%, transparent 50%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: 'Creepster', cursive;
+}
+
+#title {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+#title h1 {
+    font-family: 'Creepster', cursive;
+    font-size: 96px;
+    color: #4caf50;
+    text-shadow:
+        0 0 10px rgba(76, 175, 80, 0.6),
+        0 0 30px rgba(76, 175, 80, 0.3),
+        0 0 60px rgba(76, 175, 80, 0.15),
+        4px 4px 0 #1a1a1a,
+        -1px -1px 0 #2e7d32;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    user-select: none;
+    animation: titlePulse 3s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+    0%, 100% {
+        text-shadow:
+            0 0 10px rgba(76, 175, 80, 0.6),
+            0 0 30px rgba(76, 175, 80, 0.3),
+            0 0 60px rgba(76, 175, 80, 0.15),
+            4px 4px 0 #1a1a1a,
+            -1px -1px 0 #2e7d32;
+    }
+    50% {
+        text-shadow:
+            0 0 15px rgba(76, 175, 80, 0.8),
+            0 0 45px rgba(76, 175, 80, 0.5),
+            0 0 80px rgba(76, 175, 80, 0.25),
+            4px 4px 0 #1a1a1a,
+            -1px -1px 0 #2e7d32;
+    }
+}
+
+#mainMenu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+#mainMenu a {
+    display: block;
+    width: 280px;
+    padding: 14px 0;
+    text-align: center;
+    font-family: 'Creepster', cursive;
+    font-size: 32px;
+    color: #c8e6c9;
+    text-decoration: none;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    border: 2px solid #2e7d32;
+    border-radius: 4px;
+    background: rgba(46, 125, 50, 0.08);
+    box-shadow:
+        0 0 10px rgba(76, 175, 80, 0.1),
+        inset 0 0 20px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+#mainMenu a:hover {
+    color: #4caf50;
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.12);
+    box-shadow:
+        0 0 15px rgba(76, 175, 80, 0.3),
+        0 0 40px rgba(76, 175, 80, 0.1),
+        inset 0 0 20px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+}
+
+#mainMenu a h2 {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: normal;
+}
+
+#footer {
+    margin-top: 48px;
+}
