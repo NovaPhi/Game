@@ -22,6 +22,8 @@ let playerStats = {
     xp: 0
 };
 
+
+
 function getDifficultyMult(){
     const doublings = Math.floor(playerStats.level / 3);
     return Math.pow(2,doublings);
@@ -30,9 +32,6 @@ function getDifficultyMult(){
 let ctx;
 let game;
 
-// ─────────────────────────────────────────────
-// Player — a box controlled with WASD
-// ─────────────────────────────────────────────
 class Player {
     constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
         this.width  = 28;
@@ -129,9 +128,6 @@ class Player {
     }
 }
 
-// ─────────────────────────────────────────────
-// Bullet — fired by outposts and wall segments
-// ─────────────────────────────────────────────
 class Bullet {
     constructor(x, y, vx, vy, damage, color = "#f84") {
         this.x = x;
@@ -169,9 +165,6 @@ class Bullet {
     }
 }
 
-// ─────────────────────────────────────────────
-// WallSegment — one square tile of the main base wall
-// ─────────────────────────────────────────────
 class WallSegment {
     constructor(x, y, maxHp = 100) {
         this.x      = x;
@@ -235,9 +228,6 @@ class WallSegment {
     }
 }
 
-// ─────────────────────────────────────────────
-// MainBase — hollow square formation of WallSegments
-// ─────────────────────────────────────────────
 class MainBase {
     constructor(cx, cy) {
         this.segments = [];
@@ -304,9 +294,6 @@ class MainBase {
     }
 }
 
-// ─────────────────────────────────────────────
-// Outpost — secondary base; fires 3 shots/sec
-// ─────────────────────────────────────────────
 class Outpost {
     constructor(x, y) {
         this.x      = x;
@@ -369,9 +356,6 @@ class Outpost {
     }
 }
 
-// ─────────────────────────────────────────────
-// Game — owns all objects, handles input, drives the loop
-// ─────────────────────────────────────────────
 class Game {
     constructor() {
         this.player   = new Player();
@@ -381,7 +365,7 @@ class Game {
         this.won      = false;
         this.waiting  = true;
         this._died    = false;
-        this.outpostCount = Math.floor(Math.random() * 11) + 10
+        
 
         this.randomEventActive    = false;
         this.randomEventTriggered = false;
@@ -439,11 +423,12 @@ class Game {
 
     const mult = getDifficultyMult();
     const count = Math.min(
-        Math.floor((Math.floor(Math.random() * 11 ) + 10 ) * mult )
+        Math.floor((Math.floor(Math.random() * 6 ) + 5 ) * mult )
         ,60
     );
+    
 
-    for (let i = 0; i < this.outpostCount; i++) {
+    for (let i = 0; i < count; i++) {
         let x, y, attempts = 0, valid = false;
 
         while (!valid && attempts < 200) {
@@ -467,6 +452,8 @@ class Game {
         // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
     }
 }
+
+    
 
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
@@ -511,7 +498,10 @@ class Game {
         this._rewardGranted = true;
 
         playerStats.level += 1;
+        this.levelnum = playerStats.level; 
         playerStats.stage = Math.floor(playerStats.level / 3)
+
+        
 
         if (playerStats.level % 3 === 0) {
             playerStats.xp += 300;
@@ -609,7 +599,10 @@ class Game {
 
         // Game over when player HP hits 0
         if (this.player.hp <= 0) {
-            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0}; // wipe on death
+            this._deathXP = playerStats.xp;
+            this._deathLevel = playerStats.level;
+            this._deathStage = playerStats.stage;
+            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0}; 
             this.won     = false;
             this.waiting = true;
             this._died   = true;
@@ -715,7 +708,7 @@ class Game {
         ctx.textAlign = "center";
         ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx.font = "32px monospace";
-        ctx.fillText("⚡ RANDOM EVENT ACTIVATED", canvasWidth / 2, canvasHeight / 2 - 18);
+        ctx.fillText(" RANDOM EVENT ACTIVATED", canvasWidth / 2, canvasHeight / 2 - 18);
         ctx.font = "16px monospace";
         ctx.fillText("Player speed -30% and attack rate -50%", canvasWidth / 2, canvasHeight / 2 + 16);
     }
@@ -731,11 +724,11 @@ class Game {
 
         ctx.fillStyle = "#ffdd57";
         ctx.font      = "32px monospace";
-        ctx.fillText(`TOTAL XP: ${playerStats.xp}`, canvasWidth / 2, canvasHeight / 2 - 20);
+        ctx.fillText(`TOTAL XP: ${this_deathXP}`, canvasWidth / 2, canvasHeight / 2 - 20);
 
         ctx.fillStyle = "#aaa";
         ctx.font      = "18px monospace";
-        ctx.fillText(`Reached Level ${playerStats.level}  —  Stage ${playerStats.stage}`, canvasWidth / 2, canvasHeight / 2 + 20);
+        ctx.fillText(`Reached Level ${this._deathLevel}  —  Stage ${this._deathStage}`, canvasWidth / 2, canvasHeight / 2 + 20);
 
         ctx.fillStyle = "#fff";
         ctx.font      = "22px monospace";
@@ -767,6 +760,8 @@ class Game {
         ctx.fillText(subtitle, canvasWidth / 2, canvasHeight / 2 + 60);
     }    
 }
+
+
 
 function main() {
     const canvas  = document.getElementById("canvas");
