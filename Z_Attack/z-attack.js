@@ -724,7 +724,7 @@ class Game {
 
         ctx.fillStyle = "#ffdd57";
         ctx.font      = "32px monospace";
-        ctx.fillText(`TOTAL XP: ${this_deathXP}`, canvasWidth / 2, canvasHeight / 2 - 20);
+        ctx.fillText(`TOTAL XP: ${this._deathXP}`, canvasWidth / 2, canvasHeight / 2 - 20);
 
         ctx.fillStyle = "#aaa";
         ctx.font      = "18px monospace";
