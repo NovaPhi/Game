@@ -1,0 +1,247 @@
+Z_ATTACK – QUERY EXAMPLES FOR TESTING
+================================================
+
+
+USERS
+------------------------------------------------
+
+-- Get all users with their role and status
+SELECT u.id_user, u.username, u.email, r.name AS role, s.name AS status
+FROM User u
+JOIN Role r ON u.id_role = r.id_role
+JOIN Status s ON u.id_status = s.id_status;
+
+-- Get a single user by username
+SELECT * FROM User WHERE username = 'shadowbyte';
+
+-- Get all active players
+SELECT u.username FROM User u
+JOIN Status s ON u.id_status = s.id_status
+WHERE s.name = 'active';
+
+-- Get all banned users
+SELECT u.username FROM User u
+JOIN Status s ON u.id_status = s.id_status
+WHERE s.name = 'banned';
+
+
+HERO
+------------------------------------------------
+
+-- Get hero stats for a specific user
+SELECT * FROM Hero WHERE id_user = 1;
+
+-- Get all heroes sorted by level descending
+SELECT u.username, h.level, h.hp, h.attack, h.defense
+FROM Hero h
+JOIN User u ON h.id_user = u.id_user
+ORDER BY h.level DESC;
+
+
+STATS / LEADERBOARD
+------------------------------------------------
+
+-- Full leaderboard sorted by best score
+SELECT u.username, st.best_score, st.best_level, st.total_runs, st.playtime
+FROM Stats st
+JOIN User u ON st.id_user = u.id_user
+ORDER BY st.best_score DESC, st.best_level DESC;
+
+-- Get stats for a specific user
+SELECT * FROM Stats WHERE id_user = 3;
+
+-- Top 3 players by best score
+SELECT u.username, st.best_score
+FROM Stats st
+JOIN User u ON st.id_user = u.id_user
+ORDER BY st.best_score DESC
+LIMIT 3;
+
+
+CARDS
+------------------------------------------------
+
+-- Get all cards with rarity name
+SELECT c.id_card, c.name, c.card_type, r.name AS rarity
+FROM Cards c
+JOIN Rarity r ON c.id_rarity = r.id_rarity;
+
+-- Get all powerup cards
+SELECT name, target_stat, modifier_value, modifier_type
+FROM Cards
+WHERE card_type = 'powerup';
+
+-- Get all ability cards
+SELECT name, combat_range, combat_role, cooldown_sec
+FROM Cards
+WHERE card_type = 'ability';
+
+-- Get all temporal buff cards
+SELECT name, buff_target, buff_value, duration_sec, trigger_type, is_immortal, unlimited_range
+FROM Cards
+WHERE card_type = 'temporal_buff';
+
+-- Get all legendary cards
+SELECT c.name, c.card_type
+FROM Cards c
+JOIN Rarity r ON c.id_rarity = r.id_rarity
+WHERE r.name = 'legendary';
+
+-- Get all cards that grant immortality
+SELECT name, duration_sec, trigger_type
+FROM Cards
+WHERE is_immortal = TRUE;
+
+-- Get all ranged offensive abilities
+SELECT name, cooldown_sec
+FROM Cards
+WHERE card_type = 'ability'
+AND combat_range = 'ranged'
+AND combat_role = 'offensive';
+
+
+RUNS
+------------------------------------------------
+
+-- Get all runs for a specific user
+SELECT id_run, status, level, wave, score, started_at, ended_at
+FROM Run
+WHERE id_user = 1;
+
+-- Get the currently active run for a user
+SELECT * FROM Run
+WHERE id_user = 3 AND status = 'active';
+
+-- Get all finished runs ordered by score
+SELECT u.username, r.level, r.wave, r.score, r.ended_at
+FROM Run r
+JOIN User u ON r.id_user = u.id_user
+WHERE r.status = 'game_over'
+ORDER BY r.score DESC;
+
+-- Get the best run per user
+SELECT u.username, MAX(r.score) AS best_score, MAX(r.level) AS best_level
+FROM Run r
+JOIN User u ON r.id_user = u.id_user
+WHERE r.status = 'game_over'
+GROUP BY r.id_user, u.username;
+
+-- Get average wave reached per user
+SELECT u.username, AVG(r.wave) AS avg_wave
+FROM Run r
+JOIN User u ON r.id_user = u.id_user
+WHERE r.status = 'game_over'
+GROUP BY r.id_user, u.username;
+
+
+USER COLLECTION
+------------------------------------------------
+
+-- Get all cards permanently unlocked by a user
+SELECT u.username, c.name, c.card_type, uc.unlocked_at
+FROM User_Collection uc
+JOIN User u ON uc.id_user = u.id_user
+JOIN Cards c ON uc.id_card = c.id_card
+WHERE uc.id_user = 1;
+
+-- Check if a specific user owns a specific card
+SELECT COUNT(*) AS owns_card
+FROM User_Collection
+WHERE id_user = 1 AND id_card = 9;
+
+-- Get users who have unlocked a specific card
+SELECT u.username
+FROM User_Collection uc
+JOIN User u ON uc.id_user = u.id_user
+WHERE uc.id_card = 2;
+
+-- Count how many cards each user has unlocked
+SELECT u.username, COUNT(uc.id_card) AS total_unlocked
+FROM User_Collection uc
+JOIN User u ON uc.id_user = u.id_user
+GROUP BY uc.id_user, u.username
+ORDER BY total_unlocked DESC;
+
+-- Get cards the user has NOT unlocked yet
+SELECT c.name, c.card_type
+FROM Cards c
+WHERE c.id_card NOT IN (
+    SELECT id_card FROM User_Collection WHERE id_user = 1
+);
+
+
+RUN CARDS
+------------------------------------------------
+
+-- Get all cards picked up during a specific run
+SELECT c.name, c.card_type, rc.acquired_at
+FROM Run_Cards rc
+JOIN Cards c ON rc.id_card = c.id_card
+WHERE rc.id_run = 4;
+
+-- Get run cards for the active run of a user
+SELECT c.name, c.card_type, rc.acquired_at
+FROM Run_Cards rc
+JOIN Cards c ON rc.id_card = c.id_card
+JOIN Run r ON rc.id_run = r.id_run
+WHERE r.id_user = 3 AND r.status = 'active';
+
+-- Most picked up cards across all runs
+SELECT c.name, COUNT(*) AS times_picked
+FROM Run_Cards rc
+JOIN Cards c ON rc.id_card = c.id_card
+GROUP BY rc.id_card, c.name
+ORDER BY times_picked DESC;
+
+
+ACTIVE BUFFS
+------------------------------------------------
+
+-- Get all currently active buffs for a hero
+SELECT c.name, c.buff_target, c.buff_value, c.duration_sec, ab.started_at, ab.expires_at
+FROM Active_Buffs ab
+JOIN Cards c ON ab.id_card = c.id_card
+WHERE ab.id_hero = 3;
+
+-- Get all buffs that have already expired
+SELECT ab.id_buff, c.name, ab.expires_at
+FROM Active_Buffs ab
+JOIN Cards c ON ab.id_card = c.id_card
+WHERE ab.expires_at <= NOW();
+
+-- Get all buffs still running right now
+SELECT ab.id_buff, c.name, ab.expires_at
+FROM Active_Buffs ab
+JOIN Cards c ON ab.id_card = c.id_card
+WHERE ab.expires_at > NOW();
+
+
+CROSS TABLE
+------------------------------------------------
+
+-- Full profile for a user: hero stats + lifetime stats
+SELECT
+    u.username,
+    h.level, h.hp, h.attack, h.defense, h.velocity,
+    st.total_runs, st.best_score, st.best_level, st.playtime
+FROM User u
+JOIN Hero h ON u.id_user = h.id_user
+JOIN Stats st ON u.id_user = st.id_user
+WHERE u.id_user = 3;
+
+-- Full history of runs with cards picked up per run
+SELECT
+    r.id_run, r.level, r.wave, r.score, r.status,
+    c.name AS card_picked,
+    c.card_type
+FROM Run r
+JOIN Run_Cards rc ON r.id_run = rc.id_run
+JOIN Cards c ON rc.id_card = c.id_card
+WHERE r.id_user = 1
+ORDER BY r.id_run, rc.acquired_at;
+
+-- Cards in collection that are temporal buffs (ready to equip)
+SELECT c.name, c.buff_target, c.buff_value, c.duration_sec, c.trigger_type
+FROM User_Collection uc
+JOIN Cards c ON uc.id_card = c.id_card
+WHERE uc.id_user = 3 AND c.card_type = 'temporal_buff';
