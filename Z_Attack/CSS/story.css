@@ -66,3 +66,29 @@ body {
 .content.show {
     max-height: 300px;
 }
+
+#backButton {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+}
+
+#backBtn {
+    font-family: 'Creepster', cursive;
+    font-size: 22px;
+    color: #4caf50;
+    text-decoration: none;
+    border: 2px solid #2e7d32;
+    padding: 8px 16px;
+    background: rgba(46, 125, 50, 0.1);
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    transition: 0.3s;
+    display: inline-block;
+}
+
+#backBtn:hover {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.15);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+    color: #c8e6c9;
+}
