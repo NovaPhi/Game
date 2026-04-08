@@ -2,107 +2,107 @@ CREATE DATABASE IF NOT EXISTS Z_ATTACK;
 USE Z_ATTACK;
 
 CREATE TABLE Role (
-    id_role     INT         NOT NULL AUTO_INCREMENT,
-    name        VARCHAR(40) NOT NULL,
+    id_role INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(40) NOT NULL,
     PRIMARY KEY (id_role)
 );
 
 CREATE TABLE Status (
-    id_status   INT         NOT NULL AUTO_INCREMENT,
-    name        VARCHAR(40) NOT NULL,
+    id_status INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(40) NOT NULL,
     PRIMARY KEY (id_status)
 );
 
 CREATE TABLE Rarity (
-    id_rarity   INT         NOT NULL AUTO_INCREMENT,
-    name        VARCHAR(40) NOT NULL,
+    id_rarity INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(40) NOT NULL,
     PRIMARY KEY (id_rarity)
 );
 
 CREATE TABLE User (
-    id_user    INT          NOT NULL AUTO_INCREMENT,
-    username   VARCHAR(40)  NOT NULL,
-    password   VARCHAR(255) NOT NULL,
-    email      VARCHAR(100) NOT NULL,
-    id_role    INT          NOT NULL,
-    id_status  INT          NOT NULL,
-    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id_user INT NOT NULL AUTO_INCREMENT,
+    username VARCHAR(40)  NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    id_role INT NOT NULL,
+    id_status INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id_user),
-    UNIQUE  KEY uq_user_username (username),
-    UNIQUE  KEY uq_user_email    (email),
-    FOREIGN KEY (id_role)   REFERENCES Role   (id_role),
+    UNIQUE KEY uq_user_username (username),
+    UNIQUE KEY uq_user_email (email),
+    FOREIGN KEY (id_role) REFERENCES Role (id_role),
     FOREIGN KEY (id_status) REFERENCES Status (id_status)
 );
 
 CREATE TABLE Hero (
-    id_hero      INT NOT NULL AUTO_INCREMENT,
-    id_user      INT NOT NULL,
-    level        INT NOT NULL DEFAULT 1,
-    hp           INT NOT NULL DEFAULT 100,
-    attack       INT NOT NULL DEFAULT 10,
-    defense      INT NOT NULL DEFAULT 10,
+    id_hero INT NOT NULL AUTO_INCREMENT,
+    id_user INT NOT NULL,
+    level INT NOT NULL DEFAULT 1,
+    hp INT NOT NULL DEFAULT 100,
+    attack INT NOT NULL DEFAULT 10,
+    defense INT NOT NULL DEFAULT 10,
     attack_range INT NOT NULL DEFAULT 1,
-    velocity     INT NOT NULL DEFAULT 5,
+    velocity INT NOT NULL DEFAULT 5,
     PRIMARY KEY (id_hero),
     FOREIGN KEY (id_user) REFERENCES User (id_user)
 );
 
 CREATE TABLE Stats (
-    id_stats    INT NOT NULL AUTO_INCREMENT,
-    id_user     INT NOT NULL,
-    total_runs  INT NOT NULL DEFAULT 0,
-    best_score  INT NOT NULL DEFAULT 0,
-    best_level  INT NOT NULL DEFAULT 0,
-    playtime    INT NOT NULL DEFAULT 0,
+    id_stats INT NOT NULL AUTO_INCREMENT,
+    id_user INT NOT NULL,
+    total_runs INT NOT NULL DEFAULT 0,
+    best_score INT NOT NULL DEFAULT 0,
+    best_level INT NOT NULL DEFAULT 0,
+    playtime INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id_stats),
-    UNIQUE  KEY uq_stats_user (id_user),
+    UNIQUE KEY uq_stats_user (id_user),
     FOREIGN KEY (id_user) REFERENCES User (id_user)
 );
 
 CREATE TABLE Cards (
-    id_card         INT           NOT NULL AUTO_INCREMENT,
-    name            VARCHAR(40)   NOT NULL,
-    description     VARCHAR(200),
-    artwork_url     VARCHAR(100),
-    id_rarity       INT           NOT NULL,
-    card_type       ENUM('powerup','ability','temporal_buff') NOT NULL,
-    target_stat     ENUM('hp','attack','defense','velocity','attack_range'),
-    modifier_value  DECIMAL(5,2),
-    modifier_type   ENUM('percent','flat'),
-    combat_range    ENUM('ranged','melee','both'),
-    combat_role     ENUM('offensive','defensive','heal'),
-    cooldown_sec    DECIMAL(5,2),
-    buff_target     ENUM('hp','attack','defense','velocity','attack_range','attack_speed','damage_reduction'),
-    buff_value      DECIMAL(5,2),
-    duration_sec    DECIMAL(5,2),
-    trigger_type    ENUM('on_kill','on_hit','on_damage_taken','on_low_hp','manual'),
-    is_immortal     BOOLEAN       NOT NULL DEFAULT FALSE,
-    unlimited_range BOOLEAN       NOT NULL DEFAULT FALSE,
+    id_card INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(40) NOT NULL,
+    description VARCHAR(200),
+    artwork_url VARCHAR(100),
+    id_rarity INT NOT NULL,
+    card_type ENUM('powerup','ability','temporal_buff') NOT NULL,
+    target_stat ENUM('hp','attack','defense','velocity','attack_range'),
+    modifier_value DECIMAL(5,2),
+    modifier_type ENUM('percent','flat'),
+    combat_range ENUM('ranged','melee','both'),
+    combat_role ENUM('offensive','defensive','heal'),
+    cooldown_sec DECIMAL(5,2),
+    buff_target ENUM('hp','attack','defense','velocity','attack_range','attack_speed','damage_reduction'),
+    buff_value DECIMAL(5,2),
+    duration_sec DECIMAL(5,2),
+    trigger_type ENUM('on_kill','on_hit','on_damage_taken','on_low_hp','manual'),
+    is_immortal BOOLEAN NOT NULL DEFAULT FALSE,
+    unlimited_range BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id_card),
     FOREIGN KEY (id_rarity) REFERENCES Rarity (id_rarity)
 );
 
 CREATE TABLE Run (
-    id_run       INT      NOT NULL AUTO_INCREMENT,
-    id_user      INT      NOT NULL,
-    id_hero      INT      NOT NULL,
-    status       ENUM('active','game_over','abandoned') NOT NULL DEFAULT 'active',
-    level        INT      NOT NULL DEFAULT 1,
-    wave         INT      NOT NULL DEFAULT 1,
-    score        INT      NOT NULL DEFAULT 0,
-    started_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ended_at     DATETIME,
+    id_run INT NOT NULL AUTO_INCREMENT,
+    id_user INT NOT NULL,
+    id_hero INT NOT NULL,
+    status ENUM('active','game_over','abandoned') NOT NULL DEFAULT 'active',
+    level INT NOT NULL DEFAULT 1,
+    wave INT NOT NULL DEFAULT 1,
+    score INT NOT NULL DEFAULT 0,
+    started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at DATETIME,
     PRIMARY KEY (id_run),
     FOREIGN KEY (id_user) REFERENCES User (id_user),
     FOREIGN KEY (id_hero) REFERENCES Hero (id_hero)
 );
 
 CREATE TABLE User_Collection (
-    id_collection INT      NOT NULL AUTO_INCREMENT,
-    id_user       INT      NOT NULL,
-    id_card       INT      NOT NULL,
-    unlocked_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_collection INT NOT NULL AUTO_INCREMENT,
+    id_user INT NOT NULL,
+    id_card INT NOT NULL,
+    unlocked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_collection),
     UNIQUE  KEY uq_collection (id_user, id_card),
     FOREIGN KEY (id_user) REFERENCES User  (id_user),
@@ -110,9 +110,9 @@ CREATE TABLE User_Collection (
 );
 
 CREATE TABLE Run_Cards (
-    id_run_card INT      NOT NULL AUTO_INCREMENT,
-    id_run      INT      NOT NULL,
-    id_card     INT      NOT NULL,
+    id_run_card INT NOT NULL AUTO_INCREMENT,
+    id_runINT NOT NULL,
+    id_cardINT NOT NULL,
     acquired_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_run_card),
     FOREIGN KEY (id_run)  REFERENCES Run   (id_run),
@@ -120,10 +120,10 @@ CREATE TABLE Run_Cards (
 );
 
 CREATE TABLE Active_Buffs (
-    id_buff    INT      NOT NULL AUTO_INCREMENT,
-    id_run     INT      NOT NULL,
-    id_hero    INT      NOT NULL,
-    id_card    INT      NOT NULL,
+    id_buff INT NOT NULL AUTO_INCREMENT,
+    id_run INT NOT NULL,
+    id_hero INT NOT NULL,
+    id_card INT NOT NULL,
     started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at DATETIME NOT NULL,
     PRIMARY KEY (id_buff),
@@ -132,16 +132,16 @@ CREATE TABLE Active_Buffs (
     FOREIGN KEY (id_card) REFERENCES Cards (id_card)
 );
 
-CREATE INDEX idx_hero_user         ON Hero            (id_user);
-CREATE INDEX idx_run_user          ON Run             (id_user);
-CREATE INDEX idx_run_active        ON Run             (id_user, ended_at);
-CREATE INDEX idx_cards_type        ON Cards           (card_type);
-CREATE INDEX idx_cards_rarity      ON Cards           (id_rarity);
-CREATE INDEX idx_collection_user   ON User_Collection (id_user);
-CREATE INDEX idx_run_cards_run     ON Run_Cards       (id_run);
-CREATE INDEX idx_active_buffs_run  ON Active_Buffs    (id_run);
-CREATE INDEX idx_active_buffs_exp  ON Active_Buffs    (expires_at);
-CREATE INDEX idx_stats_leaderboard ON Stats           (best_score DESC, best_level DESC);
+CREATE INDEX idx_hero_user ON Hero (id_user);
+CREATE INDEX idx_run_user ON Run (id_user);
+CREATE INDEX idx_run_active ON Run (id_user, ended_at);
+CREATE INDEX idx_cards_type ON Cards (card_type);
+CREATE INDEX idx_cards_rarity ON Cards (id_rarity);
+CREATE INDEX idx_collection_user ON User_Collection (id_user);
+CREATE INDEX idx_run_cards_run ON Run_Cards (id_run);
+CREATE INDEX idx_active_buffs_run ON Active_Buffs (id_run);
+CREATE INDEX idx_active_buffs_exp ON Active_Buffs (expires_at);
+CREATE INDEX idx_stats_leaderboard ON Stats (best_score DESC, best_level DESC);
 
 
 --INFORMACION TEMPORAL
