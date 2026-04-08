@@ -1,8 +1,4 @@
-/*
-  Base Assault - Prototype
-  Luis Arias
-  29-Marzo-26
-*/
+//Game
 
 "use strict";
 
@@ -19,7 +15,9 @@ let playerStats = {
     bonuses: [],
     level: 0,
     stage: 0,
-    xp: 0
+    xp: 0,
+    dmgReduction: 0,
+    deck: createStarterDeck()
 };
 
 
@@ -372,6 +370,12 @@ class Game {
         this.notifTimer           = 0;
         this.notifDuration        = 180;
 
+        this.targetingMode = null;
+        this.draftChoices  = null;
+        this._pendingTargetCard = null;
+        this.mouseX = 0;
+        this.mouseY = 0;
+
         this.spawnOutposts();
         this.spawnPlayer();
         this.createEventListeners();
@@ -397,61 +401,61 @@ class Game {
     }
 
     spawnOutposts() {
-    const margin  = 80;
-    const cx = canvasWidth / 2, cy = canvasHeight / 2;
+        const margin  = 80;
+        const cx = canvasWidth / 2, cy = canvasHeight / 2;
 
-    // Main base bounding box with a padding buffer
-    const basePad = 60;
-    const baseW   = 7 * (32 + 2) - 2; // matches buildWall math
-    const baseH   = baseW;
-    const baseX   = cx - baseW / 2 - basePad;
-    const baseY   = cy - baseH / 2 - basePad;
-    const baseBW  = baseW + basePad * 2;
-    const baseBH  = baseH + basePad * 2;
+        // Main base bounding box with a padding buffer
+        const basePad = 60;
+        const baseW   = 7 * (32 + 2) - 2; // matches buildWall math
+        const baseH   = baseW;
+        const baseX   = cx - baseW / 2 - basePad;
+        const baseY   = cy - baseH / 2 - basePad;
+        const baseBW  = baseW + basePad * 2;
+        const baseBH  = baseH + basePad * 2;
 
-    const outW    = 40; // Outpost.width
-    const outH    = 40; // Outpost.height
-    const minGap  = 30; // minimum clearance between outpost edges
+        const outW    = 40; // Outpost.width
+        const outH    = 40; // Outpost.height
+        const minGap  = 30; // minimum clearance between outpost edges
 
-    const placed  = []; // list of { x, y, width, height } already accepted
+        const placed  = []; // list of { x, y, width, height } already accepted
 
-    const overlaps = (ax, ay, aw, ah, bx, by, bw, bh, gap = 0) =>
-        ax < bx + bw + gap &&
-        ax + aw + gap > bx &&
-        ay < by + bh + gap &&
-        ay + ah + gap > by;
+        const overlaps = (ax, ay, aw, ah, bx, by, bw, bh, gap = 0) =>
+            ax < bx + bw + gap &&
+            ax + aw + gap > bx &&
+            ay < by + bh + gap &&
+            ay + ah + gap > by;
 
-    const mult = getDifficultyMult();
-    const count = Math.min(
-        Math.floor((Math.floor(Math.random() * 6 ) + 5 ) * mult )
-        ,60
-    );
-    
+            const mult = getDifficultyMult();
+            const count = Math.min(
+                Math.floor((Math.floor(Math.random() * 6 ) + 5 ) * mult )
+                ,60
+            );
+        
 
-    for (let i = 0; i < count; i++) {
-        let x, y, attempts = 0, valid = false;
+        for (let i = 0; i < count; i++) {
+            let x, y, attempts = 0, valid = false;
 
-        while (!valid && attempts < 200) {
-            attempts++;
-            x = margin + Math.random() * (canvasWidth  - margin * 2 - outW);
-            y = margin + Math.random() * (canvasHeight - margin * 2 - outH);
+            while (!valid && attempts < 200) {
+                attempts++;
+                x = margin + Math.random() * (canvasWidth  - margin * 2 - outW);
+                y = margin + Math.random() * (canvasHeight - margin * 2 - outH);
 
-            // Reject if overlapping the main base (with buffer)
-            if (overlaps(x, y, outW, outH, baseX, baseY, baseBW, baseBH)) continue;
+                // Reject if overlapping the main base (with buffer)
+                if (overlaps(x, y, outW, outH, baseX, baseY, baseBW, baseBH)) continue;
 
-            // Reject if overlapping any already-placed outpost (with gap)
-            if (placed.some(p => overlaps(x, y, outW, outH, p.x, p.y, p.width, p.height, minGap))) continue;
+                // Reject if overlapping any already-placed outpost (with gap)
+                if (placed.some(p => overlaps(x, y, outW, outH, p.x, p.y, p.width, p.height, minGap))) continue;
 
-            valid = true;
+                valid = true;
+            }
+
+            if (valid) {
+                placed.push({ x, y, width: outW, height: outH });
+                this.outposts.push(new Outpost(x, y));
+            }
+            // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
         }
-
-        if (valid) {
-            placed.push({ x, y, width: outW, height: outH });
-            this.outposts.push(new Outpost(x, y));
-        }
-        // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
     }
-}
 
     
 
@@ -459,6 +463,37 @@ class Game {
 
     createEventListeners() {
         window.addEventListener("keydown", (e) => {
+            // Draft pick takes priority when active
+            if (this.won && this.draftChoices) {
+                if (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3") {
+                    const idx = parseInt(e.code.slice(-1), 10) - 1;
+                    if (idx >= 0 && idx < this.draftChoices.length) {
+                        playerStats.deck.push(this.draftChoices[idx]);
+                        this.draftChoices = null;
+                    }
+                }
+                return;
+            }
+            // Cancel targeting with E (refund the card)
+            if (this.targetingMode && e.code === "KeyE") {
+                if (this._pendingTargetCard) {
+                    playerStats.deck.push(this._pendingTargetCard);
+                    this._pendingTargetCard = null;
+                }
+                this.targetingMode = null;
+                return;
+            }
+            // Play card from hand by index 1-5
+            if (!this.waiting && !this.won && !this.targetingMode &&
+                ["Digit1","Digit2","Digit3","Digit4","Digit5"].includes(e.code)) {
+                const idx = parseInt(e.code.slice(-1), 10) - 1;
+                if (idx >= 0 && idx < playerStats.deck.length) {
+                    const card = playerStats.deck.splice(idx, 1)[0];
+                    if (card.targeting) this._pendingTargetCard = card;
+                    card.apply(this);
+                }
+                return;
+            }
             if (e.code === "Space") this.startOrRestart();
             if (e.code === "KeyW") this.player.keys.up    = true;
             if (e.code === "KeyS") this.player.keys.down  = true;
@@ -471,10 +506,39 @@ class Game {
             if (e.code === "KeyA") this.player.keys.left  = false;
             if (e.code === "KeyD") this.player.keys.right = false;
         });
+
+        const canvas = document.getElementById("canvas");
+        if (canvas) {
+            canvas.addEventListener("mousemove", (e) => {
+                const rect = canvas.getBoundingClientRect();
+                this.mouseX = (e.clientX - rect.left) * (canvasWidth  / rect.width);
+                this.mouseY = (e.clientY - rect.top)  * (canvasHeight / rect.height);
+            });
+            canvas.addEventListener("mousedown", (e) => {
+                if (this.targetingMode !== "destroy_outpost") return;
+                const rect = canvas.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
+                const my = (e.clientY - rect.top)  * (canvasHeight / rect.height);
+                for (const o of this.outposts) {
+                    if (o.alive &&
+                        mx >= o.x && mx <= o.x + o.width &&
+                        my >= o.y && my <= o.y + o.height) {
+                        o.hp = 0;
+                        this.targetingMode = null;
+                        this._pendingTargetCard = null;
+                        break;
+                    }
+                }
+            });
+        }
     }
 
     startOrRestart() {
+        // Block restart while a draft is still pending
+        if (this.won && this.draftChoices) return;
         if (this.waiting || this.won) {
+            this.targetingMode = null;
+            this._pendingTargetCard = null;
             this.player   = new Player(playerStats)
             this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
             this.outposts = [];
@@ -510,20 +574,9 @@ class Game {
             this.lastStageReward = false;
         }
 
-        const roll = Math.random();
-        if (roll < 0.5) {
-            // Speed reward — +15% per level
-            const bonus = 0.15;
-            playerStats.speedMod = +(playerStats.speedMod + bonus).toFixed(2);
-            playerStats.bonuses.push(`Speed +15%  -> ${(playerStats.speedMod * 100).toFixed(0)}%`);
-            this.lastReward = "SPEED +15%";
-        } else {
-            // HP reward — +25 max HP per level
-            const bonus = 25;
-            playerStats.maxHp += bonus;
-            playerStats.bonuses.push(`Max HP +25   ->  ${playerStats.maxHp}`);
-            this.lastReward = "MAX HP +25";
-        }
+        // Card draft replaces the old random speed/HP reward
+        this.lastReward = null;
+        this.draftChoices = getDraftChoices();
     }
 
     update() {
@@ -590,7 +643,8 @@ class Game {
         for (const b of this.bullets) {
             b.update();
             if (!b.dead && b.overlaps(this.player)) {
-                this.player.hp -= b.damage;
+                const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
+                this.player.hp -= dmg;
                 if (this.player.hp < 0) this.player.hp = 0;
                 b.dead = true;
             }
@@ -602,7 +656,10 @@ class Game {
             this._deathXP = playerStats.xp;
             this._deathLevel = playerStats.level;
             this._deathStage = playerStats.stage;
-            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0}; 
+            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0, dmgReduction: 0, deck: createStarterDeck() };
+            this.draftChoices = null;
+            this.targetingMode = null;
+            this._pendingTargetCard = null;
             this.won     = false;
             this.waiting = true;
             this._died   = true;
@@ -637,13 +694,97 @@ class Game {
 
         if (this.notifTimer > 0) this.drawEventNotif(ctx);
 
+        if (this.targetingMode) this.drawTargeting(ctx);
+
         if (this.waiting && this._died) {
             this.drawDeathScreen();
         } else if (this.waiting) {
             this.drawOverlay("BASE ASSAULT", "PRESS SPACE TO START", "#4af");
         } else if (this.won) {
-            this.drawOverlay("BASE DESTROYED", "PRESS SPACE TO PLAY AGAIN", "lime");
+            if (this.draftChoices) {
+                this.drawDraft(ctx);
+            } else {
+                this.drawOverlay("BASE DESTROYED", "PRESS SPACE TO PLAY AGAIN", "lime");
+            }
         }
+    }
+
+    drawTargeting(ctx) {
+        ctx.fillStyle = "rgba(255, 200, 0, 0.08)";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.strokeStyle = "#ff0";
+        ctx.lineWidth = 3;
+        for (const o of this.outposts) {
+            if (o.alive) ctx.strokeRect(o.x - 2, o.y - 2, o.width + 4, o.height + 4);
+        }
+        ctx.strokeStyle = "rgba(255,255,0,0.8)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.mouseX - 10, this.mouseY); ctx.lineTo(this.mouseX + 10, this.mouseY);
+        ctx.moveTo(this.mouseX, this.mouseY - 10); ctx.lineTo(this.mouseX, this.mouseY + 10);
+        ctx.stroke();
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ff0";
+        ctx.font = "18px monospace";
+        ctx.fillText("TARGETING — Click an outpost", canvasWidth / 2, 24);
+        ctx.fillStyle = "#fff";
+        ctx.font = "14px monospace";
+        ctx.fillText("Press E to exit targeting mode", canvasWidth / 2, 46);
+    }
+
+    drawDraft(ctx) {
+        ctx.fillStyle = "rgba(0,0,0,0.78)";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.textAlign = "center";
+        ctx.fillStyle = "lime";
+        ctx.font = "44px monospace";
+        ctx.fillText("BASE DESTROYED", canvasWidth / 2, 90);
+        ctx.fillStyle = "#ffdd57";
+        ctx.font = "24px monospace";
+        ctx.fillText("CHOOSE A CARD  (1 / 2 / 3)", canvasWidth / 2, 140);
+
+        if (this.lastStageReward) {
+            ctx.fillStyle = "#4f4";
+            ctx.font = "16px monospace";
+            ctx.fillText(`STAGE COMPLETE — +300 XP  (total: ${playerStats.xp})`, canvasWidth / 2, 168);
+        }
+
+        const cardW = 220, cardH = 280, gap = 30;
+        const totalW = 3 * cardW + 2 * gap;
+        const startX = (canvasWidth - totalW) / 2;
+        const y = 200;
+        ctx.textAlign = "left";
+        for (let i = 0; i < this.draftChoices.length; i++) {
+            const c = this.draftChoices[i];
+            const x = startX + i * (cardW + gap);
+            ctx.fillStyle = "rgba(20,20,20,0.95)";
+            ctx.fillRect(x, y, cardW, cardH);
+            ctx.strokeStyle = c.color || "#fff";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, cardW, cardH);
+            ctx.fillStyle = c.color || "#fff";
+            ctx.font = "22px monospace";
+            ctx.fillText(`[${i+1}]`, x + 12, y + 32);
+            ctx.font = "18px monospace";
+            ctx.fillText(c.name, x + 12, y + 62);
+            ctx.fillStyle = "#888";
+            ctx.font = "12px monospace";
+            ctx.fillText(c.type, x + 12, y + 82);
+            ctx.fillStyle = "#ddd";
+            ctx.font = "13px monospace";
+            const words = c.description.split(" ");
+            let line = "", ly = y + 112;
+            for (const w of words) {
+                const test = line ? line + " " + w : w;
+                if (test.length > 22) {
+                    ctx.fillText(line, x + 12, ly);
+                    ly += 18;
+                    line = w;
+                } else line = test;
+            }
+            if (line) ctx.fillText(line, x + 12, ly);
+        }
+        ctx.textAlign = "center";
     }
 
     drawGrid(ctx) {
@@ -699,6 +840,46 @@ class Game {
         ctx.font = "11px monospace";
         ctx.textAlign = "left";
         ctx.fillText(`HP  ${Math.ceil(this.player.hp)} / ${this.player.maxHp}`, barX, barY - 4);
+
+        if (playerStats.dmgReduction > 0) {
+            ctx.fillStyle = "#aaa";
+            ctx.fillText(`DR ${playerStats.dmgReduction}`, barX + 170, barY + 9);
+        }
+
+        this.drawHand(ctx);
+    }
+
+    drawHand(ctx) {
+        const deck = playerStats.deck || [];
+        const cardW = 130, cardH = 60, gap = 10;
+        const totalW = deck.length * cardW + Math.max(0, deck.length - 1) * gap;
+        const startX = (canvasWidth - totalW) / 2;
+        const y = canvasHeight - cardH - 8;
+        ctx.textAlign = "left";
+        for (let i = 0; i < deck.length; i++) {
+            const c = deck[i];
+            const x = startX + i * (cardW + gap);
+            ctx.fillStyle = "rgba(0,0,0,0.75)";
+            ctx.fillRect(x, y, cardW, cardH);
+            ctx.strokeStyle = c.color || "#fff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, cardW, cardH);
+            ctx.fillStyle = c.color || "#fff";
+            ctx.font = "12px monospace";
+            ctx.fillText(`[${i+1}] ${c.name}`, x + 6, y + 16);
+            ctx.fillStyle = "#ccc";
+            ctx.font = "10px monospace";
+            const desc = c.description;
+            const maxChars = 20;
+            let line1 = desc, line2 = "";
+            if (desc.length > maxChars) {
+                const cut = desc.lastIndexOf(" ", maxChars);
+                line1 = desc.slice(0, cut);
+                line2 = desc.slice(cut + 1);
+            }
+            ctx.fillText(line1, x + 6, y + 34);
+            if (line2) ctx.fillText(line2, x + 6, y + 48);
+        }
     }
 
     drawEventNotif(ctx) {
