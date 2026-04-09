@@ -463,17 +463,8 @@ class Game {
 
     createEventListeners() {
         window.addEventListener("keydown", (e) => {
-            // Draft pick takes priority when active
-            if (this.won && this.draftChoices) {
-                if (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3") {
-                    const idx = parseInt(e.code.slice(-1), 10) - 1;
-                    if (idx >= 0 && idx < this.draftChoices.length) {
-                        playerStats.deck.push(this.draftChoices[idx]);
-                        this.draftChoices = null;
-                    }
-                }
-                return;
-            }
+            // Draft pick takes priority when active — selection is via mouse click
+            if (this.won && this.draftChoices) return;
             // Cancel targeting with E (refund the card)
             if (this.targetingMode && e.code === "KeyE") {
                 if (this._pendingTargetCard) {
@@ -515,18 +506,33 @@ class Game {
                 this.mouseY = (e.clientY - rect.top)  * (canvasHeight / rect.height);
             });
             canvas.addEventListener("mousedown", (e) => {
-                if (this.targetingMode !== "destroy_outpost") return;
                 const rect = canvas.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
                 const my = (e.clientY - rect.top)  * (canvasHeight / rect.height);
-                for (const o of this.outposts) {
-                    if (o.alive &&
-                        mx >= o.x && mx <= o.x + o.width &&
-                        my >= o.y && my <= o.y + o.height) {
-                        o.hp = 0;
-                        this.targetingMode = null;
-                        this._pendingTargetCard = null;
-                        break;
+                if (this.targetingMode === "destroy_outpost") {
+                    for (const o of this.outposts) {
+                        if (o.alive &&
+                            mx >= o.x && mx <= o.x + o.width &&
+                            my >= o.y && my <= o.y + o.height) {
+                            o.hp = 0;
+                            this.targetingMode = null;
+                            this._pendingTargetCard = null;
+                            break;
+                        }
+                    }
+                    return;
+                }
+                if (this.won && this.draftChoices) {
+                    const cardW = 220, cardH = 280, gap = 30;
+                    const startX = (canvasWidth - (3 * cardW + 2 * gap)) / 2;
+                    const cardY = 200;
+                    for (let i = 0; i < this.draftChoices.length; i++) {
+                        const cx = startX + i * (cardW + gap);
+                        if (mx >= cx && mx <= cx + cardW && my >= cardY && my <= cardY + cardH) {
+                            playerStats.deck.push(this.draftChoices[i]);
+                            this.draftChoices = null;
+                            break;
+                        }
                     }
                 }
             });
@@ -741,7 +747,7 @@ class Game {
         ctx.fillText("BASE DESTROYED", canvasWidth / 2, 90);
         ctx.fillStyle = "#ffdd57";
         ctx.font = "24px monospace";
-        ctx.fillText("CHOOSE A CARD  (1 / 2 / 3)", canvasWidth / 2, 140);
+        ctx.fillText("CLICK A CARD TO SELECT", canvasWidth / 2, 140);
 
         if (this.lastStageReward) {
             ctx.fillStyle = "#4f4";
@@ -757,23 +763,27 @@ class Game {
         for (let i = 0; i < this.draftChoices.length; i++) {
             const c = this.draftChoices[i];
             const x = startX + i * (cardW + gap);
+            const hovered = this.mouseX >= x && this.mouseX <= x + cardW &&
+                            this.mouseY >= y && this.mouseY <= y + cardH;
             ctx.fillStyle = "rgba(20,20,20,0.95)";
             ctx.fillRect(x, y, cardW, cardH);
-            ctx.strokeStyle = c.color || "#fff";
-            ctx.lineWidth = 3;
+            if (hovered) {
+                ctx.fillStyle = "rgba(255,255,255,0.07)";
+                ctx.fillRect(x, y, cardW, cardH);
+            }
+            ctx.strokeStyle = hovered ? "#fff" : (c.color || "#fff");
+            ctx.lineWidth = hovered ? 5 : 3;
             ctx.strokeRect(x, y, cardW, cardH);
             ctx.fillStyle = c.color || "#fff";
-            ctx.font = "22px monospace";
-            ctx.fillText(`[${i+1}]`, x + 12, y + 32);
             ctx.font = "18px monospace";
-            ctx.fillText(c.name, x + 12, y + 62);
+            ctx.fillText(c.name, x + 12, y + 32);
             ctx.fillStyle = "#888";
             ctx.font = "12px monospace";
-            ctx.fillText(c.type, x + 12, y + 82);
+            ctx.fillText(c.type, x + 12, y + 56);
             ctx.fillStyle = "#ddd";
             ctx.font = "13px monospace";
             const words = c.description.split(" ");
-            let line = "", ly = y + 112;
+            let line = "", ly = y + 86;
             for (const w of words) {
                 const test = line ? line + " " + w : w;
                 if (test.length > 22) {
