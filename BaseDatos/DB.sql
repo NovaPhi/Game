@@ -1,3 +1,11 @@
+
+--crear tabla de bitacora
+--merge rarity to cards
+--guardar basado en el xp el nivel de avance de los ussuarios Ej xp300 mal, 600 med , 900 bien
+--especificar dato a usar
+--keys de optimizacion
+
+
 CREATE DATABASE IF NOT EXISTS Z_ATTACK;
 USE Z_ATTACK;
 
@@ -18,6 +26,8 @@ CREATE TABLE Rarity (
     name VARCHAR(40) NOT NULL,
     PRIMARY KEY (id_rarity)
 );
+
+
 
 CREATE TABLE User (
     id_user INT NOT NULL AUTO_INCREMENT,
@@ -111,8 +121,8 @@ CREATE TABLE User_Collection (
 
 CREATE TABLE Run_Cards (
     id_run_card INT NOT NULL AUTO_INCREMENT,
-    id_runINT NOT NULL,
-    id_cardINT NOT NULL,
+    id_run INT NOT NULL,
+    id_card INT NOT NULL,
     acquired_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_run_card),
     FOREIGN KEY (id_run)  REFERENCES Run   (id_run),
@@ -145,6 +155,8 @@ CREATE INDEX idx_stats_leaderboard ON Stats (best_score DESC, best_level DESC);
 
 
 --INFORMACION TEMPORAL
+
+--Merge Rol & User
 
 INSERT INTO Role (name) VALUES
     ('admin'),
@@ -234,3 +246,6 @@ INSERT INTO Active_Buffs (id_run, id_hero, id_card, started_at, expires_at) VALU
     (5, 3, 9,  '2024-11-04 11:10:00', '2024-11-04 11:10:05'),
     (5, 3, 11, '2024-11-04 11:12:00', '2024-11-04 11:12:06');
 
+
+
+SELECT * FROM User;
