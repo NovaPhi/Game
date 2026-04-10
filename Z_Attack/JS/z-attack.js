@@ -209,11 +209,11 @@ class WallSegment {
         if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
-        const speed = PLAYER_SPEED * 0.5;
+        const speed = 4;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
         // 1/6 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, player.maxHp / 6, "#f44");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 ,"#f44");
     }
 
     draw(ctx) {
@@ -328,11 +328,11 @@ class Outpost {
         if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
-        const speed = PLAYER_SPEED * 0.5;
+        const speed = 3;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
         // 1/8 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, player.maxHp / 8, "#f84");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 ,    "#f84");
     }
 
     draw(ctx) {
@@ -941,8 +941,6 @@ class Game {
         ctx.fillText(subtitle, canvasWidth / 2, canvasHeight / 2 + 60);
     }    
 }
-
-
 
 function main() {
     const canvas  = document.getElementById("canvas");
