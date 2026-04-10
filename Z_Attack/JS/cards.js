@@ -1,16 +1,3 @@
-/*
-Dudas: 
-Where is the apply method defined? 
-Explain logic behind getCardById return
-Explain logic behind slice and while loop in getDraftChoices
-How do the cards defined in the array mutate the code in z-attack.js?
-Power ups should be lost when the player loses. Does this happen correctly even considering they're applied via Player(playerStats)?
-*/
-
-/*
-  Base Assault - TCG Cards (front-end prototype)
-*/
-
 "use strict";
 
 const CARD_DEFS = [
