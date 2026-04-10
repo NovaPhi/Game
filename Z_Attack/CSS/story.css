@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0a0a0a;
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(30, 80, 20, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(80, 10, 10, 0.1) 0%, transparent 50%);
+    min-height: 100vh;
+    font-family: 'Creepster', cursive;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+}
+
+#title h1 {
+    font-size: 72px;
+    color: #4caf50;
+    text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+    margin-bottom: 30px;
+}
+
+#storyContainer {
+    width: 90%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.storyPart {
+    border: 2px solid #2e7d32;
+    background: rgba(46, 125, 50, 0.05);
+    padding: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.storyPart:hover {
+    border-color: #4caf50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+}
+
+.storyPart h2 {
+    font-size: 28px;
+    color: #c8e6c9;
+}
+
+.content {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #aaa;
+    line-height: 1.5;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+/* cuando se muestra */
+.content.show {
+    max-height: 300px;
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z Attack - Story</title>
+    <link rel="stylesheet" href="/Z_Attack/CSS/story.css">
+</head>
+<body>
+
+    <div id="title">
+        <h1>Story</h1>
+    </div>
+
+    <div id="storyContainer">
+
+        <div class="storyPart" onclick="togglePart(this)">
+            <h2>Introduction</h2>
+            <p class="content">
+                ¡The apocalypse has arrived!
+                Waking up one day on the street after a big party, you discover that zombies have arrived and are taking over everything! You must protect yourself, arm yourself, and defend yourself against— wait… you see your hands, your reflection, and realize that now you are a zombie!
+                A great fear and a great doubt arise within you since you remember nothing, not even your name. But something even greater grows inside you… a voracious hunger for human flesh… and you will do whatever it takes to satisfy it…
+
+            </p>
+        </div>
+
+        <div class="storyPart" onclick="togglePart(this)">
+            <h2>Part 1 - Newspaper</h2>
+            <p class="content">
+                Compound Z is the new invention by scientists to eradicate hunger in the world. People who acquire it will stop feeling hunger and will be able to live a life where they no longer have to worry about eating every day. The future is today!
+            </p>
+        </div>
+
+        <div class="storyPart" onclick="togglePart(this)">
+            <h2>Part 2 - Medical Note</h2>
+            <p class="content">
+                The first subjects who consumed Compound Z showed no hunger… at first.
+                After 72 hours, they began to present aggression, memory loss, and… a voracious hunger?
+            </p>
+        </div>
+
+        <div class="storyPart" onclick="togglePart(this)">
+            <h2>Part 3 - Letter</h2>
+            <p class="content">
+                “Good afternoon ____ thank you very much ___ __ service, the payment ___ ____ __ has been deposited. We hope to count on you for future ______. Signed: Carolina”
+                For some reason, that name feels familiar…  
+            </p>
+        </div>
+
+        <div class="storyPart" onclick="togglePart(this)">
+            <h2>Part 4 - Confidential File</h2>
+            <p class="content">
+                “Compound Z, which was intended to end hunger in humanity, appears to be our downfall. It seems to awaken a voracious hunger in patients that can only be satisfied with human flesh. Time to create a cure is scarce; our only hope lies in the blood of patient zero… Mr. Jake Brown.”
+                For some reason, that name feels familiar…
+            </p>
+        </div>
+
+        <div class="storyPart" onclick="togglePart(this)">
+            <h2>Part 5 - Party Invitation</h2>
+            <p class="content">
+                “Hi Jake! You’re invited to my super party this Friday, don’t miss it for anything in the world!”
+                This party… Jake… the pieces begin to fall into place in your infected mind. You are Jake, you agreed to be a test subject for the money and it seems that… you are patient zero.
+                If the document is correct, you are the key, the cure, the only hope of humanity. You think about how to say it, how to save humanity, but something inside you doesn’t let you think clearly, a gigantic hunger within you won’t let you think straight. Maybe if you calm it down you can think clearly, you only need one more human… or maybe two… or maybe just a bit more…
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        function togglePart(element) {
+            const content = element.querySelector(".content");
+            content.classList.toggle("show");
+        }
+    </script>
+
+</body>
+</html>
