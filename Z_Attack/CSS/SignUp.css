@@ -1,0 +1,35 @@
+<nav id="topBar">
+    <a class="nav-btn" href="login.html">Login</a>
+</nav>
+
+<div id="pageBody">
+    <div id="loginCard">
+        <h1>Sign Up</h1>
+        <p class="subtitle">Join the undead</p>
+
+        <div id="fields">
+            <div class="field">
+                <label>Email</label>
+                <input type="email" placeholder="survivor@gmail.com" />
+            </div>
+            <div class="field">
+                <label>Username</label>
+                <input type="text" placeholder="survivor_001" />
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" placeholder="••••••••" />
+            </div>
+        </div>
+
+        <button id="btnSignin">Create Account</button>
+
+        <div id="divider">
+            <div class="line"></div>
+            <span>or</span>
+            <div class="line"></div>
+        </div>
+
+        <button id="btnCreate">Sign In</button>
+    </div>
+</div>

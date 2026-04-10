@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Log In</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        
+        <link rel="stylesheet" href="/Z_Attack/CSS/LogIn.css">
+    </head>
+
+    <body>
+
+        <nav id="topBar">
+            <a class="nav-btn" href="main.html">Home</a>
+        </nav>
+
+        <div id="pageBody">
+            <div id="loginCard">
+                <h1>Login</h1>
+
+                <div id="fields">
+                    <div class="field">
+                        <label for="Username">Username</label>
+                        <input type="text" id="Username" name="Username">
+                    </div>
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password">
+                    </div>
+                </div>
+
+                <button id="btnSignin">Sign In</button>
+
+                <div id="divider">
+                    <div class="line"></div>
+                    <span>or</span>
+                    <div class="line"></div>
+                </div>
+
+                <a href="SignUp.html" id="btnCreate">Create Account</a>
+
+            </div>
+        </div>
+        <script src="../Api/LogIn.js"></script>
+    </body>
+</html>
