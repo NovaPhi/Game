@@ -1,27 +1,29 @@
-//Game
+//Game Z_ATTACK
+//By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 
 "use strict";
 
 const canvasWidth  = 1000;
 const canvasHeight = 750;
-const PLAYER_SPEED = 6;
-const PLAYER_DMG   = 100;
+const PLAYER_SPEED = 6; // Player base movement speed
+const PLAYER_DMG   = 100; // Player base melee damage per hit
 
 const OUTPOST_COUNT = 50;
 
 let playerStats = {
-    speedMod: 1.0,
-    maxHp: 100,
-    bonuses: [],
-    level: 0,
-    stage: 0,
-    xp: 0,
-    dmgReduction: 0,
-    deck: createStarterDeck()
+    speedMod: 1.0, // Speed multiplier
+    maxHp: 100, // Player maximum HP
+    bonuses: [], 
+    level: 0, // Current level
+    stage: 0, // Current stage (advances every 3 levels)
+    xp: 0, // Total accumulated experience points
+    dmgReduction: 0, //Flat damage reduction applied to incoming hits
+    deck: createStarterDeck() //Player's current card hand
+
 };
 
 
-
+// Calculates the difficulty multiplier based on the current level (temp)
 function getDifficultyMult(){
     const doublings = Math.floor(playerStats.level / 3);
     return Math.pow(2,doublings);
@@ -30,6 +32,7 @@ function getDifficultyMult(){
 let ctx;
 let game;
 
+// Represents the character. Handles movement, wall collisions, melee attacks, and rendering
 class Player {
     constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
         this.width  = 28;
@@ -40,7 +43,7 @@ class Player {
         this.color  = "#4af";
         this.keys   = { up: false, down: false, left: false, right: false };
 
-        this.attackCooldown    = 0;
+        this.attackCooldown    = 0;  // Attack cooldown prevents dealing damage every single frame
         this.attackCooldownMax = 20;
         this.speedMod          = 1;
         this.isAttacking       = false;
@@ -54,8 +57,9 @@ class Player {
         this.hp = this.maxHp;
     }
 
+    // Moves the player and makes wall collisions
     update(walls) {
-        const spd = PLAYER_SPEED * this.speedMod;
+        const spd = PLAYER_SPEED * this.speedMod; 
         let dx = 0, dy = 0;
         if (this.keys.up)    dy -= spd;
         if (this.keys.down)  dy += spd;
@@ -101,6 +105,7 @@ class Player {
         if (dy < 0) this.y = wall.y + wall.height;
     }
 
+    // Does an attack on a target if the player is touching it and the cooldown has expired
     tryAttack(target) {
         if (this.touches(target)) {
             this.isAttacking = true;
@@ -126,6 +131,7 @@ class Player {
     }
 }
 
+// Class form projectiles fired by outposts or wall segments
 class Bullet {
     constructor(x, y, vx, vy, damage, color = "#f84") {
         this.x = x;
@@ -133,11 +139,11 @@ class Bullet {
         this.vx = vx;
         this.vy = vy;
         this.damage = 1;
-        this.damage = damage;
+        this.damage = damage;  // Damage dealt to the player on impact
         this.color = color;
         this.width = 6;
         this.height = 6;
-        this.dead = false;
+        this.dead = false; // Flag for bullet if still active
     }
 
     update() {
@@ -163,6 +169,7 @@ class Bullet {
     }
 }
 
+// Class for the tiles of the main base wall
 class WallSegment {
     constructor(x, y, maxHp = 100) {
         this.x      = x;
@@ -175,8 +182,9 @@ class WallSegment {
         const cdMin  = Math.max(Math.floor(60  / mult), 10);
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1);
 
+        // Logic for scaling the shoot cooldown
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
-        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);        
+        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax); // Random so they don't all fire simultaneously        
         this.shootRange = 300;
         this.side = "top";
         
@@ -184,6 +192,7 @@ class WallSegment {
 
     get alive() { return this.hp > 0; }
 
+    // Fires a bullet at the player if they are within range and on the correct side of the wall
     tryShoot(player) {
         if (!this.alive) return null;
 
@@ -226,14 +235,16 @@ class WallSegment {
     }
 }
 
+// Class for the main base of the level
 class MainBase {
     constructor(cx, cy) {
-        this.segments = [];
+        this.segments = []; // All wall segments
         this.cx = cx;
         this.cy = cy;
         this.buildWall(cx, cy);
     }
 
+    // Places WallSegment tiles only on the outer edge
     buildWall(cx, cy) {
         const tileSize = 32;
         const gap      = 2;
@@ -254,7 +265,7 @@ class MainBase {
                 const y = startY + row * step;
                 const seg = (new WallSegment(x, y, 100));
 
-                
+                 // Assign side so it knows in which direction it is allowed to shoot
                 if (row === 0)        seg.side = "top";
                 if (row === rows - 1) seg.side = "bottom";
                 if (col === 0)        seg.side = "left";
@@ -292,6 +303,7 @@ class MainBase {
     }
 }
 
+//Class for all the enemy outposts scattered thru the map
 class Outpost {
     constructor(x, y) {
         this.x      = x;
@@ -300,18 +312,20 @@ class Outpost {
         this.height = 40;
         this.maxHp  = 99;
         this.hp     = this.maxHp;
+
+        // Shoot cooldown scaled by difficulty
         const mult   = getDifficultyMult();
         const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
-
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
         this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
 
-        this.shootRange = 200;
+        this.shootRange = 200; // Detection range
     }
 
     get alive() { return this.hp > 0; }
 
+    // Fires at the player if they are in range
     tryShoot(player) {
         if (!this.alive) return null;
 
@@ -354,6 +368,7 @@ class Outpost {
     }
 }
 
+//Main game class
 class Game {
     constructor() {
         this.player   = new Player();
@@ -370,9 +385,12 @@ class Game {
         this.notifTimer           = 0;
         this.notifDuration        = 180;
 
+        // Card system state
         this.targetingMode = null;
         this.draftChoices  = null;
         this._pendingTargetCard = null;
+
+        // Mouse cursor position in canvas-space coordinates
         this.mouseX = 0;
         this.mouseY = 0;
 
@@ -383,6 +401,7 @@ class Game {
         this.lastReward = null;
     }
 
+    // Places the player at a random map position, ensuring they do not appear inside or directly besides the main base
     spawnPlayer() {
         const iz     = this.mainBase.innerZone;
         const margin = 20;
@@ -400,7 +419,8 @@ class Game {
         this.player.y = y;
     }
 
-    spawnOutposts() {
+    // Places outposts around the map while avoiding the main base and overlapping with each other
+    spawnOutposts() { 
         const margin  = 80;
         const cx = canvasWidth / 2, cy = canvasHeight / 2;
 
@@ -425,6 +445,7 @@ class Game {
             ay < by + bh + gap &&
             ay + ah + gap > by;
 
+            // Random base of 5–10 multiplied by difficulty capped at 60
             const mult = getDifficultyMult();
             const count = Math.min(
                 Math.floor((Math.floor(Math.random() * 6 ) + 5 ) * mult )
@@ -479,7 +500,7 @@ class Game {
                 ["Digit1","Digit2","Digit3","Digit4","Digit5"].includes(e.code)) {
                 const idx = parseInt(e.code.slice(-1), 10) - 1;
                 if (idx >= 0 && idx < playerStats.deck.length) {
-                    const card = playerStats.deck.splice(idx, 1)[0];
+                    const card = playerStats.deck.splice(idx, 1)[0]; // Remove card from hand
                     if (card.targeting) this._pendingTargetCard = card;
                     card.apply(this);
                 }
@@ -500,6 +521,7 @@ class Game {
 
         const canvas = document.getElementById("canvas");
         if (canvas) {
+            // Track mouse position in canvas coordinates
             canvas.addEventListener("mousemove", (e) => {
                 const rect = canvas.getBoundingClientRect();
                 this.mouseX = (e.clientX - rect.left) * (canvasWidth  / rect.width);
@@ -509,6 +531,7 @@ class Game {
                 const rect = canvas.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
                 const my = (e.clientY - rect.top)  * (canvasHeight / rect.height);
+                // Targeting mode that instantly destroys the clicked outpost logic
                 if (this.targetingMode === "destroy_outpost") {
                     for (const o of this.outposts) {
                         if (o.alive &&
@@ -522,6 +545,7 @@ class Game {
                     }
                     return;
                 }
+                // Click detection for one of the 3 displayed cards
                 if (this.won && this.draftChoices) {
                     const cardW = 220, cardH = 280, gap = 30;
                     const startX = (canvasWidth - (3 * cardW + 2 * gap)) / 2;
@@ -529,7 +553,7 @@ class Game {
                     for (let i = 0; i < this.draftChoices.length; i++) {
                         const cx = startX + i * (cardW + gap);
                         if (mx >= cx && mx <= cx + cardW && my >= cardY && my <= cardY + cardH) {
-                            playerStats.deck.push(this.draftChoices[i]);
+                            playerStats.deck.push(this.draftChoices[i]); // Add chosen card to hand
                             this.draftChoices = null;
                             break;
                         }
@@ -539,6 +563,7 @@ class Game {
         }
     }
 
+    // Resets all game entities and states for a new round
     startOrRestart() {
         // Block restart while a draft is still pending
         if (this.won && this.draftChoices) return;
@@ -563,16 +588,17 @@ class Game {
     }
 
    
+    // Awards win reward. Increments level, checks for stage completion XP bonus, and generates 3 card choices for the draft screen
     grantReward() {
         if (this._rewardGranted) return;
         this._rewardGranted = true;
 
         playerStats.level += 1;
         this.levelnum = playerStats.level; 
-        playerStats.stage = Math.floor(playerStats.level / 3)
+        playerStats.stage = Math.floor(playerStats.level / 3) // New stage every 3 levels
 
         
-
+        // Stage completion XP bonus
         if (playerStats.level % 3 === 0) {
             playerStats.xp += 300;
             this.lastStageReward = true;
@@ -715,6 +741,8 @@ class Game {
         }
     }
 
+    // Draws a yellow outline to all living outposts so the player can click one to destroy it (card effect)
+    // Also draws a cursor at the current mouse position
     drawTargeting(ctx) {
         ctx.fillStyle = "rgba(255, 200, 0, 0.08)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -738,6 +766,7 @@ class Game {
         ctx.fillText("Press E to exit targeting mode", canvasWidth / 2, 46);
     }
 
+    // Displays the 3-card selection screen after winning a level, cards highlight on hover to indicate interactivity.
     drawDraft(ctx) {
         ctx.fillStyle = "rgba(0,0,0,0.78)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -806,21 +835,25 @@ class Game {
         }
     }
 
+     // Renders the display 
     drawHUD(ctx) {
         ctx.font      = "14px monospace";
-        const mult = getDifficultyMult();  
+        const mult = getDifficultyMult(); 
+
+        // Difficulty indicator
         ctx.fillStyle = mult >= 4 ? "#f44" : mult >= 2 ? "#fa0" : "#aaa";  
         ctx.textAlign = "right";   
         ctx.fillText(`level ${playerStats.level + 1}   ×${mult} difficulty`, canvasWidth - 12, 22);
         ctx.textAlign = "left";
 
+        // Remaining enemy counts
         const outpostsLeft = this.outposts.filter(o => o.alive).length;
         const wallsLeft    = this.mainBase.living.length;
-
         ctx.fillStyle = "#aaa";
         ctx.fillText(`Outposts remaining : ${outpostsLeft}`, 12, 22);
         ctx.fillText(`Wall segments left : ${wallsLeft}`,    12, 42);
 
+        // Objective message
         if (!this.outpostsCleared) {
             ctx.fillStyle = "#f88";
             ctx.fillText("⚠  Destroy all outposts to damage the main base", 12, 64);
@@ -859,6 +892,7 @@ class Game {
         this.drawHand(ctx);
     }
 
+    // Renders the card hand on the bottom of the canvas.
     drawHand(ctx) {
         const deck = playerStats.deck || [];
         const cardW = 130, cardH = 60, gap = 10;
