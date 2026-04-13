@@ -1,6 +1,5 @@
 document.getElementById('btnSignin').addEventListener('click', async () => {
     const btn = document.getElementById('btnSignin');
-    //btn.disabled = true; // disable immediately to prevent double click
 
     const Username = document.getElementById('Username').value;
     const password = document.getElementById('password').value;
@@ -14,10 +13,13 @@ document.getElementById('btnSignin').addEventListener('click', async () => {
     const data = await response.json();
 
     if (data.success) {
+        localStorage.setItem('sessionUser', JSON.stringify({user_ID: data.user_id , username: data.username}));
         btn.textContent = 'Welcome Back...';
         btn.style.color = '#4caf50';
         btn.style.borderColor = '#4caf50';
         btn.style.textShadow = '0 0 8px rgba(76, 175, 80, 0.8)';
+
+        localStorage
 
         setTimeout(() => {
             window.location.href = '../HTML/main.html';
@@ -35,3 +37,4 @@ document.getElementById('btnSignin').addEventListener('click', async () => {
         }, 2000);
     }
 });
+
