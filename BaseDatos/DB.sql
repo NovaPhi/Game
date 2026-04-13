@@ -9,17 +9,6 @@
 CREATE DATABASE IF NOT EXISTS Z_ATTACK;
 USE Z_ATTACK;
 
-CREATE TABLE Role (
-    id_role INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(40) NOT NULL,
-    PRIMARY KEY (id_role)
-);
-
-CREATE TABLE Status (
-    id_status INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(40) NOT NULL,
-    PRIMARY KEY (id_status)
-);
 
 CREATE TABLE Rarity (
     id_rarity INT NOT NULL AUTO_INCREMENT,
@@ -34,15 +23,14 @@ CREATE TABLE User (
     username VARCHAR(40)  NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL,
-    id_role INT NOT NULL,
-    id_status INT NOT NULL,
+    role SMALLINT NOT NULL,
+    status SMALLINT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id_user),
     UNIQUE KEY uq_user_username (username),
-    UNIQUE KEY uq_user_email (email),
-    FOREIGN KEY (id_role) REFERENCES Role (id_role),
-    FOREIGN KEY (id_status) REFERENCES Status (id_status)
+    UNIQUE KEY uq_user_email (email)
+ 
 );
 
 CREATE TABLE Hero (
@@ -174,7 +162,7 @@ INSERT INTO Rarity (name) VALUES
     ('rare'),
     ('legendary');
 
-INSERT INTO User (username, password, email, id_role, id_status) VALUES
+INSERT INTO User (username, password, email, role, status) VALUES
     ('shadowbyte',  '$2b$10$abc123hashedpassword1', 'shadow@zattack.io',  2, 1),
     ('ironclad',    '$2b$10$abc123hashedpassword2', 'iron@zattack.io',    2, 1),
     ('voidrunner',  '$2b$10$abc123hashedpassword3', 'void@zattack.io',    2, 1),
@@ -248,4 +236,3 @@ INSERT INTO Active_Buffs (id_run, id_hero, id_card, started_at, expires_at) VALU
 
 
 
-SELECT * FROM User;
