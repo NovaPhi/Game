@@ -4,7 +4,7 @@
 
 ---
 
-##### **Copyright notice / author information / boring legal stuff nobody likes**
+##### **By Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza**
 
 ##
 ## _Index_
@@ -46,15 +46,16 @@
 
 ### **Summary**
 
-A tower offense game with raid mechanics where you control a hero with subtroops that defend a hero and try to destroy the enemy emplacements, you can also use cards such as power ups, change stats, change the environment, etc.
+A rogue-like base assault game where you control a zombie hero and you must destroy all the enemy outposts in order to unlock the main base and you be able to attack it You can also use cards such as power ups, change stats, abilities, etc.
 
 ### **Gameplay**
 
-The gameplay will start with the player choosing a hero and getting a random set of cards the can include subtroops, power ups and stage changes. Once in the run the player will be able to display his subtroops on the field as he pleases and they will attack nearby enemies or camps, including the main one. The player can also use his cards to power up a subtroop for that stage or his main hero or use one of the stage changing cards to make it so that the terrain affect the enemies or helps the player. Every three stages the player will be able to with the money earned, he can improve a hero stat for the rest of the run, get more powerups or more stage changing cards. Then the player will start again for other three stages but with higher difficulty.
+The gameplay will start with the player choosing a hero and getting a random set of cards the can include power ups and abilities. Once in the run the player will have to attack all the enemy outpost trying to dutch all the bullets and attacks they deploy. Once they are all destroyed, he will be able to destroy the main base to beat the level and enter the next one. 
+The player can also use his cards to power up the hero or use a special ability in order to achieve his objective. Once the run is over, the player will be able that with the xp earned, level up the cards he has or unlock new cards to add to his inventory.
 
 ### **Mindset**
 
-The player will have a psychological reward in our progression based system where at the start they will be relatively weak so that as gameplay time advances they get stronger and manage to advance in power. We aim to make the player feel hurried with the game as time passes in a "raid" difficulty will increase but good players will be rewarded by staying calm. The main resource for that will be difficulty progression.
+The player adopts an aggressive survival mindset, constantly balancing offense and evasion while making fast real-time decisions. At the same time, they engage in strategic planning through card selection and progression systems, embracing a roguelite loop of experimentation, failure, and improvement.
 
 ## _Technical_
 
@@ -64,9 +65,9 @@ The player will have a psychological reward in our progression based system wher
 
 1. Title Screen
     1. Start Game
-    2. Options
-    3. Credits
-    4. Exit
+    2. Tutorial
+    3. Story
+    4. Settings
 2. Loadout
     1. Hero Selection
     2. Cards Selected Overview
@@ -80,10 +81,9 @@ The player will have a psychological reward in our progression based system wher
     4. Leave to Menu
 4. Game Over Screen
     1. Final Score
-    2. High Score
-    3. Rewards(Total money you end up with)
-    4. Retry
-    5. Return to Hub
+    2. Rewards(Total XP you got)
+    3. Retry
+    4. Return to Hub
 6. Credits
     1. Dev Team
     2. Music/Art credits
@@ -95,14 +95,11 @@ The player will have a psychological reward in our progression based system wher
 
 2. Mouse Controls
     1. Left Click
-        1. Place Hero on the map
-        2. Place Subtroops on the map
-        3. Drag power up card to hero/subtroop to apply it
-    2. Right Click
-        1. Cancel Drop
-    3. Keyboard
+        1. Select card in between levels
+        2. Destroy outposts with special card
+    2. Keyboard
         1. WASD
-            1. Move Hero after Placement
+            1. Move Hero
         2. Space
             1. Attack(Hero)
         3. Esc
@@ -111,9 +108,15 @@ The player will have a psychological reward in our progression based system wher
 
 ### **Mechanics**
 
-The game will have an automatic targeting system for enemies and subtroops where the enemies attack will be based on distance and troop type for example subtroops will draw the attacks to them even if they are farther away from the emplacement but in range and the subtroops auto-attack will work in a similar principle but if the hero recieves damage from an emplacement while in an effective "detection range" they will switch to a defend behaviour where they will attack the emplacement that is targeting the hero which also has automatic damaga selection but it will be purely based on distance and aggro to a hero can drop if a subtroop is actively attacking the emplacement and the emplacement looses a percentage of health.
+The game features a top-down movement and combat system where the player controls a hero with free directional movement and engages enemies through direct contact. The player deals continuous damage when colliding with enemy structures, regulated by an attack cooldown that prevents constant damage. This creates a dynamic where positioning and timing are essential to both survival and efficiency in combat.
 
-The difficulty progression works similar to other rougelite systems where it is based on time so that the player is incentivised to act recklessly but rewarded for acting calm. When completing a run the player will be rewarded with a selection of randomized upgrade cards drawn from a predefined pool. The player chooses a card that will modify their stats for the remainder of the run. The cards can enchance Hero stats, improve subtroops, be power ups for use in the remaining of the run and be stage modifiers that benefits the player or affects the enemy on a stage. These upgrades do not persist between runs encouraging replayability. 
+The enemy system is composed of multiple outposts distributed across the map, each with independent health and type, depending on the type, the outpost will attack one way or other. These outposts will automatically detect the player within a certain range and fire bullets. The player must destroy all active outposts before gaining access to the main base, creating a clear objective for the player to move around the map to destroy all outposts.
+
+The main base is protected by a series of wall segments that function both as defensive barriers and offensive units. Each segment has its own health and can shoot projectiles at the player when in range. These segments block movement and must be destroyed individually once the outposts are all destoyed. The level is completed when the player successfully enters the inner zone of the base.
+
+The projectile system is based on simple physics where enemy bullets travel in straight lines toward the player’s position at the time of firing. Each projectile deals damage upon collision and is removed either when it hits the player or leaves the stage.
+
+The game incorporates a card-based ability system where the player has access to a deck of cards that can be activated during gameplay. These cards can modify player stats, provide temporary boosts, or trigger special abilities. 
 
 ## _Level Design_
 

@@ -1,38 +1,30 @@
-//Game Z_ATTACK
+//Game Z_ATTACK — Tutorial
 //By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 
 "use strict";
 
 const canvasWidth  = 1000;
 const canvasHeight = 750;
-const PLAYER_SPEED = 6; // Player base movement speed
-const PLAYER_DMG   = 100; // Player base melee damage per hit
-
-const OUTPOST_COUNT = 50;
+const PLAYER_SPEED = 6;
+const PLAYER_DMG   = 100;
 
 let playerStats = {
-    speedMod: 1.0, // Speed multiplier
-    maxHp: 100, // Player maximum HP
-    bonuses: [], 
-    level: 0, // Current level
-    stage: 0, // Current stage (advances every 3 levels)
-    xp: 0, // Total accumulated experience points
-    dmgReduction: 0, //Flat damage reduction applied to incoming hits
-    deck: createStarterDeck() //Player's current card hand
-
+    speedMod:     1.0,
+    maxHp:        100,
+    level:        0,
+    xp:           0,
+    dmgReduction: 0,
+    deck:         createStarterDeck()
 };
 
-
-// Calculates the difficulty multiplier based on the current level (temp)
-function getDifficultyMult(){
+function getDifficultyMult() {
     const doublings = Math.floor(playerStats.level / 3);
-    return Math.pow(2,doublings);
+    return Math.pow(2, doublings);
 }
 
 let ctx;
 let game;
 
-// Represents the character. Handles movement, wall collisions, melee attacks, and rendering
 class Player {
     constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
         this.width  = 28;
@@ -43,23 +35,19 @@ class Player {
         this.color  = "#4af";
         this.keys   = { up: false, down: false, left: false, right: false };
 
-        this.attackCooldown    = 0;  // Attack cooldown prevents dealing damage every single frame
+        this.attackCooldown    = 0;
         this.attackCooldownMax = 20;
-        this.speedMod          = 1;
+        this.speedMod          = stats.speedMod;
         this.isAttacking       = false;
         this.targetHp          = null;
 
-        this.maxHp = 100;
-        this.hp    = this.maxHp;
-
-        this.speedMod = stats.speedMod;
         this.maxHp = stats.maxHp;
-        this.hp = this.maxHp;
+        this.hp    = 50;
     }
 
-    // Moves the player and makes wall collisions
     update(walls) {
-        const spd = PLAYER_SPEED * this.speedMod; 
+        if (game.tutorial.active) return;
+        const spd = PLAYER_SPEED * this.speedMod;
         let dx = 0, dy = 0;
         if (this.keys.up)    dy -= spd;
         if (this.keys.down)  dy += spd;
@@ -105,7 +93,6 @@ class Player {
         if (dy < 0) this.y = wall.y + wall.height;
     }
 
-    // Does an attack on a target if the player is touching it and the cooldown has expired
     tryAttack(target) {
         if (this.touches(target)) {
             this.isAttacking = true;
@@ -131,19 +118,17 @@ class Player {
     }
 }
 
-// Class form projectiles fired by outposts or wall segments
 class Bullet {
     constructor(x, y, vx, vy, damage, color = "#f84") {
-        this.x = x;
-        this.y = y;
-        this.vx = vx;
-        this.vy = vy;
-        this.damage = 1;
-        this.damage = damage;  // Damage dealt to the player on impact
-        this.color = color;
-        this.width = 6;
+        this.x      = x;
+        this.y      = y;
+        this.vx     = vx;
+        this.vy     = vy;
+        this.damage = damage;
+        this.color  = color;
+        this.width  = 6;
         this.height = 6;
-        this.dead = false; // Flag for bullet if still active
+        this.dead   = false;
     }
 
     update() {
@@ -169,7 +154,6 @@ class Bullet {
     }
 }
 
-// Class for the tiles of the main base wall
 class WallSegment {
     constructor(x, y, maxHp = 100) {
         this.x      = x;
@@ -177,22 +161,20 @@ class WallSegment {
         this.width  = 32;
         this.height = 32;
         this.maxHp  = maxHp;
-        this.hp     = maxHp; 
-        const mult   = getDifficultyMult();
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);
-        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1);
+        this.hp     = maxHp;
 
-        // Logic for scaling the shoot cooldown
+        const mult  = getDifficultyMult();
+        const cdMin = Math.max(Math.floor(60  / mult), 10);
+        const cdMax = Math.max(Math.floor(180 / mult), cdMin + 1);
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
-        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax); // Random so they don't all fire simultaneously        
+        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
+
         this.shootRange = 300;
-        this.side = "top";
-        
+        this.side       = "top";
     }
 
     get alive() { return this.hp > 0; }
 
-    // Fires a bullet at the player if they are within range and on the correct side of the wall
     tryShoot(player) {
         if (!this.alive) return null;
 
@@ -202,18 +184,16 @@ class WallSegment {
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
 
-
-        // Don't shoot if player is within one player-length
-        if (dist < player.width) return null;
+        if (dist < player.width)    return null;
         if (dist > this.shootRange) return null;
 
-        const outside = 
-                this.side === "top" ? py < cy :
-                this.side === "bottom" ? py > cy:
-                this.side === "left" ? px < cx: 
-                this.side === "right" ? px > cx: true;
-        
-        if(!outside) return null;
+        const outside =
+            this.side === "top"    ? py < cy :
+            this.side === "bottom" ? py > cy :
+            this.side === "left"   ? px < cx :
+            this.side === "right"  ? px > cx : true;
+
+        if (!outside) return null;
 
         if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
 
@@ -221,8 +201,7 @@ class WallSegment {
         const speed = 4;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
-        // 1/6 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 ,"#f44");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5, "#f44");
     }
 
     draw(ctx) {
@@ -235,50 +214,42 @@ class WallSegment {
     }
 }
 
-// Class for the main base of the level
 class MainBase {
     constructor(cx, cy) {
-        this.segments = []; // All wall segments
+        this.segments = [];
         this.cx = cx;
         this.cy = cy;
         this.buildWall(cx, cy);
     }
 
-    // Places WallSegment tiles only on the outer edge
     buildWall(cx, cy) {
         const tileSize = 32;
         const gap      = 2;
         const step     = tileSize + gap;
         const cols     = 7;
         const rows     = 7;
-
-        const totalW = cols * step - gap;
-        const totalH = rows * step - gap;
-        const startX = cx - totalW / 2;
-        const startY = cy - totalH / 2;
+        const totalW   = cols * step - gap;
+        const totalH   = rows * step - gap;
+        const startX   = cx - totalW / 2;
+        const startY   = cy - totalH / 2;
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const isEdge = row === 0 || row === rows - 1 || col === 0 || col === cols - 1;
                 if (!isEdge) continue;
-                const x = startX + col * step;
-                const y = startY + row * step;
-                const seg = (new WallSegment(x, y, 100));
-
-                 // Assign side so it knows in which direction it is allowed to shoot
+                const x   = startX + col * step;
+                const y   = startY + row * step;
+                const seg = new WallSegment(x, y, 100);
                 if (row === 0)        seg.side = "top";
                 if (row === rows - 1) seg.side = "bottom";
                 if (col === 0)        seg.side = "left";
                 if (col === cols - 1) seg.side = "right";
-
                 this.segments.push(seg);
             }
         }
     }
 
     get living() { return this.segments.filter(s => s.alive); }
-
-    get isDestroyed() { return this.segments.every(s => !s.alive); }
 
     get innerZone() {
         const tileSize = 32;
@@ -303,7 +274,6 @@ class MainBase {
     }
 }
 
-//Class for all the enemy outposts scattered thru the map
 class Outpost {
     constructor(x, y) {
         this.x      = x;
@@ -313,19 +283,17 @@ class Outpost {
         this.maxHp  = 99;
         this.hp     = this.maxHp;
 
-        // Shoot cooldown scaled by difficulty
-        const mult   = getDifficultyMult();
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
-        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
+        const mult  = getDifficultyMult();
+        const cdMin = Math.max(Math.floor(60  / mult), 10);
+        const cdMax = Math.max(Math.floor(180 / mult), cdMin + 1);
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
         this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
 
-        this.shootRange = 200; // Detection range
+        this.shootRange = 200;
     }
 
     get alive() { return this.hp > 0; }
 
-    // Fires at the player if they are in range
     tryShoot(player) {
         if (!this.alive) return null;
 
@@ -335,8 +303,7 @@ class Outpost {
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
 
-        // Don't shoot if player is within one player-length
-        if (dist < player.width) return null;
+        if (dist < player.width)    return null;
         if (dist > this.shootRange) return null;
 
         if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
@@ -345,8 +312,7 @@ class Outpost {
         const speed = 3;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
-        // 1/8 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 ,    "#f84");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5, "#f84");
     }
 
     draw(ctx) {
@@ -368,7 +334,51 @@ class Outpost {
     }
 }
 
-//Main game class
+class Tutorial {
+    constructor(game) {
+        this.game = game;
+        this.active = true;
+        this.step = 0;
+
+        this.steps = [
+            "Use WASD to move",
+            "This is an OUTPOST (touch to attack)",
+            "Attack the MAIN BASE",
+            "Enter the GREEN zone to win",
+            "Health Bar",
+            "HUD",
+            "Level",
+            "Cards explain",
+            "Low life",
+            "Use a card",
+            "Heal",
+            "End"
+        ];
+    }
+
+    next() {
+        this.step++;
+        if (this.step >= this.steps.length) {
+            this.active = false;
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, canvasHeight - 80, canvasWidth, 80);
+
+        ctx.fillStyle = "#0ff";
+        ctx.font = "20px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(this.steps[this.step], canvasWidth / 2, canvasHeight - 40);
+
+        ctx.font = "14px monospace";
+        ctx.fillText("Press SPACE to continue", canvasWidth / 2, canvasHeight - 15);
+    }
+}
+
 class Game {
     constructor() {
         this.player   = new Player();
@@ -378,19 +388,19 @@ class Game {
         this.won      = false;
         this.waiting  = true;
         this._died    = false;
-        
+        this.tutorial = new Tutorial(this);
+        this.tutorial.active = false;
+        this.instructionsScreen = false;
 
         this.randomEventActive    = false;
         this.randomEventTriggered = false;
         this.notifTimer           = 0;
         this.notifDuration        = 180;
 
-        // Card system state
-        this.targetingMode = null;
-        this.draftChoices  = null;
+        this.targetingMode      = null;
+        this.draftChoices       = null;
         this._pendingTargetCard = null;
 
-        // Mouse cursor position in canvas-space coordinates
         this.mouseX = 0;
         this.mouseY = 0;
 
@@ -398,95 +408,25 @@ class Game {
         this.spawnPlayer();
         this.createEventListeners();
         this._rewardGranted = false;
-        this.lastReward = null;
+        this.lastReward     = null;
     }
 
-    // Places the player at a random map position, ensuring they do not appear inside or directly besides the main base
     spawnPlayer() {
-        const iz     = this.mainBase.innerZone;
-        const margin = 20;
-        let x, y;
-        do {
-            x = margin + Math.random() * (canvasWidth  - margin * 2 - this.player.width);
-            y = margin + Math.random() * (canvasHeight - margin * 2 - this.player.height);
-        } while (
-            x + this.player.width  > iz.x - 40 &&
-            x                      < iz.x + iz.width  + 40 &&
-            y + this.player.height > iz.y - 40 &&
-            y                      < iz.y + iz.height + 40
-        );
-        this.player.x = x;
-        this.player.y = y;
+        this.player.x = 900;
+        this.player.y = 200;
     }
 
-    // Places outposts around the map while avoiding the main base and overlapping with each other
-    spawnOutposts() { 
-        const margin  = 80;
-        const cx = canvasWidth / 2, cy = canvasHeight / 2;
-
-        // Main base bounding box with a padding buffer
-        const basePad = 60;
-        const baseW   = 7 * (32 + 2) - 2; // matches buildWall math
-        const baseH   = baseW;
-        const baseX   = cx - baseW / 2 - basePad;
-        const baseY   = cy - baseH / 2 - basePad;
-        const baseBW  = baseW + basePad * 2;
-        const baseBH  = baseH + basePad * 2;
-
-        const outW    = 40; // Outpost.width
-        const outH    = 40; // Outpost.height
-        const minGap  = 30; // minimum clearance between outpost edges
-
-        const placed  = []; // list of { x, y, width, height } already accepted
-
-        const overlaps = (ax, ay, aw, ah, bx, by, bw, bh, gap = 0) =>
-            ax < bx + bw + gap &&
-            ax + aw + gap > bx &&
-            ay < by + bh + gap &&
-            ay + ah + gap > by;
-
-            // Random base of 5–10 multiplied by difficulty capped at 60
-            const mult = getDifficultyMult();
-            const count = Math.min(
-                Math.floor((Math.floor(Math.random() * 6 ) + 5 ) * mult )
-                ,60
-            );
-        
-
-        for (let i = 0; i < count; i++) {
-            let x, y, attempts = 0, valid = false;
-
-            while (!valid && attempts < 200) {
-                attempts++;
-                x = margin + Math.random() * (canvasWidth  - margin * 2 - outW);
-                y = margin + Math.random() * (canvasHeight - margin * 2 - outH);
-
-                // Reject if overlapping the main base (with buffer)
-                if (overlaps(x, y, outW, outH, baseX, baseY, baseBW, baseBH)) continue;
-
-                // Reject if overlapping any already-placed outpost (with gap)
-                if (placed.some(p => overlaps(x, y, outW, outH, p.x, p.y, p.width, p.height, minGap))) continue;
-
-                valid = true;
-            }
-
-            if (valid) {
-                placed.push({ x, y, width: outW, height: outH });
-                this.outposts.push(new Outpost(x, y));
-            }
-            // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
-        }
+    spawnOutposts() {
+        this.outposts.push(new Outpost(200, 200));
+        this.outposts.push(new Outpost(700, 500));
     }
-
-    
 
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
     createEventListeners() {
         window.addEventListener("keydown", (e) => {
-            // Draft pick takes priority when active — selection is via mouse click
             if (this.won && this.draftChoices) return;
-            // Cancel targeting with E (refund the card)
+
             if (this.targetingMode && e.code === "KeyE") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
@@ -495,23 +435,48 @@ class Game {
                 this.targetingMode = null;
                 return;
             }
-            // Play card from hand by index 1-5
+
             if (!this.waiting && !this.won && !this.targetingMode &&
                 ["Digit1","Digit2","Digit3","Digit4","Digit5"].includes(e.code)) {
+                if (this.tutorial.active && this.tutorial.step != 8) return;
                 const idx = parseInt(e.code.slice(-1), 10) - 1;
                 if (idx >= 0 && idx < playerStats.deck.length) {
-                    const card = playerStats.deck.splice(idx, 1)[0]; // Remove card from hand
+                    const card = playerStats.deck.splice(idx, 1)[0];
+                    if (this.tutorial.active && this.tutorial.step == 8 && idx == 0) {
+                        this.tutorial.next();
+                    }
                     if (card.targeting) this._pendingTargetCard = card;
                     card.apply(this);
                 }
                 return;
             }
-            if (e.code === "Space") this.startOrRestart();
+
+            if (e.code === "Space") {
+                if (this.won && !this.instructionsScreen && !this.draftChoices) return;
+                if (this.won && this.instructionsScreen) {
+                    this.instructionsScreen = false;
+                    this.draftChoices = getDraftChoices();
+                    return;
+                }
+                if (this.waiting) {
+                    this.waiting = false;
+                    this.tutorial.active = true;
+                    return;
+                }
+                if (this.tutorial && this.tutorial.active) {
+                    if (this.tutorial.step != 8) this.tutorial.next();
+                    if (!this.tutorial.active) this.startOrRestart();
+                    return;
+                }
+                this.startOrRestart();
+            }
+
             if (e.code === "KeyW") this.player.keys.up    = true;
             if (e.code === "KeyS") this.player.keys.down  = true;
             if (e.code === "KeyA") this.player.keys.left  = true;
             if (e.code === "KeyD") this.player.keys.right = true;
         });
+
         window.addEventListener("keyup", (e) => {
             if (e.code === "KeyW") this.player.keys.up    = false;
             if (e.code === "KeyS") this.player.keys.down  = false;
@@ -521,7 +486,6 @@ class Game {
 
         const canvas = document.getElementById("canvas");
         if (canvas) {
-            // Track mouse position in canvas coordinates
             canvas.addEventListener("mousemove", (e) => {
                 const rect = canvas.getBoundingClientRect();
                 this.mouseX = (e.clientX - rect.left) * (canvasWidth  / rect.width);
@@ -531,29 +495,29 @@ class Game {
                 const rect = canvas.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
                 const my = (e.clientY - rect.top)  * (canvasHeight / rect.height);
-                // Targeting mode that instantly destroys the clicked outpost logic
+
                 if (this.targetingMode === "destroy_outpost") {
                     for (const o of this.outposts) {
                         if (o.alive &&
                             mx >= o.x && mx <= o.x + o.width &&
                             my >= o.y && my <= o.y + o.height) {
                             o.hp = 0;
-                            this.targetingMode = null;
+                            this.targetingMode      = null;
                             this._pendingTargetCard = null;
                             break;
                         }
                     }
                     return;
                 }
-                // Click detection for one of the 3 displayed cards
+
                 if (this.won && this.draftChoices) {
                     const cardW = 220, cardH = 280, gap = 30;
                     const startX = (canvasWidth - (3 * cardW + 2 * gap)) / 2;
-                    const cardY = 200;
+                    const cardY  = 200;
                     for (let i = 0; i < this.draftChoices.length; i++) {
                         const cx = startX + i * (cardW + gap);
                         if (mx >= cx && mx <= cx + cardW && my >= cardY && my <= cardY + cardH) {
-                            playerStats.deck.push(this.draftChoices[i]); // Add chosen card to hand
+                            playerStats.deck.push(this.draftChoices[i]);
                             this.draftChoices = null;
                             break;
                         }
@@ -563,14 +527,12 @@ class Game {
         }
     }
 
-    // Resets all game entities and states for a new round
     startOrRestart() {
-        // Block restart while a draft is still pending
         if (this.won && this.draftChoices) return;
         if (this.waiting || this.won) {
-            this.targetingMode = null;
+            this.targetingMode      = null;
             this._pendingTargetCard = null;
-            this.player   = new Player(playerStats)
+            this.player   = new Player(playerStats);
             this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
             this.outposts = [];
             this.bullets  = [];
@@ -583,32 +545,19 @@ class Game {
             this.spawnOutposts();
             this.spawnPlayer();
             this._rewardGranted = false;
-            this.lastReward = false;
+            this.lastReward     = false;
         }
     }
 
-   
-    // Awards win reward. Increments level, checks for stage completion XP bonus, and generates 3 card choices for the draft screen
     grantReward() {
         if (this._rewardGranted) return;
         this._rewardGranted = true;
-
         playerStats.level += 1;
-        this.levelnum = playerStats.level; 
-        playerStats.stage = Math.floor(playerStats.level / 3) // New stage every 3 levels
-
-        
-        // Stage completion XP bonus
-        if (playerStats.level % 3 === 0) {
-            playerStats.xp += 300;
-            this.lastStageReward = true;
-        } else {
-            this.lastStageReward = false;
-        }
-
-        // Card draft replaces the old random speed/HP reward
-        this.lastReward = null;
-        this.draftChoices = getDraftChoices();
+        playerStats.xp    += playerStats.level % 3 === 0 ? 300 : 0;
+        this.lastStageReward    = playerStats.level % 3 === 0;
+        this.lastReward         = null;
+        this.draftChoices       = null;
+        this.instructionsScreen = true;
     }
 
     update() {
@@ -620,19 +569,16 @@ class Game {
         this.player.isAttacking = false;
         this.player.targetHp    = null;
 
-        // Player attacks outposts
         for (const outpost of this.outposts) {
             if (outpost.alive) this.player.tryAttack(outpost);
         }
 
-        // Player attacks main base only when outposts are cleared
         if (this.outpostsCleared) {
             for (const seg of this.mainBase.living) {
                 this.player.tryAttack(seg);
             }
         }
 
-        // Win condition — always open
         const iz = this.mainBase.innerZone;
         const playerInside = (
             this.player.x + this.player.width  > iz.x &&
@@ -640,12 +586,11 @@ class Game {
             this.player.y + this.player.height  > iz.y &&
             this.player.y                       < iz.y + iz.height
         );
-        if (playerInside){
+        if (playerInside) {
             this.grantReward();
             this.won = true;
         }
 
-        // Random event — fires once when any wall segment drops below 50% HP
         if (!this.randomEventTriggered && this.outpostsCleared) {
             const triggered = this.mainBase.segments.some(s => s.alive && s.hp < s.maxHp * 0.5);
             if (triggered) {
@@ -659,19 +604,16 @@ class Game {
 
         if (this.notifTimer > 0) this.notifTimer--;
 
-        // Outposts shoot at player
         for (const outpost of this.outposts) {
             const b = outpost.tryShoot(this.player);
             if (b) this.bullets.push(b);
         }
 
-        // Wall segments shoot at player
         for (const seg of this.mainBase.living) {
             const b = seg.tryShoot(this.player);
             if (b) this.bullets.push(b);
         }
 
-        // Move bullets, check hits, cull dead ones
         for (const b of this.bullets) {
             b.update();
             if (!b.dead && b.overlaps(this.player)) {
@@ -683,20 +625,17 @@ class Game {
         }
         this.bullets = this.bullets.filter(b => !b.dead);
 
-        // Game over when player HP hits 0
         if (this.player.hp <= 0) {
-            this._deathXP = playerStats.xp;
+            this._deathXP    = playerStats.xp;
             this._deathLevel = playerStats.level;
-            this._deathStage = playerStats.stage;
-            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0, dmgReduction: 0, deck: createStarterDeck() };
-            this.draftChoices = null;
-            this.targetingMode = null;
+            playerStats = { speedMod: 1.0, maxHp: 100, level: 0, xp: 0, dmgReduction: 0, deck: createStarterDeck() };
+            this.draftChoices       = null;
+            this.targetingMode      = null;
             this._pendingTargetCard = null;
             this.won     = false;
             this.waiting = true;
             this._died   = true;
         }
-
     }
 
     draw(ctx) {
@@ -706,7 +645,6 @@ class Game {
 
         this.mainBase.draw(ctx);
 
-        // Capture zone — always visible
         const iz = this.mainBase.innerZone;
         ctx.fillStyle = "rgba(0, 255, 100, 0.25)";
         ctx.fillRect(iz.x, iz.y, iz.width, iz.height);
@@ -723,26 +661,27 @@ class Game {
         for (const b of this.bullets) b.draw(ctx);
 
         this.drawHUD(ctx);
+        if (this.tutorial.active) this.drawTutorialHUD(ctx);
 
         if (this.notifTimer > 0) this.drawEventNotif(ctx);
-
-        if (this.targetingMode) this.drawTargeting(ctx);
+        if (this.targetingMode)  this.drawTargeting(ctx);
 
         if (this.waiting && this._died) {
             this.drawDeathScreen();
-        } else if (this.waiting) {
-            this.drawOverlay("BASE ASSAULT", "PRESS SPACE TO START", "#4af");
+        } else if (this.waiting && !this.tutorial.active) {
+            this.drawOverlay("WELCOME TO TUTORIAL", "PRESS SPACE TO START", "#4af");
         } else if (this.won) {
-            if (this.draftChoices) {
+            if (this.instructionsScreen) {
+                this.drawOverlay("GREAT JOB", "Now, when you beat a level, you will be able to select one card for next rounds", "lime");
+            } else if (this.draftChoices) {
                 this.drawDraft(ctx);
             } else {
-                this.drawOverlay("BASE DESTROYED", "PRESS SPACE TO PLAY AGAIN", "lime");
+                this.drawOverlay("TUTORIAL COMPLETED", "YOU ARE NOW READY TO TAKE OVER THE WORLD", "lime");
+                document.getElementById("backBtn").style.display = "block";
             }
         }
     }
 
-    // Draws a yellow outline to all living outposts so the player can click one to destroy it (card effect)
-    // Also draws a cursor at the current mouse position
     drawTargeting(ctx) {
         ctx.fillStyle = "rgba(255, 200, 0, 0.08)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -766,7 +705,6 @@ class Game {
         ctx.fillText("Press E to exit targeting mode", canvasWidth / 2, 46);
     }
 
-    // Displays the 3-card selection screen after winning a level, cards highlight on hover to indicate interactivity.
     drawDraft(ctx) {
         ctx.fillStyle = "rgba(0,0,0,0.78)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -785,15 +723,14 @@ class Game {
         }
 
         const cardW = 220, cardH = 280, gap = 30;
-        const totalW = 3 * cardW + 2 * gap;
-        const startX = (canvasWidth - totalW) / 2;
+        const startX = (canvasWidth - (3 * cardW + 2 * gap)) / 2;
         const y = 200;
         ctx.textAlign = "left";
         for (let i = 0; i < this.draftChoices.length; i++) {
             const c = this.draftChoices[i];
             const x = startX + i * (cardW + gap);
             const hovered = this.mouseX >= x && this.mouseX <= x + cardW &&
-                            this.mouseY >= y && this.mouseY <= y + cardH;
+                            this.mouseY >= y  && this.mouseY <= y  + cardH;
             ctx.fillStyle = "rgba(20,20,20,0.95)";
             ctx.fillRect(x, y, cardW, cardH);
             if (hovered) {
@@ -835,25 +772,20 @@ class Game {
         }
     }
 
-     // Renders the display 
     drawHUD(ctx) {
-        ctx.font      = "14px monospace";
-        const mult = getDifficultyMult(); 
-
-        // Difficulty indicator
-        ctx.fillStyle = mult >= 4 ? "#f44" : mult >= 2 ? "#fa0" : "#aaa";  
-        ctx.textAlign = "right";   
+        ctx.font = "14px monospace";
+        const mult = getDifficultyMult();
+        ctx.fillStyle = mult >= 4 ? "#f44" : mult >= 2 ? "#fa0" : "#aaa";
+        ctx.textAlign = "right";
         ctx.fillText(`level ${playerStats.level + 1}   ×${mult} difficulty`, canvasWidth - 12, 22);
         ctx.textAlign = "left";
 
-        // Remaining enemy counts
         const outpostsLeft = this.outposts.filter(o => o.alive).length;
         const wallsLeft    = this.mainBase.living.length;
         ctx.fillStyle = "#aaa";
         ctx.fillText(`Outposts remaining : ${outpostsLeft}`, 12, 22);
         ctx.fillText(`Wall segments left : ${wallsLeft}`,    12, 42);
 
-        // Objective message
         if (!this.outpostsCleared) {
             ctx.fillStyle = "#f88";
             ctx.fillText("⚠  Destroy all outposts to damage the main base", 12, 64);
@@ -862,15 +794,13 @@ class Game {
             ctx.fillText("✓  Outposts cleared — attack the main base!", 12, 64);
         }
 
-        
         if (this.randomEventActive) {
             ctx.fillStyle = "#fa0";
             ctx.fillText("RANDOM EVENT ACTIVE — Speed -30%  Attack rate -50%", 12, 86);
         }
 
-        // Player HP bar
-        const barW  = 160, barH = 12;
-        const barX  = 12,  barY = canvasHeight - 28;
+        const barW    = 160, barH = 12;
+        const barX    = 12,  barY = canvasHeight - 28;
         const hpRatio = this.player.hp / this.player.maxHp;
         ctx.fillStyle = "#333";
         ctx.fillRect(barX, barY, barW, barH);
@@ -892,7 +822,129 @@ class Game {
         this.drawHand(ctx);
     }
 
-    // Renders the card hand on the bottom of the canvas.
+    drawTutorialHUD(ctx) {
+        ctx.save();
+
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        ctx.strokeStyle = "#0ff";
+        ctx.fillStyle   = "#0ff";
+        ctx.lineWidth   = 2;
+        ctx.font        = "14px monospace";
+
+        if (this.tutorial.step == 0) {
+            ctx.beginPath();
+            ctx.moveTo(this.player.x, this.player.y);
+            ctx.lineTo(this.player.x - 80, this.player.y - 80);
+            ctx.stroke();
+            ctx.fillText("YOU (WASD to move)", this.player.x - 180, this.player.y - 90);
+        }
+
+        if (this.tutorial.step == 1) {
+            const o = this.outposts[0];
+            if (o) {
+                ctx.beginPath();
+                ctx.moveTo(o.x + o.width / 2, o.y + o.height / 2);
+                ctx.lineTo(o.x + 100, o.y - 60);
+                ctx.stroke();
+                ctx.fillText("OUTPOST (touch to attack and lookout from bullets)", o.x + 110, o.y - 70);
+            }
+        }
+
+        if (this.tutorial.step == 2) {
+            const base = this.mainBase;
+            ctx.beginPath();
+            ctx.moveTo(base.cx, base.cy);
+            ctx.lineTo(base.cx + 120, base.cy);
+            ctx.stroke();
+            ctx.fillText("MAIN BASE (destroy all outposts first)", base.cx + 130, base.cy + 5);
+        }
+
+        if (this.tutorial.step == 3) {
+            const iz = this.mainBase.innerZone;
+            ctx.beginPath();
+            ctx.moveTo(iz.x + iz.width / 2, iz.y + iz.height / 2);
+            ctx.lineTo(iz.x + iz.width / 2, iz.y - 60);
+            ctx.stroke();
+            ctx.fillText("ENTER HERE TO WIN, YOU DON'T NEED TO DESTROY ALL WALLS", iz.x + iz.width / 2 - 170, iz.y - 70);
+        }
+
+        if (this.tutorial.step == 4) {
+            ctx.beginPath();
+            ctx.moveTo(100, canvasHeight - 40);
+            ctx.lineTo(200, canvasHeight - 100);
+            ctx.stroke();
+            ctx.fillText("HP (your health)", 210, canvasHeight - 110);
+        }
+
+        if (this.tutorial.step == 5) {
+            ctx.beginPath();
+            ctx.moveTo(220, 140);
+            ctx.lineTo(60, 40);
+            ctx.stroke();
+            ctx.fillText("HUD: Outposts left, current objective, and wall segments", 230, 150);
+        }
+
+        if (this.tutorial.step == 6) {
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth - 120, 20);
+            ctx.lineTo(canvasWidth - 300, 100);
+            ctx.stroke();
+            ctx.fillText("This shows your LEVEL", canvasWidth - 470, 120);
+            ctx.fillText("and current DIFFICULTY", canvasWidth - 470, 140);
+        }
+
+        if (this.tutorial.step == 7) {
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth / 2, canvasHeight - 30);
+            ctx.lineTo(canvasWidth / 2, canvasHeight - 120);
+            ctx.stroke();
+            ctx.fillText("CARDS (press 1-5)", canvasWidth / 2 - 70, canvasHeight - 130);
+        }
+
+        if (this.tutorial.step == 8) {
+            ctx.beginPath();
+            ctx.moveTo(100, canvasHeight - 40);
+            ctx.lineTo(200, canvasHeight - 100);
+            ctx.stroke();
+            ctx.fillText("Looks like your HP is kind of low...", 210, canvasHeight - 110);
+
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth / 2, canvasHeight - 70);
+            ctx.lineTo(canvasWidth / 2, canvasHeight - 120);
+            ctx.stroke();
+            ctx.fillText("Try using the healing card to fix that (KEY 1)", canvasWidth / 2 - 70, canvasHeight - 130);
+        }
+
+        if (this.tutorial.step == 9) {
+            ctx.beginPath();
+            ctx.moveTo(100, canvasHeight - 40);
+            ctx.lineTo(200, canvasHeight - 100);
+            ctx.stroke();
+            ctx.fillText("You healed up! Thats a card effect", 210, canvasHeight - 110);
+        }
+
+        if (this.tutorial.step == 10) {
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth / 2, canvasHeight - 30);
+            ctx.lineTo(canvasWidth / 2, canvasHeight - 120);
+            ctx.stroke();
+            ctx.fillText("Keep playing to find new cards and new effects", canvasWidth / 2 - 180, canvasHeight - 130);
+        }
+
+        if (this.tutorial.step == 11) {
+            ctx.fillText("Now try to beat the level with what you have learned!", canvasWidth / 2 - 190, canvasHeight - 600);
+        }
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "18px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("FOLLOW THE TUTORIAL STEPS", canvasWidth / 2, 40);
+        ctx.fillText("PRESS SPACE TO CONTINUE THRU STEPS", canvasWidth / 2, 60);
+        ctx.restore();
+    }
+
     drawHand(ctx) {
         const deck = playerStats.deck || [];
         const cardW = 130, cardH = 60, gap = 10;
@@ -933,28 +985,24 @@ class Game {
         ctx.textAlign = "center";
         ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx.font = "32px monospace";
-        ctx.fillText(" RANDOM EVENT ACTIVATED", canvasWidth / 2, canvasHeight / 2 - 18);
+        ctx.fillText("RANDOM EVENT ACTIVATED", canvasWidth / 2, canvasHeight / 2 - 18);
         ctx.font = "16px monospace";
         ctx.fillText("Player speed -30% and attack rate -50%", canvasWidth / 2, canvasHeight / 2 + 16);
     }
 
-        drawDeathScreen() {
+    drawDeathScreen() {
         ctx.fillStyle = "rgba(0,0,0,0.75)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.textAlign = "center";
-
         ctx.fillStyle = "#f44";
         ctx.font      = "56px monospace";
         ctx.fillText("YOU DIED", canvasWidth / 2, canvasHeight / 2 - 80);
-
         ctx.fillStyle = "#ffdd57";
         ctx.font      = "32px monospace";
         ctx.fillText(`TOTAL XP: ${this._deathXP}`, canvasWidth / 2, canvasHeight / 2 - 20);
-
         ctx.fillStyle = "#aaa";
         ctx.font      = "18px monospace";
-        ctx.fillText(`Reached Level ${this._deathLevel}  —  Stage ${this._deathStage}`, canvasWidth / 2, canvasHeight / 2 + 20);
-
+        ctx.fillText(`Reached Level ${this._deathLevel}`, canvasWidth / 2, canvasHeight / 2 + 20);
         ctx.fillStyle = "#fff";
         ctx.font      = "22px monospace";
         ctx.fillText("PRESS SPACE TO TRY AGAIN", canvasWidth / 2, canvasHeight / 2 + 60);
@@ -967,23 +1015,10 @@ class Game {
         ctx.fillStyle = color;
         ctx.font      = "56px monospace";
         ctx.fillText(title, canvasWidth / 2, canvasHeight / 2 - 60);
-
-        if (this.won && this.lastReward) {
-            ctx.fillStyle = "#ffdd57";
-            ctx.font      = "28px monospace";
-            ctx.fillText(`REWARD: ${this.lastReward}`, canvasWidth / 2, canvasHeight / 2 - 10);
-
-            if (this.lastStageReward) {
-                ctx.fillStyle = "#4f4";
-                ctx.font      = "22px monospace";
-                ctx.fillText(`STAGE COMPLETE — +300 XP  (total: ${playerStats.xp})`, canvasWidth / 2, canvasHeight / 2 + 24);
-            }
-        }
-
         ctx.fillStyle = "#fff";
         ctx.font      = "22px monospace";
         ctx.fillText(subtitle, canvasWidth / 2, canvasHeight / 2 + 60);
-    }    
+    }
 }
 
 function main() {
