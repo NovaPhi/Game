@@ -37,7 +37,7 @@ app.post('/Login', (req, res) => {
             return;
         }
 
-        const { id_user, username, status } = results[0];
+        const { id_user, username, status, role } = results[0];
         
         if (status != 1) {
             res.json({ success: false, message: 'Account inactive' });
@@ -45,8 +45,9 @@ app.post('/Login', (req, res) => {
             return;
         }
 
-        res.json({ success: true, user_ID: id_user, username, status });
+        res.json({ success: true, user_ID: id_user, username, status, role });
         //console.log('true -', username, id_user);
+        //console.log(role);
     });
 });
 
@@ -96,7 +97,7 @@ app.post('/SignUp', (req, res) => {
                     res.json({ success: false, message: 'Username or email already exists' });
                     return;
                 }
-                console.error(err);
+                //console.error(err);
                 res.status(500).json({ success: false, message: 'Server error' });
                 return;
             }
@@ -117,6 +118,38 @@ app.post('/SignUp', (req, res) => {
     );
 });
 
+app.get('/Admin', (req,res)=>{
+    connection.query('SELECT id_user, username, status FROM User',[],(err,results,fields)=>{
+        if(err) throw err;
+        let Users = results.map(User => ({
+            user_ID: User.id_user,
+            username: User.username,
+            Stauts: User.status
+        }));
+
+        res.json({ success: true, Users});
+        //console.log(Users);
+        
+    })
+    
+});
+
+app.post('/Admin', (req,res)=>{
+    const {user_ID} = req.body;
+
+    connection.query('UPDATE User SET status = 2 WHERE id_user =?', [user_ID], (err,result) =>{
+        if (err){ 
+            console.error('status update: ', err)
+            console.log(sessionUser.id_user, sessionUser.status);
+            return res.json({success: false});
+        };
+        res.json({success: true});
+
+    });
+});
+
+
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)
 });
+

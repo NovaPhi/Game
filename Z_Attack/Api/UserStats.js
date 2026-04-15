@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () =>{
         document.getElementById('losses').innerHTML = data.best_level;
         document.getElementById('Playtime').innerHTML = data.playtime;
   } catch (err) {
-        console.error('Failed to fetch stats:', err);
+        //console.error('Failed to fetch stats:', err);
   }
 
     
