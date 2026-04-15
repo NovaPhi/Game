@@ -18,7 +18,7 @@ const connection = mysql.createConnection({
     });
     connection.connect((err) => {
         if (err) throw err;
-    //console.log('Connected to DB');
+    console.log('Connected to DB');
 });
 
 app.post('/Login', (req, res) => {
@@ -52,7 +52,7 @@ app.post('/Login', (req, res) => {
 });
 
 app.get('/UserStats', (req, res) => {
-  const { user_ID} = req.query; // match the frontend
+  const { user_ID } = req.query; // match the frontend
   //console.log('userId received:', user_ID); // verify it's coming through
 
   connection.query('SELECT * FROM Stats WHERE id_user = ?', [user_ID], (err, results) => {
@@ -66,6 +66,27 @@ app.get('/UserStats', (req, res) => {
     const { total_runs, best_score, best_level, playtime } = results[0];
     res.json({ success: true, total_runs, best_score, best_level, playtime });
   });
+});
+
+app.post('/saveStats', (req, res) => {
+    const { user_ID, score, level, playtime } = req.body;
+
+    connection.query(
+        `UPDATE Stats SET
+            total_runs = total_runs + 1,
+            best_score = GREATEST(best_score, ?),
+            best_level = GREATEST(best_level, ?),
+            playtime = playtime + ?
+        WHERE id_user = ?`,
+        [score, level, playtime, user_ID],
+        (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ success: false });
+            }
+            res.json({ success: true });
+        }
+    );
 });
 
 app.get('/deleteAccount', (req, res) => {
