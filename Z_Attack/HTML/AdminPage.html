@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../CSS/Admin.css"/>
+</head>
+<body>
+
+  <a href="main.html" class="back-btn">← Back</a>
+
+  <nav id="topBar">
+    <span id="authBtn"></span>
+  </nav>
+
+  <h1 class="welcome">Admin <span>Panel</span></h1>
+  <p class="subtitle">// system control //</p>
+
+  <!-- USERS TABLE -->
+  <div class="section-label">// user registry //</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="usersTable">
+        <tr><td colspan="7" class="empty">Loading users...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- LOGS TABLE -->
+  <div class="section-label">// Users //</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th >User</th>
+          <th >Action</th>
+          <th>BAN</th>
+        </tr>
+      </thead>
+      <tbody id="logsTable">
+        <tr><td colspan="3" class="empty">Loading logs...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+  <script src="../Api/Admin.js"></script>
+</body>
+</html>

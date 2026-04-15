@@ -17,7 +17,8 @@ CREATE TABLE Rarity (
 );
 
 
-
+--Status 1:Active, 2: Banned, 3: Disabled;
+--Role 1: Admin, 2: User
 CREATE TABLE User (
     id_user INT NOT NULL AUTO_INCREMENT,
     username VARCHAR(40)  NOT NULL,

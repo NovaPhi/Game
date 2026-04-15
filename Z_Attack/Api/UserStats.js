@@ -37,13 +37,21 @@ document.addEventListener('DOMContentLoaded', async () =>{
         const data = await response.json();
         //console.log(data);
         
+         
+        function StoH(times){
+            var hour = Math.floor(times / 3600);
+            var min = Math.floor(times % 3600 / 60);
+            var sec = Math.floor(times % 3600 % 60);
+            return `${hour.toString()}:${min.toString()}:${sec.toString()}`;
+        }
+        
 
         document.getElementById('gamesPlayed').innerHTML = data.total_runs;
         document.getElementById('wins').innerHTML = data.best_score;
         document.getElementById('losses').innerHTML = data.best_level;
-        document.getElementById('Playtime').innerHTML = data.playtime;
+        document.getElementById('Playtime').innerHTML = StoH(data.playtime);
   } catch (err) {
-        console.error('Failed to fetch stats:', err);
+        //console.error('Failed to fetch stats:', err);
   }
 
     

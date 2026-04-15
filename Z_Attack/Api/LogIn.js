@@ -14,7 +14,7 @@ document.getElementById('btnSignin').addEventListener('click', async () => {
 
     if (data.success) {
         //console.log(data.user_ID);
-        localStorage.setItem('sessionUser', JSON.stringify({user_ID: data.user_ID , username: data.username}));
+        localStorage.setItem('sessionUser', JSON.stringify({user_ID: data.user_ID , username: data.username, role: data.role}));
         btn.textContent = 'Welcome Back...';
         btn.style.color = '#4caf50';
         btn.style.borderColor = '#4caf50';
