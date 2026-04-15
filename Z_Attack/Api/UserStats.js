@@ -1,21 +1,41 @@
+
+
 function logout(){
     localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
     window.location.href = 'main.html'
 }
+
+async function deleteAccount() {
+    const stored = localStorage.getItem('sessionUser');
+    const sessionUser = stored ? JSON.parse(stored) : null;
+
+    const response = await fetch(`http://localhost:8081/deleteAccount?user_ID=${sessionUser.user_ID}`);
+
+    const data = await response.json();
+
+    if (data.success) {
+        localStorage.setItem('sessionUser', JSON.stringify({ user_ID: 0, username: null }));
+        window.location.href = '../HTML/LogIn.html';
+    } else {
+        //console.log('failed to delete account');
+    }
+}
+
 //delete user changes the status of the account from 1-0 and change the login logic so that it also checks account status
 
 document.addEventListener('DOMContentLoaded', async () =>{
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
-
+    //console.log(sessionUser.user_ID);
     if (!sessionUser || sessionUser.user_ID === 0) {
         window.location.href = 'LogIn.html';
         return;
     }
 
     try {
-        const response = await fetch(`http://localhost:8081/UserStats?user_id=${sessionUser.user_ID}`);
+        const response = await fetch(`http://localhost:8081/UserStats?user_ID=${sessionUser.user_ID}`);
         const data = await response.json();
+        //console.log(data);
         
 
         document.getElementById('gamesPlayed').innerHTML = data.total_runs;

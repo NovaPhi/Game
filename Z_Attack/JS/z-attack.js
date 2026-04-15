@@ -558,6 +558,7 @@ class Game {
         this.createEventListeners();
         this._rewardGranted = false;
         this.lastReward = null;
+        this._runStartTime = Date.now();
     }
 
     // Places the player at a random map position, ensuring they do not appear inside or directly besides the main base
@@ -762,6 +763,7 @@ class Game {
             this.spawnPlayer();
             this._rewardGranted = false;
             this.lastReward = false;
+            if (this.waiting) this._runStartTime = Date.now();
         }
     }
 
@@ -869,6 +871,26 @@ class Game {
             this._deathLevel = playerStats.level;
             this._deathStage = playerStats.stage;
              const savedHeroId = playerStats.heroId;
+
+            const stored = localStorage.getItem('sessionUser');
+            const sessionUser = stored ? JSON.parse(stored) : null;
+            if (sessionUser && sessionUser.user_ID !== 0) {
+                const playtime = this._runStartTime ? Math.floor((Date.now() - this._runStartTime) / 1000) : 0;
+                console.log("Match playtime:", playtime);
+                console.log("Started: ", this._runStartTime);
+                console.log("Ended: ", Date.now())
+                fetch('http://localhost:8081/saveStats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_ID: sessionUser.user_ID,
+                        score: this._deathXP,
+                        level: this._deathLevel,
+                        playtime: playtime
+                    })
+                });
+            }
+
             playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0, dmgReduction: 0, deck: createStarterDeck() };
             applyHeroStats(savedHeroId); // Re-apply hero base stats after reset
             this.draftChoices = null;
