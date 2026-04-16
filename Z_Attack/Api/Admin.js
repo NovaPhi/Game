@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const tableBody = document.getElementById('logsTable');
+  const connectionLogsBody = document.getElementById('connectionLogsTable');
+  const usersTableBody = document.getElementById('usersTable');
 
   const statusMap = {
     1: "active",
@@ -54,6 +56,81 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(err);
     tableBody.innerHTML = `<tr><td colspan="2">Error loading User</td></tr>`;
   }
+
+  try{
+    const response = await fetch(`http://localhost:8081/LogsTable`);
+    const data = await response.json();
+
+    connectionLogsBody.innerHTML = "";
+
+    if (!data.Logs || data.Logs.length === 0) {
+      connectionLogsBody.innerHTML = `<tr><td colspan="7">No logs found</td></tr>`;
+      return;
+    }
+
+    data.Logs.forEach(log => {
+      const row = document.createElement("tr");
+
+      const cells = [
+        log.log_id,
+        log.user_ID,
+        log.connection_date,
+        log.disconnection_date ?? "Active",
+        log.ip_address,
+        log.location,
+        log.device_browser
+      ];
+
+      cells.forEach(value => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        row.appendChild(td);
+      });
+
+      connectionLogsBody.appendChild(row);
+    });
+
+  }catch (err) {
+    console.error(err);
+    connectionLogsBody.innerHTML = `<tr><td colspan="7">Error loading Connection logs</td></tr>`;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8081/UserRegistry`);
+    const data = await response.json();
+
+    usersTableBody.innerHTML = "";
+
+    if (!data.Users || data.Users.length === 0) {
+      usersTableBody.innerHTML = `<tr><td colspan="7">No users found</td></tr>`;
+      return;
+    }
+
+    data.Users.forEach(user => {
+      const row = document.createElement("tr");
+
+      const cells = [
+        user.id,
+        user.username,
+        user.email,
+        user.role,
+        user.status,
+        user.created,
+      ];
+
+      cells.forEach(value => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        row.appendChild(td);
+      });
+
+      usersTableBody.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error(err);
+    usersTableBody.innerHTML = `<tr><td colspan="7">Error loading User Registry</td></tr>`;
+  }
 });
 
 function banbutton(user_ID) {
@@ -76,7 +153,16 @@ function banbutton(user_ID) {
     
 };
 
-function logout(){
-    localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
-    window.location.href = 'main.html'
+async function logout(){
+    const stored = localStorage.getItem('sessionUser');
+    const sessionUser = stored ? JSON.parse(stored) : null;
+
+    const response = await fetch(`http://localhost:8081/Logout?user_ID=${sessionUser.user_ID}`, { method: 'GET' });
+
+    const data = await response.json();
+
+    if (data.success){
+        localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
+        window.location.href = 'main.html'
+    }
 };

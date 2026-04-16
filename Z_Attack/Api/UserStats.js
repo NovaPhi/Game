@@ -1,9 +1,18 @@
 
 
-function logout(){
-    localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
-    window.location.href = 'main.html'
-}
+async function logout(){
+    const stored = localStorage.getItem('sessionUser');
+    const sessionUser = stored ? JSON.parse(stored) : null;
+
+    const response = await fetch(`http://localhost:8081/Logout?user_ID=${sessionUser.user_ID}`, { method: 'GET' });
+
+    const data = await response.json();
+
+    if (data.success){
+        localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
+        window.location.href = 'main.html'
+    }
+};
 
 async function deleteAccount() {
     const stored = localStorage.getItem('sessionUser');

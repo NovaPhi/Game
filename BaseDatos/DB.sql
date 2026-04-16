@@ -131,6 +131,18 @@ CREATE TABLE Active_Buffs (
     FOREIGN KEY (id_card) REFERENCES Cards (id_card)
 );
 
+CREATE TABLE Connection_logs(
+	id_log INT NOT NULL AUTO_INCREMENT,
+    id_user INT NOT NULL,
+    connection_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    disconnection_timestamp TIMESTAMP NULL,
+    ip_address VARCHAR(45),
+    location VARCHAR(100),
+    device_browser_info VARCHAR(255),
+    PRIMARY KEY (id_log),
+    FOREIGN KEY (id_user) REFERENCES User (id_user)
+);
+
 CREATE INDEX idx_hero_user ON Hero (id_user);
 CREATE INDEX idx_run_user ON Run (id_user);
 CREATE INDEX idx_run_active ON Run (id_user, ended_at);
@@ -141,6 +153,7 @@ CREATE INDEX idx_run_cards_run ON Run_Cards (id_run);
 CREATE INDEX idx_active_buffs_run ON Active_Buffs (id_run);
 CREATE INDEX idx_active_buffs_exp ON Active_Buffs (expires_at);
 CREATE INDEX idx_stats_leaderboard ON Stats (best_score DESC, best_level DESC);
+CREATE INDEX idx_user_connection_log ON Connection_logs (id_user);
 
 
 --INFORMACION TEMPORAL
