@@ -9,14 +9,6 @@
 CREATE DATABASE IF NOT EXISTS Z_ATTACK;
 USE Z_ATTACK;
 
-
-CREATE TABLE Rarity (
-    id_rarity INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(40) NOT NULL,
-    PRIMARY KEY (id_rarity)
-);
-
-
 --Status 1:Active, 2: Banned, 3: Disabled;
 --Role 1: Admin, 2: User
 CREATE TABLE User (
@@ -36,15 +28,15 @@ CREATE TABLE User (
 
 CREATE TABLE Hero (
     id_hero INT NOT NULL AUTO_INCREMENT,
-    id_user INT NOT NULL,
-    level INT NOT NULL DEFAULT 1,
-    hp INT NOT NULL DEFAULT 100,
-    attack INT NOT NULL DEFAULT 10,
-    defense INT NOT NULL DEFAULT 10,
-    attack_range INT NOT NULL DEFAULT 1,
-    velocity INT NOT NULL DEFAULT 5,
+    hero_name VARCHAR(50) NOT NULL,
+    desc VARCHAR(200), 
+    asset VARCHAR(200),
+    cardColor VARCHAR(20),
+    speedMod INT NOT NULL DEFAULT 1,
+    maxHp INT NOT NULL DEFAULT 100,
+    dmgMult INT NOT NULL DEFAULT 1,
+    dmgReduction INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id_hero),
-    FOREIGN KEY (id_user) REFERENCES User (id_user)
 );
 
 CREATE TABLE Stats (
@@ -61,25 +53,19 @@ CREATE TABLE Stats (
 
 CREATE TABLE Cards (
     id_card INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(40) NOT NULL,
+    name VARCHAR(50) NOT NULL,
     description VARCHAR(200),
     artwork_url VARCHAR(100),
-    id_rarity INT NOT NULL,
-    card_type ENUM('powerup','ability','temporal_buff') NOT NULL,
-    target_stat ENUM('hp','attack','defense','velocity','attack_range'),
+    rarity VARCHAR(100) NOT NULL,
+    card_type ENUM('powerup','ability','map_change') NOT NULL,
+    targeting BOOLEAN,
+    is_ability INT NOT NULL,
     modifier_value DECIMAL(5,2),
-    modifier_type ENUM('percent','flat'),
-    combat_range ENUM('ranged','melee','both'),
-    combat_role ENUM('offensive','defensive','heal'),
     cooldown_sec DECIMAL(5,2),
-    buff_target ENUM('hp','attack','defense','velocity','attack_range','attack_speed','damage_reduction'),
     buff_value DECIMAL(5,2),
     duration_sec DECIMAL(5,2),
-    trigger_type ENUM('on_kill','on_hit','on_damage_taken','on_low_hp','manual'),
     is_immortal BOOLEAN NOT NULL DEFAULT FALSE,
-    unlimited_range BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id_card),
-    FOREIGN KEY (id_rarity) REFERENCES Rarity (id_rarity)
 );
 
 CREATE TABLE Run (
@@ -197,13 +183,13 @@ INSERT INTO Stats (id_user, total_runs, best_score, best_level, playtime) VALUES
     (4, 0,  0,     0, 0),
     (5, 12, 3100,  2, 21600);
 
-INSERT INTO Cards (name, description, artwork_url, id_rarity, card_type, target_stat, modifier_value, modifier_type, combat_range, combat_role, cooldown_sec, buff_target, buff_value, duration_sec, trigger_type, is_immortal, unlimited_range) VALUES
-    ('Iron Skin',      'Boosts defense permanently',          '/art/iron_skin.png',      1, 'powerup',       'defense',      10.00, 'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Berserker',      'Boosts attack permanently',           '/art/berserker.png',      2, 'powerup',       'attack',       15.00, 'percent', NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Swift Feet',     'Increases velocity permanently',      '/art/swift_feet.png',     1, 'powerup',       'velocity',     2.00,  'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Vital Surge',    'Increases max HP permanently',        '/art/vital_surge.png',    2, 'powerup',       'hp',           25.00, 'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Long Shot',      'Ranged offensive strike',             '/art/long_shot.png',      2, 'ability',       NULL,           NULL,  NULL,      'ranged', 'offensive', 3.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Shield Bash',    'Melee defensive counter',             '/art/shield_bash.png',    2, 'ability',       NULL,           NULL,  NULL,      'melee',  'defensive', 5.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
+INSERT INTO Cards (name, description, artwork_url, rarity, card_type, target_stat, modifier_value, modifier_type, combat_range, combat_role, cooldown_sec, buff_target, buff_value, duration_sec, trigger_type, is_immortal, unlimited_range) VALUES
+    ('Iron Skin',      'Boosts defense permanently',          '/art/iron_skin.png',      common, 'powerup',       'defense',      10.00, 'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
+    ('Berserker',      'Boosts attack permanently',           '/art/berserker.png',      common, 'powerup',       'attack',       15.00, 'percent', NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
+    ('Swift Feet',     'Increases velocity permanently',      '/art/swift_feet.png',     common, 'powerup',       'velocity',     2.00,  'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
+    ('Vital Surge',    'Increases max HP permanently',        '/art/vital_surge.png',    uncommon, 'powerup',       'hp',           25.00, 'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
+    ('Long Shot',      'Ranged offensive strike',             '/art/long_shot.png',      uncommon, 'ability',       NULL,           NULL,  NULL,      'ranged', 'offensive', 3.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
+    ('Shield Bash',    'Melee defensive counter',             '/art/shield_bash.png',    uncommon, 'ability',       NULL,           NULL,  NULL,      'melee',  'defensive', 5.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
     ('Mend',           'Melee heal on self',                  '/art/mend.png',           1, 'ability',       NULL,           NULL,  NULL,      'melee',  'heal',      8.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
     ('Arc Blast',      'Ranged offensive with short CD',      '/art/arc_blast.png',      3, 'ability',       NULL,           NULL,  NULL,      'ranged', 'offensive', 2.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
     ('Ghost Form',     'Immortal for 5 seconds on kill',      '/art/ghost_form.png',     4, 'temporal_buff', NULL,           NULL,  NULL,      NULL,     NULL,        NULL,  'hp',            0.00,  5.00,  'on_kill',      TRUE,  FALSE),
