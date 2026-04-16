@@ -12,7 +12,7 @@ async function logout(){
         localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
         window.location.href = 'main.html'
     }
-}
+};
 
 async function deleteAccount() {
     const stored = localStorage.getItem('sessionUser');

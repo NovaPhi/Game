@@ -168,6 +168,24 @@ app.post('/SignUp', (req, res) => {
     );
 });
 
+app.get('/UserRegistry', (req, res) => {
+    const roleMap = { 1: 'Admin', 2: 'User' };
+    const statusMap = { 1: 'Active', 2: 'Banned', 3: 'Disabled' };
+
+    connection.query('SELECT id_user, username, email, role, status, created_at FROM User', [], (err, results) => {
+        if (err) throw err;
+        let Users = results.map(User => ({
+            id: User.id_user,
+            username: User.username,
+            email: User.email,
+            role: roleMap[User.role] || User.role,
+            status: statusMap[User.status] || User.status,
+            created: User.created_at ? User.created_at.toString() : 'N/A',
+        }));
+        res.json({ success: true, Users });
+    });
+});
+
 app.get('/Admin', (req,res)=>{
     connection.query('SELECT id_user, username, status FROM User',[],(err,results,fields)=>{
         if(err) throw err;
@@ -178,6 +196,26 @@ app.get('/Admin', (req,res)=>{
         }));
 
         res.json({ success: true, Users});
+        //console.log(Users);
+        
+    })
+    
+});
+
+app.get('/LogsTable', (req,res)=>{
+    connection.query('SELECT * FROM Connection_logs',[],(err,results)=>{
+        if(err) throw err;
+        let Logs = results.map(Logs => ({
+            log_id: Logs.id_log,
+            user_ID: Logs.id_user,
+            connection_date: Logs.connection_timestamp ? Logs.connection_timestamp.toString() : null,
+            disconnection_date: Logs.disconnection_timestamp ? Logs.disconnection_timestamp.toString() : null,
+            ip_address: Logs.ip_address,
+            location: Logs.location,
+            device_browser: Logs.device_browser_info
+        }));
+
+        res.json({ success: true, Logs});
         //console.log(Users);
         
     })
