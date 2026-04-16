@@ -24,6 +24,9 @@ const connection = mysql.createConnection({
 app.post('/Login', (req, res) => {
     const user = req.body.Username;
     const password = req.body.password;
+    const date = new Date();
+    const ip = req.ip;
+    const device_browser = req.headers['user-agent']
 
     connection.query('SELECT * FROM User WHERE username = ? AND password = ?', [user, password], (err, results) => {
         if (err) throw err;
@@ -48,6 +51,32 @@ app.post('/Login', (req, res) => {
         res.json({ success: true, user_ID: id_user, username, status, role });
         //console.log('true -', username, id_user);
         //console.log(role);
+
+        connection.query(
+            `INSERT INTO Connection_logs (id_user, connection_timestamp, disconnection_timestamp, ip_address, location, device_browser_info)
+            VALUES (?, ?, NULL, ?, 'Mexico', ?)`,
+            [id_user, date, ip, device_browser],
+            (err) => {
+                if (err) console.error('Connection log insert error:', err);
+            }
+        );
+    });
+});
+
+app.get('/Logout', (req, res) => {
+    const { user_ID } = req.query;
+
+    connection.query(
+        'UPDATE Connection_logs SET disconnection_timestamp = NOW() WHERE id_user = ? AND disconnection_timestamp IS NULL ORDER BY connection_timestamp DESC LIMIT 1', [user_ID], (err, results) => {
+        if (err){
+            console.error(err);
+            res.status(500).json({succes: false});
+            return;
+        }else{
+            res.json({success:true});
+            ////console.log('user dectivated')
+        }
+        
     });
 });
 
