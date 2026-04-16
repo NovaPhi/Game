@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //console.log("sessionUser:", sessionUser);
     //console.log("user_ID:", sessionUser.user_ID);
     //console.log("username:", sessionUser.username);
-    //console.log("role:", sessionUser.role);
+    console.log("role:", sessionUser.role);
 
     if (sessionUser && sessionUser.user_ID !== 0 && sessionUser.username !== null && sessionUser.role == 2) {
       document.getElementById('topBar').innerHTML = `<a href="UserStats.html" class="nav-btn">${sessionUser.username}</a>`;
