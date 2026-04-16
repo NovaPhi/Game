@@ -236,7 +236,7 @@ app.post('/Admin', (req,res)=>{
     });
 });
 
-pp.get('/heroes', (req,res)=>{
+app.get('/heroes', (req,res)=>{
     connection.query('SELECT id_hero, hp, attack, defense, velocity,  FROM Hero',[],(err,results,fields)=>{
         if(err) throw err;
         let Heroes = results.map(hero => ({
