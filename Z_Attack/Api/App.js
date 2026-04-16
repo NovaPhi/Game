@@ -236,8 +236,30 @@ app.post('/Admin', (req,res)=>{
     });
 });
 
+pp.get('/heroes', (req,res)=>{
+    connection.query('SELECT id_hero, hp, attack, defense, velocity,  FROM Hero',[],(err,results,fields)=>{
+        if(err) throw err;
+        let Heroes = results.map(hero => ({
+                //add all into the db table and the query
+                //heroname: hero.heroname,
+                //desc: "Tough frontliner. High HP and damage, but slow on their feet.",
+                //color: change color to asset location on the folder from the target
+                //cardcolor: color on the db
+                //speedMod: .8, 
+                maxHp: hero.hp,
+                //dmgMult: hero.description,
+                //dmgReduction: hero.defense,
+        }));
+
+        res.json({ success: true, Heroes});
+        //console.log(Users);
+        
+    })
+    
+});
 
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)
 });
 
+ 
