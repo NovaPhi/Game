@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cards</title>
+    <link rel="stylesheet" href="/Z_Attack/CSS/cards.css">
+</head>
+<body>
+
+    <nav id="topBar"></nav>
+    <a class="back-btn" href="main.html">&#8592; Back</a>
+
+    <h1 class="page-title">Deck Builder</h1>
+
+    <!-- Deck -->
+    <div class="section-label">
+        // Deck //
+        <span class="deck-counter" id="deckCounter">0 / 10</span>
+    </div>
+    <div class="panel deck-panel">
+        <div class="card-grid" id="deckGrid"></div>
+    </div>
+
+    <!-- Collection -->
+    <div class="section-label">// Card Collection //</div>
+    <div class="panel collection-panel">
+        <div class="card-grid" id="collectionGrid"></div>
+    </div>
+
+    <button class="save-btn" id="saveBtn">Save Deck</button>
+
+    <script src="../JS/cards.js"></script>
+    <script src="../Api/main.js"></script>
+    <script src="../JS/DeckBuilder.js"></script>
+</body>
+</html>
