@@ -23,7 +23,6 @@ CREATE TABLE User (
     PRIMARY KEY (id_user),
     UNIQUE KEY uq_user_username (username),
     UNIQUE KEY uq_user_email (email)
- 
 );
 
 CREATE TABLE Hero (
@@ -32,23 +31,22 @@ CREATE TABLE Hero (
     desc VARCHAR(200), 
     asset VARCHAR(200),
     cardColor VARCHAR(20),
-    speedMod INT NOT NULL DEFAULT 1,
+    speedMod DECIMAL(4,2) NOT NULL DEFAULT 1,
     maxHp INT NOT NULL DEFAULT 100,
-    dmgMult INT NOT NULL DEFAULT 1,
+    dmgMult DECIMAL(4,2) NOT NULL DEFAULT 1, 
     dmgReduction INT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id_hero),
+    PRIMARY KEY (id_hero)
 );
 
 CREATE TABLE Stats (
-    id_stats INT NOT NULL AUTO_INCREMENT,
     id_user INT NOT NULL,
     total_runs INT NOT NULL DEFAULT 0,
     best_score INT NOT NULL DEFAULT 0,
     best_level INT NOT NULL DEFAULT 0,
+    total_xp INT NOT NULL DEFAULT 0,
     playtime INT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id_stats),
-    UNIQUE KEY uq_stats_user (id_user),
-    FOREIGN KEY (id_user) REFERENCES User (id_user)
+    PRIMARY KEY (user),
+    FOREIGN KEY (id_user) REFERENCES User (id_user) ON DELETE CASCADE
 );
 
 CREATE TABLE Cards (
@@ -56,16 +54,16 @@ CREATE TABLE Cards (
     name VARCHAR(50) NOT NULL,
     description VARCHAR(200),
     artwork_url VARCHAR(100),
-    rarity VARCHAR(100) NOT NULL,
+    rarity ENUM('common','uncommon','rare','legendary') NOT NULL,
     card_type ENUM('powerup','ability','map_change') NOT NULL,
     targeting BOOLEAN,
-    is_ability INT NOT NULL,
+    is_ability BOOLEAN NOT NULL,
     modifier_value DECIMAL(5,2),
     cooldown_sec DECIMAL(5,2),
     buff_value DECIMAL(5,2),
     duration_sec DECIMAL(5,2),
     is_immortal BOOLEAN NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (id_card),
+    PRIMARY KEY (id_card)
 );
 
 CREATE TABLE Run (
@@ -79,7 +77,7 @@ CREATE TABLE Run (
     started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ended_at DATETIME,
     PRIMARY KEY (id_run),
-    FOREIGN KEY (id_user) REFERENCES User (id_user),
+    FOREIGN KEY (id_user) REFERENCES User (id_user) ON DELETE CASCADE,
     FOREIGN KEY (id_hero) REFERENCES Hero (id_hero)
 );
 
@@ -90,7 +88,7 @@ CREATE TABLE User_Collection (
     unlocked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_collection),
     UNIQUE  KEY uq_collection (id_user, id_card),
-    FOREIGN KEY (id_user) REFERENCES User  (id_user),
+    FOREIGN KEY (id_user) REFERENCES User  (id_user) ON DELETE CASCADE,
     FOREIGN KEY (id_card) REFERENCES Cards (id_card)
 );
 
@@ -113,7 +111,6 @@ CREATE TABLE Active_Buffs (
     expires_at DATETIME NOT NULL,
     PRIMARY KEY (id_buff),
     FOREIGN KEY (id_run)  REFERENCES Run   (id_run),
-    FOREIGN KEY (id_hero) REFERENCES Hero  (id_hero),
     FOREIGN KEY (id_card) REFERENCES Cards (id_card)
 );
 
@@ -126,41 +123,32 @@ CREATE TABLE Connection_logs(
     location VARCHAR(100),
     device_browser_info VARCHAR(255),
     PRIMARY KEY (id_log),
-    FOREIGN KEY (id_user) REFERENCES User (id_user)
+    FOREIGN KEY (id_user) REFERENCES User (id_user) ON DELETE CASCADE  
 );
 
-CREATE INDEX idx_hero_user ON Hero (id_user);
 CREATE INDEX idx_run_user ON Run (id_user);
 CREATE INDEX idx_run_active ON Run (id_user, ended_at);
-CREATE INDEX idx_cards_type ON Cards (card_type);
-CREATE INDEX idx_cards_rarity ON Cards (id_rarity);
 CREATE INDEX idx_collection_user ON User_Collection (id_user);
 CREATE INDEX idx_run_cards_run ON Run_Cards (id_run);
 CREATE INDEX idx_active_buffs_run ON Active_Buffs (id_run);
 CREATE INDEX idx_active_buffs_exp ON Active_Buffs (expires_at);
 CREATE INDEX idx_stats_leaderboard ON Stats (best_score DESC, best_level DESC);
 CREATE INDEX idx_user_connection_log ON Connection_logs (id_user);
+CREATE INDEX idx_connection_time ON Connection_logs (connection_timestamp);
 
+CREATE TRIGGER trg_update_tier
+BEFORE UPDATE ON Stats
+FOR EACH ROW
+SET NEW.performance_tier =
+  CASE 
+    WHEN NEW.total_xp < 300 THEN 'poor'
+    WHEN NEW.total_xp < 600 THEN 'average'
+    ELSE 'good'
+  END; 
 
 --INFORMACION TEMPORAL
 
 --Merge Rol & User
-
-INSERT INTO Role (name) VALUES
-    ('admin'),
-    ('player'),
-    ('guest');
-
-INSERT INTO Status (name) VALUES
-    ('active'),
-    ('banned'),
-    ('inactive');
-
-INSERT INTO Rarity (name) VALUES
-    ('common'),
-    ('uncommon'),
-    ('rare'),
-    ('legendary');
 
 INSERT INTO User (username, password, email, role, status) VALUES
     ('shadowbyte',  '$2b$10$abc123hashedpassword1', 'shadow@zattack.io',  2, 1),
@@ -169,12 +157,11 @@ INSERT INTO User (username, password, email, role, status) VALUES
     ('adminuser',   '$2b$10$abc123hashedpassword4', 'admin@zattack.io',   1, 1),
     ('ghostpulse',  '$2b$10$abc123hashedpassword5', 'ghost@zattack.io',   2, 2);
 
-INSERT INTO Hero (id_user, level, hp, attack, defense, attack_range, velocity) VALUES
-    (1, 5,  180, 22, 15, 2, 7),
-    (2, 3,  130, 15, 20, 1, 5),
-    (3, 8,  220, 30, 12, 3, 9),
-    (4, 1,  100, 10, 10, 1, 5),
-    (5, 2,  110, 12, 11, 1, 6);
+
+INSERT INTO Hero (hero_name, desc, asset, cardColor, speedMod, maxHp, dmgMult, dmgReduction) VALUES
+    ('Warrior','Tough frontliner. High HP and damage, but slow on their feet',  NULL, '#c55', 0.8, 180, 1.5, 2),
+    ('Scout', 'Fast and fragile. Low HP but moves like a bullet — hard to hit',  NULL, '#2a2', 1.6, 60, 0.7, 0),
+    ('Tank', 'Resistence to the top but moves really slow',  NULL, '#b70', 0.5, 180, 0.8, 2);
 
 INSERT INTO Stats (id_user, total_runs, best_score, best_level, playtime) VALUES
     (1, 23, 8400,  4, 72400),
@@ -183,19 +170,12 @@ INSERT INTO Stats (id_user, total_runs, best_score, best_level, playtime) VALUES
     (4, 0,  0,     0, 0),
     (5, 12, 3100,  2, 21600);
 
-INSERT INTO Cards (name, description, artwork_url, rarity, card_type, target_stat, modifier_value, modifier_type, combat_range, combat_role, cooldown_sec, buff_target, buff_value, duration_sec, trigger_type, is_immortal, unlimited_range) VALUES
-    ('Iron Skin',      'Boosts defense permanently',          '/art/iron_skin.png',      common, 'powerup',       'defense',      10.00, 'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Berserker',      'Boosts attack permanently',           '/art/berserker.png',      common, 'powerup',       'attack',       15.00, 'percent', NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Swift Feet',     'Increases velocity permanently',      '/art/swift_feet.png',     common, 'powerup',       'velocity',     2.00,  'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Vital Surge',    'Increases max HP permanently',        '/art/vital_surge.png',    uncommon, 'powerup',       'hp',           25.00, 'flat',    NULL,     NULL,        NULL,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Long Shot',      'Ranged offensive strike',             '/art/long_shot.png',      uncommon, 'ability',       NULL,           NULL,  NULL,      'ranged', 'offensive', 3.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Shield Bash',    'Melee defensive counter',             '/art/shield_bash.png',    uncommon, 'ability',       NULL,           NULL,  NULL,      'melee',  'defensive', 5.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Mend',           'Melee heal on self',                  '/art/mend.png',           1, 'ability',       NULL,           NULL,  NULL,      'melee',  'heal',      8.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Arc Blast',      'Ranged offensive with short CD',      '/art/arc_blast.png',      3, 'ability',       NULL,           NULL,  NULL,      'ranged', 'offensive', 2.00,  NULL,            NULL,  NULL,  NULL,           FALSE, FALSE),
-    ('Ghost Form',     'Immortal for 5 seconds on kill',      '/art/ghost_form.png',     4, 'temporal_buff', NULL,           NULL,  NULL,      NULL,     NULL,        NULL,  'hp',            0.00,  5.00,  'on_kill',      TRUE,  FALSE),
-    ('Sniper Mode',    'Unlimited range for 8 seconds',       '/art/sniper_mode.png',    3, 'temporal_buff', NULL,           NULL,  NULL,      NULL,     NULL,        NULL,  'attack_range',  0.00,  8.00,  'manual',       FALSE, TRUE),
-    ('Adrenaline',     '+50% attack speed for 6s on hit',     '/art/adrenaline.png',     3, 'temporal_buff', NULL,           NULL,  NULL,      NULL,     NULL,        NULL,  'attack_speed',  50.00, 6.00,  'on_hit',       FALSE, FALSE),
-    ('Last Stand',     '+40% damage reduction on low HP',     '/art/last_stand.png',     4, 'temporal_buff', NULL,           NULL,  NULL,      NULL,     NULL,        NULL,  'damage_reduction', 40.00, 10.00, 'on_low_hp',  FALSE, FALSE);
+
+INSERT INTO Cards (name, description, artwork_url, rarity, card_type, targeting, is_ability, modifier_value, cooldown_sec, buff_value, duration_sec, is_immortal) VALUES
+('Vital Surge', '+25 max HP and full heal', NULL, 'common', 'powerup', FALSE, 0, 25.00, NULL, NULL, NULL, FALSE),
+('Swift Feet', '+15% movement speed', NULL, 'common', 'powerup', FALSE, 0, 0.15, NULL, NULL, NULL, FALSE),
+('Iron Skin', '+10 flat damage reduction', NULL, 'common', 'powerup', FALSE, 0, 10.00, NULL, NULL, NULL, FALSE),
+('Demolish Outpost', 'Click an outpost to destroy it', NULL, 'uncommon', 'map_change', TRUE, 1, NULL, NULL, NULL, NULL, FALSE);
 
 INSERT INTO Run (id_user, id_hero, status, level, wave, score, started_at, ended_at) VALUES
     (1, 1, 'game_over', 4,  12, 8400,  '2024-11-01 10:00:00', '2024-11-01 10:42:00'),
