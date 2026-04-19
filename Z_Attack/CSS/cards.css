@@ -1,0 +1,327 @@
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --green: #4caf50;
+  --green-dark: #2e7d32;
+  --green-glow: rgba(76, 175, 80, 0.35);
+  --text: #c8e6c9;
+  --bg: #050f05;
+  --border: #2e7d32;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(46,125,50,0.15) 0%, transparent 70%),
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(46,125,50,0.03) 40px, rgba(46,125,50,0.03) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(46,125,50,0.03) 40px, rgba(46,125,50,0.03) 41px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  padding: 100px 40px 80px;
+}
+
+#topBar {
+  position: fixed;
+  top: 10px;
+  right: 50px;
+  padding: 18px 28px;
+  z-index: 100;
+}
+
+#topBar .nav-btn {
+  font-family: 'Creepster', cursive;
+  font-size: 30px;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: rgba(46, 125, 50, 0.08);
+  box-shadow: 0 0 10px rgba(76,175,80,0.1), inset 0 0 20px rgba(0,0,0,0.4);
+  padding: 8px 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+#topBar .nav-btn:hover {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,80,0.12);
+  box-shadow: 0 0 15px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(76,175,80,0.5);
+  transform: scale(1.05);
+}
+
+/*Boton de back */
+.back-btn {
+  position: fixed;
+  top: 28px;
+  left: 50px;
+  font-family: 'Creepster', cursive;
+  font-size: 28px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: rgba(46, 125, 50, 0.08);
+  box-shadow: 0 0 10px rgba(76,175,80,0.1), inset 0 0 20px rgba(0,0,0,0.4);
+  padding: 8px 24px;
+  transition: all 0.25s ease;
+  z-index: 100;
+}
+
+.back-btn:hover {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,80,0.12);
+  box-shadow: 0 0 15px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(76,175,80,0.5);
+  transform: scale(1.05);
+}
+
+/*Titulo */
+.page-title {
+  font-family: 'Creepster', cursive;
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  color: var(--text);
+  text-shadow: 0 0 20px var(--green-glow), 0 0 60px rgba(76,175,80,0.15);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+/*Etiquetas (Deck o Card Collection)*/
+.section-label {
+  width: 100%;
+  max-width: 1200px;
+  font-size: 0.75rem;
+  letter-spacing: 4px;
+  color: var(--green-dark);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  margin-top: 36px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.deck-counter {
+  color: var(--green);
+  text-shadow: 0 0 8px var(--green-glow);
+}
+
+.deck-counter.full {
+  color: #e57373;
+  text-shadow: 0 0 8px rgba(239, 83, 80, 0.4);
+}
+
+/*Paneles (Deck o Card Collection)*/
+.panel {
+  width: 100%;
+  max-width: 1200px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 30px rgba(76,175,80,0.08), inset 0 0 60px rgba(0,0,0,0.5);
+  animation: fadeUp 0.6s ease both;
+  padding: 20px;
+}
+
+.deck-panel {
+  min-height: 140px;
+}
+
+.collection-panel {
+  animation-delay: 0.15s;
+}
+
+/*Espacio entre cartas*/
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/*Mensaje de vacio */
+.empty-msg {
+  color: var(--green-dark);
+  letter-spacing: 3px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  padding: 16px 0;
+}
+
+/*Cartas */
+.card {
+  width: 155px;
+  min-height: 195px;
+  border-radius: 6px;
+  border: 1px solid rgba(46, 125, 50, 0.4);
+  background: rgba(5, 20, 5, 0.85);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card:hover {
+  transform: scale(1.06) translateY(-3px);
+  border-color: var(--card-color, var(--green));
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.5),
+    0 0 16px var(--card-glow, var(--green-glow));
+}
+
+/*Carta en coleccion despues de meterla a deck (quita hover y opacidad)*/
+.card.in-deck {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Cartas en deck */
+.card.deck-card {
+  border-color: rgba(76, 175, 80, 0.5);
+}
+
+.card.deck-card:hover {
+  border-color: #e57373;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5), 0 0 16px rgba(239, 83, 80, 0.3);
+}
+
+.card.deck-card::after {
+  content: 'X remove';
+  position: absolute;
+  inset: 0;
+  background: rgba(183, 28, 28, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Creepster', cursive;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 6px;
+}
+
+.card.deck-card:hover::after {
+  opacity: 1;
+}
+
+/* cartas */
+.card-accent {
+  height: 5px;
+  width: 100%;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.card-name {
+  font-family: 'Creepster', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  color: var(--card-color, var(--text));
+  text-shadow: 0 0 8px var(--card-glow, transparent);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.card-type {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--green-dark);
+  text-transform: uppercase;
+  border: 1px solid rgba(46, 125, 50, 0.3);
+  border-radius: 3px;
+  padding: 2px 6px;
+  align-self: flex-start;
+}
+
+.card-desc {
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  opacity: 0.8;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+/* Add texto */
+.card.available::before {
+  content: '+ add';
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-family: 'Creepster', cursive;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: var(--card-color, var(--green));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card.available:hover::before {
+  opacity: 0.9;
+}
+
+/* save button*/
+.save-btn {
+  margin-top: 40px;
+  font-family: 'Creepster', cursive;
+  font-size: 1.6rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text);
+  background: rgba(46, 125, 50, 0.08);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 48px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 10px rgba(76,175,80,0.1), inset 0 0 20px rgba(0,0,0,0.4);
+}
+
+.save-btn:hover {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,80,0.12);
+  box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(76,175,80,0.5);
+  transform: scale(1.05);
+}
+
+.save-btn.saved {
+  color: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 25px var(--green-glow);
+  text-shadow: 0 0 10px var(--green-glow);
+}
+
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
