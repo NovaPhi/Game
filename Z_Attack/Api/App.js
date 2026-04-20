@@ -136,34 +136,47 @@ app.get('/deleteAccount', (req, res) => {
 
 app.post('/SignUp', (req, res) => {
     const { username, password, email } = req.body;
-    //console.log('registering:', username, email);
 
     connection.query(
         'INSERT INTO User (username, password, email, role, status) VALUES (?, ?, ?, 2, 1)',
         [username, password, email],
         (err, results) => {
             if (err) {
-                if (err.code === 'ER_DUP_ENTRY') {
-                    res.json({ success: false, message: 'Username or email already exists' });
-                    return;
-                }
-                //console.error(err);
-                res.status(500).json({ success: false, message: 'Server error' });
-                return;
+                if (err.code === 'ER_DUP_ENTRY') return res.json({ success: false, message: 'Username or email already exists' });
+                return res.status(500).json({ success: false, message: 'Server error' });
             }
 
-            const newUserId = results.insertId; 
+            const newUserId = results.insertId;
 
             connection.query(
-            'INSERT INTO Stats (id_user, total_runs, best_score, best_level, playtime) VALUES (?, 0, 0, 0, 0)',
-            [newUserId],
+                'INSERT INTO Stats (id_user, total_runs, best_score, best_level, playtime) VALUES (?, 0, 0, 0, 0)',
+                [newUserId],
                 (err) => {
                     if (err) console.error('Stats insert error:', err);
+
+                    connection.query(
+                        `INSERT INTO User_Collection (id_user, id_card) 
+                         SELECT ?, id_card FROM Cards ORDER BY id_card LIMIT 3`,
+                        [newUserId],
+                        (err, colResult) => {
+                            if (err) console.error('Starter collection insert error:', err);
+                            console.log('Collection rows inserted:', colResult?.affectedRows);
+
+                            connection.query(
+                                `INSERT INTO User_Deck (id_user, id_card, slot)
+                                 SELECT ?, id_card, ROW_NUMBER() OVER (ORDER BY id_card) - 1
+                                 FROM Cards ORDER BY id_card LIMIT 3`,
+                                [newUserId],
+                                (err, deckResult) => {
+                                    if (err) console.error('Starter deck insert error:', err);
+                                    console.log('Deck rows inserted:', deckResult?.affectedRows);
+                                    res.json({ success: true });
+                                }
+                            );
+                        }
+                    );
                 }
             );
-
-            res.json({ success: true });
-            //console.log('user created:', username);
         }
     );
 });
@@ -237,18 +250,18 @@ app.post('/Admin', (req,res)=>{
 });
 
 app.get('/heroes', (req,res)=>{
-    connection.query('SELECT id_hero, hp, attack, defense, velocity,  FROM Hero',[],(err,results,fields)=>{
+    connection.query('SELECT id_hero, hero_name, description, asset, cardColor, speedMod, maxHp, dmgMult, dmgReduction FROM Hero',[],(err,results,fields)=>{
         if(err) throw err;
         let Heroes = results.map(hero => ({
-                //add all into the db table and the query
-                //heroname: hero.heroname,
-                //desc: "Tough frontliner. High HP and damage, but slow on their feet.",
-                //color: change color to asset location on the folder from the target
-                //cardcolor: color on the db
-                //speedMod: .8, 
-                maxHp: hero.hp,
-                //dmgMult: hero.description,
-                //dmgReduction: hero.defense,
+                id: hero.id_hero,
+                name: hero.hero_name,
+                description: hero.description,
+                asset: hero.asset,
+                cardColor: hero.cardColor,
+                speedMod: hero.speedMod, 
+                maxHp: hero.maxHp,
+                dmgMult: hero.dmgMult,
+                dmgReduction: hero.dmgReduction
         }));
 
         res.json({ success: true, Heroes});
@@ -256,7 +269,85 @@ app.get('/heroes', (req,res)=>{
         
     })
     
+    
 });
+
+app.get('/DeckBuilder', (req, res) => {
+    const { user_ID } = req.query;  // ← GET uses query params not body
+    
+    connection.query(
+        `SELECT c.id_card, c.name, c.description, c.rarity, c.card_type, 
+                c.targeting, c.is_ability, c.modifier_value, c.modifier, c.cooldown_sec, 
+                c.buff_value, c.duration_sec, c.is_immortal
+         FROM User_Collection uc
+         JOIN Cards c ON uc.id_card = c.id_card
+         WHERE uc.id_user = ?`,
+        [user_ID],
+        (err, results) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ success: false });
+            }
+            //console.log("connection succesfull")
+            const Cards = results.map(c => ({
+                id:            c.id_card,
+                name:          c.name,
+                description:   c.description,
+                rarity:        c.rarity,
+                card_type:     c.card_type,
+                targeting:     c.targeting,
+                is_ability:    c.is_ability,
+                modifier_value: parseFloat(c.modifier_value),
+                modifier:      c.modifier,
+                cooldown_sec:  parseFloat(c.cooldown_sec),
+                buff_value:    parseFloat(c.buff_value),
+                duration_sec:  parseFloat(c.duration_sec),
+                is_immortal:   c.is_immortal
+            }));
+            res.json({ success: true, Cards });
+
+           //Cconsole.log("cards Api",results);
+        }
+    );
+});
+
+app.post('/saveDeck', (req, res) => {
+    const { user_ID, cardIds } = req.body;
+
+    connection.query('DELETE FROM User_Deck WHERE id_user = ?', [user_ID], (err) => {
+        if (err) return res.status(500).json({ success: false });
+        if (cardIds.length === 0) return res.json({ success: true });
+
+        const values = cardIds.map((id, index) => [user_ID, id, index]);
+        connection.query(
+            'INSERT INTO User_Deck (id_user, id_card, slot) VALUES ?',
+            [values],
+            (err) => {
+                if (err) { console.error(err); return res.status(500).json({ success: false }); }
+                res.json({ success: true });
+            }
+        );
+    });
+});
+
+app.get('/loadDeck', (req, res) => {
+    const { user_ID } = req.query;
+    connection.query(
+        `SELECT c.id_card, c.name, c.description, c.rarity, c.card_type,
+                c.targeting, c.modifier, c.modifier_value, c.buff_value,
+                c.duration_sec, c.is_immortal
+         FROM User_Deck ud
+         JOIN Cards c ON ud.id_card = c.id_card
+         WHERE ud.id_user = ?
+         ORDER BY ud.slot`,
+        [user_ID],
+        (err, results) => {
+            if (err) return res.status(500).json({ success: false });
+            res.json({ success: true, Cards: results });
+        }
+    );
+});
+
 
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)

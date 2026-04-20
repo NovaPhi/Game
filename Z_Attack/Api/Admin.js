@@ -162,6 +162,8 @@ async function logout(){
     const data = await response.json();
 
     if (data.success){
+        localStorage.removeItem('playerDeck');
+        localStorage.removeItem('sessionUser');
         localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
         window.location.href = 'main.html'
     }

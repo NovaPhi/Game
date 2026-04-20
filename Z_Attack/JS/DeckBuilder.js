@@ -2,19 +2,58 @@
 
 const MAX_DECK = 10;
 
-// ids de cartas
 let deck = [];
+let collection = [];
 
-// Cmabiar a fetch('/user-collection/:userId') para agarrar las cartas de db
-const collection = CARD_DEFS;
+const RARITY_COLORS = {
+    common:    '#aaaaaa',
+    uncommon:  '#4fc34f',
+    rare:      '#4a8fff',
+    legendary: '#ff9a00'
+};
 
+document.addEventListener("DOMContentLoaded", async () => {
+    const stored = localStorage.getItem('sessionUser');
+    const sessionUser = stored ? JSON.parse(stored) : null;
+
+    if (!sessionUser || sessionUser.user_ID === 0) {
+        window.location.href = 'LogIn.html';
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:8081/DeckBuilder?user_ID=${sessionUser.user_ID}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            console.error('Failed to load collection');
+            return;
+        }
+
+        collection = data.Cards.map(c => ({
+            ...c,
+            id:    c.id || c.id_card,
+            type:  c.card_type,
+            color: RARITY_COLORS[c.rarity] || '#fff'
+        }));
+
+        loadDeck();
+        render();
+
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+function getCardById(id) {
+    return collection.find(c => c.id == id) || null;
+}
 
 function createCardElement(card, state) {
     const element = document.createElement('div');
     element.className = `card ${state}`;
     element.dataset.id = card.id;
     element.style.setProperty('--card-color', card.color);
-
 
     element.innerHTML = `
         <div class="card-accent" style="background:${card.color}"></div>
@@ -28,17 +67,16 @@ function createCardElement(card, state) {
 }
 
 function renderDeck() {
-    const grid = document.getElementById('deckGrid');
+    const grid    = document.getElementById('deckGrid');
     const counter = document.getElementById('deckCounter');
 
     counter.textContent = `${deck.length} / ${MAX_DECK}`;
     counter.classList.toggle('full', deck.length >= MAX_DECK);
-
     grid.innerHTML = '';
 
     if (deck.length === 0) {
         const msg = document.createElement('div');
-        msg.className = 'empty-msg';
+        msg.className   = 'empty-msg';
         msg.textContent = 'Your deck is empty — select cards from your collection.';
         grid.appendChild(msg);
         return;
@@ -58,11 +96,9 @@ function renderCollection() {
     grid.innerHTML = '';
 
     collection.forEach(card => {
-        const inDeck = deck.includes(card.id);
+        const inDeck = deck.some(d => d == card.id);
         const el = createCardElement(card, inDeck ? 'in-deck' : 'available');
-        if (!inDeck) {
-            el.addEventListener('click', () => addToDeck(card.id));
-        }
+        if (!inDeck) el.addEventListener('click', () => addToDeck(card.id));
         grid.appendChild(el);
     });
 }
@@ -74,13 +110,13 @@ function render() {
 
 function addToDeck(id) {
     if (deck.length >= MAX_DECK) return;
-    if (deck.includes(id)) return;
+    if (deck.some(d => d == id)) return;
     deck.push(id);
     render();
 }
 
 function removeFromDeck(id) {
-    deck = deck.filter(d => d !== id);
+    deck = deck.filter(d => d != id);
     render();
 }
 
@@ -88,27 +124,48 @@ function loadDeck() {
     try {
         const saved = localStorage.getItem('playerDeck');
         if (!saved) return;
-        const ids = JSON.parse(saved);
-        deck = ids.filter(id => getCardById(id)); // Checa si no se han borrado o cambiado cartas desde ultimo deck guardado
-        console.log("Loaded deck: ", deck);
+        const parsed = JSON.parse(saved);
+        console.log("parsed[0]:", parsed[0]);
+        console.log("collection[0]:", collection[0]);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            if (typeof parsed[0] === 'object') {
+                deck = parsed.map(c => c.id || c.id_card).filter(id => {
+                    const found = getCardById(id);
+                    console.log("looking for id:", id, "found:", found?.name);
+                    return !!found;
+                });
+            } else {
+                deck = parsed.filter(id => getCardById(id));
+            }
+        }
+        console.log("deck after load:", deck);
     } catch (e) {
         deck = [];
     }
 }
+document.getElementById('saveBtn').addEventListener('click', async () => {
+    const stored = localStorage.getItem('sessionUser');
+    const sessionUser = stored ? JSON.parse(stored) : null;
 
-document.getElementById('saveBtn').addEventListener('click', () => {
-    // Cambiar a POST /user-deck con { user_ID, cardIds: deck } para poder mandarlo a db y de ahí a juego
-    localStorage.setItem('playerDeck', JSON.stringify(deck));
-    console.log("Saved deck: ", deck);
+    const selectedCards = deck.map(id => collection.find(c => c.id == id)).filter(Boolean);
+    localStorage.setItem('playerDeck', JSON.stringify(selectedCards));
+
+    if (sessionUser && sessionUser.user_ID !== 0) {
+        try {
+            const response = await fetch('http://localhost:8081/saveDeck', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_ID: sessionUser.user_ID, cardIds: deck })
+            });
+            const data = await response.json();
+            if (!data.success) console.error('Failed to save deck to DB');
+        } catch (err) {
+            console.error('Save deck error:', err);
+        }
+    }
 
     const btn = document.getElementById('saveBtn');
     btn.textContent = 'Saved!';
     btn.classList.add('saved');
-    setTimeout(() => {
-        btn.textContent = 'Save Deck';
-        btn.classList.remove('saved');
-    }, 1500);
+    setTimeout(() => { btn.textContent = 'Save Deck'; btn.classList.remove('saved'); }, 1500);
 });
-
-loadDeck();
-render();

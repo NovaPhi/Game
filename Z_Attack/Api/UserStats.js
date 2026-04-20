@@ -10,6 +10,8 @@ async function logout(){
 
     if (data.success){
         localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
+        localStorage.removeItem('playerDeck');
+        localStorage.removeItem('sessionUser');
         window.location.href = 'main.html'
     }
 };

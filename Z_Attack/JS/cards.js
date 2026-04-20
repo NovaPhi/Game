@@ -1,75 +1,118 @@
 "use strict";
 
-const CARD_DEFS = [
-    {
-        id: "vital_surge",
-        name: "Vital Surge",
-        type: "powerup",
-        description: "+25 max HP and full heal",
-        color: "#4f4",
-        targeting: false,
-        apply(game) { 
-            playerStats.maxHp += 25;
-            game.player.maxHp = playerStats.maxHp;
-            game.player.hp = game.player.maxHp;
-        }
-    },
-    {
-        id: "swift_feet",
-        name: "Swift Feet",
-        type: "powerup",
-        description: "+15% movement speed",
-        color: "#4af",
-        targeting: false,
-        apply(game) {
-            playerStats.speedMod = +(playerStats.speedMod + 0.15).toFixed(2);
-            game.player.speedMod = playerStats.speedMod;
-        }
-    },
-    {
-        id: "iron_skin",
-        name: "Iron Skin",
-        type: "powerup",
-        description: "+10 flat damage reduction",
-        color: "#aaa",
-        targeting: false,
-        apply(game) {
-            playerStats.dmgReduction = (playerStats.dmgReduction || 0) + 10;
-        }
-    },
-    {
-        id: "demolish_outpost",
-        name: "Demolish Outpost",
-        type: "map_change",
-        description: "Click an outpost to destroy it",
-        color: "#fa0",
-        targeting: true,
-        apply(game) {
-            game.targetingMode = "destroy_outpost";
-        }
-    }
-];
+const RARITY_COLOR = { common:'#aaaaaa', uncommon:'#4fc34f', rare:'#4a8fff', legendary:'#ff9a00' };
 
-function getCardById(id) {
-    return CARD_DEFS.find(c => c.id === id);
+let CARD_POOL = [];
+
+function loadCards() {
+    try {
+        const saved = localStorage.getItem('playerDeck');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                CARD_POOL = parsed.map(buildCardFromDb);
+                console.log(`Loaded ${CARD_POOL.length} cards from localStorage`);
+                return;
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load cards from localStorage:', err);
+    }
+    CARD_POOL = [];
+}
+
+function buildCardFromDb(dbCard) {
+    console.log("building card:", dbCard.name, "modifier:", dbCard.modifier, "mod_value:", dbCard.modifier_value);
+    return {
+        id:          dbCard.id_card || dbCard.id,
+        name:        dbCard.name,
+        type:        dbCard.card_type || dbCard.type,
+        description: dbCard.description,
+        rarity:      dbCard.rarity,
+        color:       dbCard.color || RARITY_COLOR[dbCard.rarity] || "#fff",
+        targeting:   !!dbCard.targeting,
+        apply(game) {
+            const mod  = parseFloat(dbCard.modifier_value) || 0;
+            const buff = parseFloat(dbCard.buff_value)     || 0;
+            console.log("APPLYING:", dbCard.name, "modifier:", dbCard.modifier, "mod:", mod, "player before:", playerStats.dmgReduction, playerStats.speedMod, playerStats.maxHp);
+
+            if (dbCard.targeting) {
+                game.targetingMode = dbCard.modifier;
+                return;
+            }
+            switch (dbCard.modifier) {
+                case "dmgReduction":    playerStats.dmgReduction += mod;                                                                              break;
+                case "speedMod":        playerStats.speedMod     += mod; game.player.speedMod += mod;                                                 break;
+                case "maxHp":           playerStats.maxHp        += mod; game.player.maxHp    += mod; game.player.hp += mod;                          break;
+                case "dmgMult":         game.player.damage       += game.player.damage * mod;                                                         break;
+                case "attackCooldown":  game.player.attackCooldownMax = Math.max(5, game.player.attackCooldownMax - mod);                             break;
+                case "healHp":          game.player.hp = Math.min(game.player.hp + mod, game.player.maxHp);                                           break;
+                case "healFull":        game.player.hp = game.player.maxHp;                                                                           break;
+                case "clearBullets":    game.bullets = [];                                                                                            break;
+                case "destroy_outpost": game.targetingMode = "destroy_outpost";                                                                       break;
+                case "destroy_random": {
+                    const alive = game.outposts.filter(o => o.alive);
+                    for (let i = 0; i < mod && i < alive.length; i++) alive[i].hp = 0;
+                    break;
+                }
+                case "destroy_all":     game.outposts.forEach(o => o.hp = 0);                                                                        break;
+                case "restoreWalls":    game.mainBase.segments.forEach(s => s.hp = s.maxHp);                                                         break;
+                case "isImmortal":      game.player.isImmortal = true; setTimeout(() => game.player.isImmortal = false, dbCard.duration_sec * 1000);  break;
+                case "all":
+                    game.player.damage       += game.player.damage * mod;
+                    playerStats.speedMod     += 0.5; game.player.speedMod += 0.5;
+                    playerStats.dmgReduction += 10;
+                    playerStats.maxHp        += 100; game.player.maxHp += 100; game.player.hp += 100;
+                    break;
+                default: console.warn("Unknown modifier:", dbCard.modifier);
+            }
+            if (buff > 0 && dbCard.modifier === "maxHp") playerStats.dmgReduction += buff;
+        }
+    };
 }
 
 function createStarterDeck() {
-    // 3 cards: a heal, a speed boost, and a Demolish Outpost
-    return [
-        getCardById("vital_surge"),
-        getCardById("swift_feet"),
-        getCardById("demolish_outpost")
-    ];
+    return CARD_POOL.filter(c => c.rarity === "common").slice(0, 3);
 }
 
 function getDraftChoices() {
-    // 3 random distinct cards
-    const pool = CARD_DEFS.slice();
-    const out = [];
-    while (out.length < 3 && pool.length) {
-        const i = Math.floor(Math.random() * pool.length);
-        out.push(pool.splice(i, 1)[0]);
+    try {
+        const saved = localStorage.getItem('playerDeck');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                const pool = parsed.map(buildCardFromDb);
+                const copy = pool.slice();
+                const out  = [];
+                while (out.length < 3 && copy.length) {
+                    const i = Math.floor(Math.random() * copy.length);
+                    out.push(copy.splice(i, 1)[0]);
+                }
+                return out;
+            }
+        }
+    } catch (e) {
+        console.error('getDraftChoices error:', e);
     }
-    return out;
+    return [];
+}
+
+async function loadPlayerDeck() {
+    const stored = localStorage.getItem('sessionUser');
+    const sessionUser = stored ? JSON.parse(stored) : null;
+
+    if (sessionUser && sessionUser.user_ID !== 0) {
+        try {
+            const response = await fetch(`http://localhost:8081/loadDeck?user_ID=${sessionUser.user_ID}`);
+            const data = await response.json();
+            if (data.success && data.Cards.length > 0) {
+                CARD_POOL = data.Cards.map(savedCard => buildCardFromDb(savedCard));
+                return;
+            }
+        } catch (err) {
+            console.error('Failed to load deck from DB, falling back to starter:', err);
+        }
+    }
+
+    playerStats.deck = createStarterDeck();
 }
