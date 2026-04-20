@@ -28,7 +28,7 @@ CREATE TABLE User (
 CREATE TABLE Hero (
     id_hero INT NOT NULL AUTO_INCREMENT,
     hero_name VARCHAR(50) NOT NULL,
-    desc VARCHAR(200), 
+    description VARCHAR(200), 
     asset VARCHAR(200),
     cardColor VARCHAR(20),
     speedMod DECIMAL(4,2) NOT NULL DEFAULT 1,
@@ -45,7 +45,7 @@ CREATE TABLE Stats (
     best_level INT NOT NULL DEFAULT 0,
     total_xp INT NOT NULL DEFAULT 0,
     playtime INT NOT NULL DEFAULT 0,
-    PRIMARY KEY (user),
+    PRIMARY KEY (id_user),
     FOREIGN KEY (id_user) REFERENCES User (id_user) ON DELETE CASCADE
 );
 
@@ -59,6 +59,7 @@ CREATE TABLE Cards (
     targeting BOOLEAN,
     is_ability BOOLEAN NOT NULL,
     modifier_value DECIMAL(5,2),
+    modifier varchar(50),
     cooldown_sec DECIMAL(5,2),
     buff_value DECIMAL(5,2),
     duration_sec DECIMAL(5,2),
@@ -158,7 +159,7 @@ INSERT INTO User (username, password, email, role, status) VALUES
     ('ghostpulse',  '$2b$10$abc123hashedpassword5', 'ghost@zattack.io',   2, 2);
 
 
-INSERT INTO Hero (hero_name, desc, asset, cardColor, speedMod, maxHp, dmgMult, dmgReduction) VALUES
+INSERT INTO Hero (hero_name, description, asset, cardColor, speedMod, maxHp, dmgMult, dmgReduction) VALUES
     ('Warrior','Tough frontliner. High HP and damage, but slow on their feet',  NULL, '#c55', 0.8, 180, 1.5, 2),
     ('Scout', 'Fast and fragile. Low HP but moves like a bullet — hard to hit',  NULL, '#2a2', 1.6, 60, 0.7, 0),
     ('Tank', 'Resistence to the top but moves really slow',  NULL, '#b70', 0.5, 180, 0.8, 2);
@@ -216,3 +217,68 @@ INSERT INTO Active_Buffs (id_run, id_hero, id_card, started_at, expires_at) VALU
 
 
 
+DROP DATABASE IF EXISTS Z_ATTACK
+
+CREATE TABLE User_Deck (
+    id_user INT NOT NULL,
+    id_card INT NOT NULL,
+    slot    INT NOT NULL,
+    PRIMARY KEY (id_user, slot),
+    FOREIGN KEY (id_user) REFERENCES User (id_user) ON DELETE CASCADE,
+    FOREIGN KEY (id_card) REFERENCES Cards (id_card)
+);
+
+
+INSERT INTO User_Collection (id_user, id_card)
+SELECT 4, id_card FROM Cards;
+
+INSERT INTO Cards (name, description, rarity, card_type, targeting, is_ability, modifier_value, modifier, cooldown_sec, buff_value, duration_sec, is_immortal) VALUES
+-- COMMON POWERUPS
+('Iron Skin',        '+2 flat damage reduction',                    'common',   'powerup',    FALSE, FALSE, 2.00,  'dmgReduction', NULL, NULL, NULL, FALSE),
+('Quick Feet',       '+0.1 movement speed',                         'common',   'powerup',    FALSE, FALSE, 0.10,  'speedMod',     NULL, NULL, NULL, FALSE),
+('Adrenaline',       'Reduces attack cooldown by 3 frames',         'common',   'powerup',    FALSE, FALSE, 3.00,  'attackCooldown',NULL, NULL, NULL, FALSE),
+('Field Medic',      '+15 max HP',                                  'common',   'powerup',    FALSE, FALSE, 15.00, 'maxHp',        NULL, NULL, NULL, FALSE),
+('Steady Hands',     '+0.1 melee damage multiplier',                'common',   'powerup',    FALSE, FALSE, 0.10,  'dmgMult',      NULL, NULL, NULL, FALSE),
+('Reinforced Boots', '+0.15 movement speed',                        'common',   'powerup',    FALSE, FALSE, 0.15,  'speedMod',     NULL, NULL, NULL, FALSE),
+('Bandage',          '+20 max HP',                                  'common',   'powerup',    FALSE, FALSE, 20.00, 'maxHp',        NULL, NULL, NULL, FALSE),
+('Sharpened Blade',  '+0.2 melee damage multiplier',                'common',   'powerup',    FALSE, FALSE, 0.20,  'dmgMult',      NULL, NULL, NULL, FALSE),
+('Padding',          '+1 flat damage reduction',                    'common',   'powerup',    FALSE, FALSE, 1.00,  'dmgReduction', NULL, NULL, NULL, FALSE),
+('Stimpack',         '+25 max HP',                                  'common',   'powerup',    FALSE, FALSE, 25.00, 'maxHp',        NULL, NULL, NULL, FALSE),
+-- UNCOMMON POWERUPS
+('Battle Hardened',  '+20 max HP and +3 damage reduction',         'uncommon', 'powerup',    FALSE, FALSE, 20.00, 'maxHp',        NULL, 3.00, NULL, FALSE),
+('Overclock',        '+0.25 movement speed',                        'uncommon', 'powerup',    FALSE, FALSE, 0.25,  'speedMod',     NULL, NULL, NULL, FALSE),
+('Combat Veteran',   '+0.3 melee damage multiplier',                'uncommon', 'powerup',    FALSE, FALSE, 0.30,  'dmgMult',      NULL, NULL, NULL, FALSE),
+('Bulwark',          '+4 flat damage reduction',                    'uncommon', 'powerup',    FALSE, FALSE, 4.00,  'dmgReduction', NULL, NULL, NULL, FALSE),
+('Surge',            'Reduces attack cooldown by 6 frames',         'uncommon', 'powerup',    FALSE, FALSE, 6.00,  'attackCooldown',NULL, NULL, NULL, FALSE),
+-- UNCOMMON ABILITIES
+('Orbital Strike',   'Instantly destroys one outpost of your choice','uncommon','ability',    TRUE,  TRUE,  NULL,  'destroy_outpost',NULL,NULL, NULL, FALSE),
+('Supply Drop',      'Restores 30 HP instantly',                    'uncommon', 'ability',    FALSE, TRUE,  30.00, 'healHp',       NULL, NULL, NULL, FALSE),
+('Smoke Screen',     'Halts all bullets on screen for 3 seconds',   'uncommon', 'ability',    FALSE, TRUE,  NULL,  'clearBullets', NULL, NULL, 3.00, FALSE),
+-- RARE POWERUPS
+('Titan Core',       '+50 max HP and +5 damage reduction',          'rare',     'powerup',    FALSE, FALSE, 50.00, 'maxHp',        NULL, 5.00, NULL, FALSE),
+('Berserker',        '+0.5 melee damage multiplier',                'rare',     'powerup',    FALSE, FALSE, 0.50,  'dmgMult',      NULL, NULL, NULL, FALSE),
+('Phase Stride',     '+0.4 movement speed',                         'rare',     'powerup',    FALSE, FALSE, 0.40,  'speedMod',     NULL, NULL, NULL, FALSE),
+('Fortified',        '+6 flat damage reduction',                    'rare',     'powerup',    FALSE, FALSE, 6.00,  'dmgReduction', NULL, NULL, NULL, FALSE),
+('Lightning Reflex', 'Reduces attack cooldown by 10 frames',        'rare',     'powerup',    FALSE, FALSE, 10.00, 'attackCooldown',NULL,NULL, NULL, FALSE),
+-- RARE ABILITIES
+('EMP Blast',        'Destroys 2 random outposts instantly',        'rare',     'ability',    FALSE, TRUE,  2.00,  'destroy_random',NULL,NULL, NULL, FALSE),
+('Full Restore',     'Restores HP to full',                         'rare',     'ability',    FALSE, TRUE,  NULL,  'healFull',     NULL, NULL, NULL, FALSE),
+-- MAP CHANGE
+('Minefield',        'Spawns 3 extra outposts but doubles XP gain', 'rare',     'map_change', FALSE, FALSE, 3.00,  'spawnOutposts',NULL, NULL, NULL, FALSE),
+('Fortify',          'Restores all wall segments to full HP',       'rare',     'map_change', FALSE, FALSE, NULL,  'restoreWalls', NULL, NULL, NULL, FALSE),
+-- LEGENDARY
+('Immortal Coil',    'You cannot die for 5 seconds',                'legendary','ability',    FALSE, TRUE,  NULL,  'isImmortal',   NULL, NULL, 5.00, TRUE),
+('God Mode',         '+1.0 dmg, +0.5 speed, +10 DR, +100 HP',      'legendary','powerup',    FALSE, FALSE, 1.00,  'all',          NULL, NULL, NULL, FALSE),
+('Nuke',             'Instantly destroys all outposts on the map',  'legendary','ability',    FALSE, TRUE,  NULL,  'destroy_all',  NULL, NULL, NULL, FALSE);
+
+SELECT id_card, name, modifier, modifier_value, buff_value FROM Cards;
+
+SELECT c.id_card, c.name, c.rarity, c.card_type, c.modifier, c.modifier_value
+FROM User_Collection uc
+JOIN Cards c ON uc.id_card = c.id_card
+WHERE uc.id_user = 13;
+
+
+SELECT id_card, name FROM Cards WHERE id_card IN (1, 2, 3);
+
+SELECT id_card, name FROM Cards ORDER BY id_card LIMIT 5;
