@@ -15,53 +15,18 @@ document.addEventListener("DOMContentLoaded", function () {
         "#fbe6e5"
     ];
 
-    const mangas = [
-        {
-            title: "One Piece",
-            genre: "Adventure, Fantasy",
-            author: "Eiichiro Oda",
-            volumes: 108,
-            description: "Monkey D. Luffy sets sail to find the legendary One Piece treasure and become King of the Pirates.",
-            price: "$5 / week",
-            cover: "../Assets/one_piece.jpg"
-        },
-        {
-            title: "Attack on Titan",
-            genre: "Action, Dark Fantasy",
-            author: "../Assets/Hajime Isayama",
-            volumes: 34,
-            description: "Humanity fights for survival against giant humanoid creatures called Titans behind massive walls.",
-            price: "$5 / week",
-            cover: "../Assets/aot.jpg"
-        },
-        {
-            title: "One Punch Man",
-            genre: "Action, Comedy",
-            author: "ONE, Yusuke Murata",
-            volumes: 30,
-            description: "Saitama is a hero who can defeat any enemy with a single punch, but struggles to find a worthy challenge.",
-            price: "$5 / week",
-            cover: "../Assets/opm.jpg"
-        },
-        {
-            title: "Demon Slayer",
-            genre: "Action, Supernatural",
-            author: "Koyoharu Gotouge",
-            volumes: 23,
-            description: "Tanjiro becomes a demon slayer after his family is slaughtered and his sister is turned into a demon.",
-            price: "$5 / week",
-            cover: "../Assets/demon_slayer.jpg"
-        },
-        {
-            title: "Fullmetal Alchemist",
-            genre: "Adventure, Fantasy",
-            author: "Hiromu Arakawa",
-            volumes: 27,
-            description: "Two brothers search for the Philosopher's Stone after a failed alchemical ritual costs them dearly.",
-            price: "$5 / week",
-            cover: "../Assets/fmab.jpg"
+    let mangaIndex = 0;
+    let mangas = [];
+    async function fetchMangas() {
+        try {
+            const res = await fetch('http://localhost:8081/Mangas');
+            mangas = await res.json();
+        } catch (err) {
+            console.error('Error fetching mangas:', err);
         }
-    ]
+    }
+    fetchMangas();
+
 
     const selectDia = document.getElementById("dia");
 
@@ -70,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     let index = 0;
-    let mangaIndex = 0;
+
 
     const button = document.getElementById("changeBtn");
     const header = document.querySelector(".Header"); 
@@ -99,13 +64,14 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("mangaAuthor").innerHTML = manga.author;
         document.getElementById("mangaVolumes").innerHTML = manga.volumes;
         document.getElementById("mangaDesc").innerHTML = manga.description;
-        document.getElementById("mangaPrice").innerHTML = manga.price;
-        document.getElementById("mangaCover").src = manga.cover;
+        document.getElementById("mangaPrice").innerHTML = `$${manga.price} / week`;
+        document.getElementById("mangaCover").src = manga.coverSrc;
     }
 
 
     //Manga button event listener
     mangaButton.addEventListener("click", function (){
+        if (mangas.length === 0) return;
         if (mangaSection.style.display === "none") {
             mangaSection.style.display = "block";
             mangaNavDiv.style.display = "flex";
@@ -116,31 +82,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    nextButton.addEventListener("click", function (){
-        console.log("Antes: ", mangaIndex);
-        if (mangaIndex < 4){
-            mangaIndex ++;
-            renderManga(mangas[mangaIndex]);
-        }
-        else{
-            mangaIndex = 0;
-            renderManga(mangas[mangaIndex]);
-        }
-        console.log("Después: ", mangaIndex);
-    })
+    nextButton.addEventListener("click", function () {
+        mangaIndex = (mangaIndex + 1) % mangas.length;
+        renderManga(mangas[mangaIndex]);
+    });
 
-    prevButton.addEventListener("click", function (){
-        console.log("Antes: ", mangaIndex);
-        if (mangaIndex > 0){
-            mangaIndex --;
-            renderManga(mangas[mangaIndex]);
-        }
-        else{
-            mangaIndex = 4;
-            renderManga(mangas[mangaIndex]);
-        }
-        console.log("Después: ", mangaIndex);
-    })
+    prevButton.addEventListener("click", function () {
+        mangaIndex = (mangaIndex - 1 + mangas.length) % mangas.length;
+        renderManga(mangas[mangaIndex]);
+    });
 
 });
 
@@ -155,148 +105,29 @@ function traducir() {
     `;
 }
 
-function cambiarMenu(dia) {
+async function cambiarMenu(dia) {
     const menu = document.getElementById("par1");
-
-    if (dia == "lunes") {
-        menu.innerHTML = `
+    try {
+        const res = await fetch(`http://localhost:8081/Menu?day=${dia}`);
+        const items = await res.json();
+        const dayLabel = items.length > 0 ? items[0].promotion_type : '';
+        let html = `
             <p>Welcome to the EVA cafe</p>
-        <p>MENU (Lunes - Descuento)</p>
-        <div class="item">
-            Shinji's Americano: 35$
-            <img src="shinji.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Asuka's Macchiato: 45$
-            <img src="asuka.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Misato's beer: 80$
-            <img src="misato.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Angels Expresso: 15$
-            <img src="expreso.jpg" class="img-hover">
-        </div>
+            <p>MENU (${dia.charAt(0).toUpperCase() + dia.slice(1)} - ${dayLabel})</p>
         `;
-    } 
-    else if (dia == "martes") {
-        menu.innerHTML = `
-        <p>Welcome to the EVA cafe</p>
-        <p>MENU (Martes - 2x1)</p>
-        <div class="item">
-            2x Shinji's Americano: 45$
-            <img src="shinji.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            2x Asuka's Macchiato: 55$
-            <img src="asuka.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            2x Misato's beer: 90$
-            <img src="misato.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            2x Angels Expresso: 20$
-            <img src="expreso.jpg" class="img-hover">
-        </div>
-        `;
-    } 
-    else if (dia == "miercoles") {
-        menu.innerHTML = `
-        <p>Welcome to the EVA cafe</p>
-        <p>MENU (Miercoles - Combo)</p>
-        <div class="item">
-            Shinji's Americano +
-            <img src="shinji.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Asuka's Macchiato: 80$
-            <img src="asuka.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Misato's beer +
-            <img src="misato.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Angels Expresso: 90$
-            <img src="expreso.jpg" class="img-hover">
-        </div>
-        `;
-    } 
-    else if (dia == "juebebes") {
-        menu.innerHTML = `
-        <p>Welcome to the EVA cafe</p>
-        <p>MENU (Juebebes - DE ALCOHOL)</p>
-        <div class="item">
-            Misato's beer: 60$
-            <img src="misato.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            10X Misato's beer: 500$
-            <img src="misato.jpg" class="img-hover">
-        </div>
-        `;
-    } 
-    else if (dia == "viernes") {
-        menu.innerHTML = `
-        <p>Welcome to the EVA cafe</p>
-        <p>MENU (Viernes - Premium)</p>
-        <div class="item">
-            Shinji's Americano: 50$
-            <img src="shinji.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Asuka's Macchiato: 65$
-            <img src="asuka.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Misato's beer: 100$
-            <img src="misato.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Angels Expresso: 30$
-            <img src="expreso.jpg" class="img-hover">
-        </div>
-        `;
-    } 
-    else {
-        menu.innerHTML = `
-            <p>Welcome to the EVA cafe</p>
-        <p>MENU (Fin de semana)</p>
-        <div class="item">
-            Shinji's Americano: 45$
-            <img src="shinji.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Asuka's Macchiato: 55$
-            <img src="asuka.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Misato's beer: 90$
-            <img src="misato.jpg" class="img-hover">
-        </div>
-
-        <div class="item">
-            Angels Expresso: 20$
-            <img src="expreso.jpg" class="img-hover">
-        </div>
-        `;
+        items.forEach(item => {
+            const priceLabel = item.price !== null ? `${item.item_name}: ${item.price}$` : `${item.item_name} +`;
+            html += `
+                <div class="item">
+                    ${priceLabel}
+                    <img src="${item.imageSrc}" class="img-hover">
+                </div>
+            `;
+        });
+        menu.innerHTML = html;
+    } catch (err) {
+        console.error('Error fetching menu:', err);
+        menu.innerHTML = '<p>Error loading menu. Please try again.</p>';
     }
 }
 
