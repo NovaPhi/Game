@@ -575,6 +575,7 @@ class Game {
     constructor() {
         this.heroSelect = new HeroSelect();
         this.player   = new Player();
+        
         this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
         this.outposts = [];
         this.bullets  = [];
