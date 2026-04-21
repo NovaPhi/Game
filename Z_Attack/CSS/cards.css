@@ -287,6 +287,21 @@ body {
   opacity: 0.9;
 }
 
+.btn-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.btn-row .save-btn {
+  margin-top: 0;
+  text-decoration: none;
+  display: inline-block;
+}
+
 /* save button*/
 .save-btn {
   margin-top: 40px;
