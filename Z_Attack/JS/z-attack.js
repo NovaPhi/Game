@@ -1,3 +1,16 @@
+
+
+(function applySettings() {
+    const brightness = localStorage.getItem('brightness') ?? 100;
+    const colorblind = localStorage.getItem('colorblind') || 'none';
+
+    document.body.style.filter = `brightness(${brightness}%)`;
+
+    document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
+    if (colorblind !== 'none') document.body.classList.add(colorblind);
+})();
+
+
 //Game Z_ATTACK
 //By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 //Commit de prueba
@@ -1249,6 +1262,13 @@ async function main() {
     canvas.width  = canvasWidth;
     canvas.height = canvasHeight;
     ctx = canvas.getContext("2d");
+
+    const allAudio = document.querySelectorAll('audio');
+    const savedVolume = Math.min(60, Math.max(0, parseInt(localStorage.getItem('volume')) || 30));
+    allAudio.forEach(a => {
+        a.volume = savedVolume / 100;
+        a.addEventListener('canplay', () => { a.volume = savedVolume / 100; }, { once: true });
+    });
 
     await loadHeroes();
     loadCards();

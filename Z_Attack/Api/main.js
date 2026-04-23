@@ -1,8 +1,26 @@
+(function applySettings() {
+    const brightness = localStorage.getItem('brightness') ?? 100;
+    const colorblind = localStorage.getItem('colorblind') || 'none';
 
+    document.body.style.filter = `brightness(${brightness}%)`;
 
+    document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
+    if (colorblind !== 'none') document.body.classList.add(colorblind);
+})();
+
+const music = document.getElementById('bgMusic'); 
+if (music) {
+    const savedVolume = Math.min(60, Math.max(0, parseInt(localStorage.getItem('volume')) || 30));
+    music.addEventListener('canplay', () => {
+        music.volume = savedVolume / 100;
+    }, { once: true });
+    music.volume = savedVolume / 100;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     
+    
+
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null; 
     ////console.log(sessionUser.role);
@@ -23,6 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+
+
+        const music = document.querySelector('audio');
+    if (music) {
+        const savedVolume = localStorage.getItem('volume') ?? 50;
+        music.volume = savedVolume / 100;
+        music.addEventListener('canplay', () => {
+            music.volume = savedVolume / 100;
+        }, { once: true });
+    }
+
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
 

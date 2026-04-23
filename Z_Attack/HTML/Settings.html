@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z Attack - Settings</title>
+    <link rel="stylesheet" href="/Z_Attack/CSS/Settings.css">
+    <link rel="stylesheet" href="../CSS/ColorblindChnge.css"/>
+</head>
+<body>
+
+    <a href="main.html" class="back-btn">Back</a>
+
+    <div id="title">
+        <h1>Settings</h1>
+    </div>
+
+    <div id="settingsMenu">
+
+        <div class="setting">
+            <label>Volume</label>
+            <input type="range" min="0" max="8" value="4" id="volumeSlider">
+        </div>
+
+        <div class="setting">
+            <label>Brightness</label>
+            <input type="range" min="50" max="120" value="100" id="brightnessSlider">
+        </div>
+
+        <div class="setting">
+            <label>Colorblind Mode</label>
+            <div id="colorblindCycle">
+                <button id="colorblindPrev">◀</button>
+                <span id="colorblindLabel">NONE</span>
+                <button id="colorblindNext">▶</button>
+            </div>
+        </div>
+
+    </div>
+
+    <audio id="bgMusic" src="/Music/Title Theme/TiTLE.mp3" autoplay loop></audio>
+
+    <script src="/Z_Attack/Api/Settings.js"></script>
+</body>
+</html>
