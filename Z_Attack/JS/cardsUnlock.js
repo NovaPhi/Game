@@ -20,7 +20,7 @@ const LOOTBOX_TIERS = [
         id: 'basic',
         name: 'Basic Crate',
         icon: '▢',
-        cost: 100,
+        cost: 900,
         color: RARITY_COLORS.common,
         weights: { common: 0.70, uncommon: 0.25, rare: 0.05, legendary: 0.00 } //probabilidad
     },
@@ -28,7 +28,7 @@ const LOOTBOX_TIERS = [
         id: 'rare',
         name: 'Rare Crate',
         icon: '◆',
-        cost: 250,
+        cost: 1800,
         color: RARITY_COLORS.rare,
         weights: { common: 0.30, uncommon: 0.45, rare: 0.20, legendary: 0.05 } //probabilidad
     },
@@ -36,7 +36,7 @@ const LOOTBOX_TIERS = [
         id: 'legendary',
         name: 'Legendary Crate',
         icon: '★',
-        cost: 500,
+        cost: 6000,
         color: RARITY_COLORS.legendary,
         weights: { common: 0.00, uncommon: 0.20, rare: 0.50, legendary: 0.30 } //probabilidad
     }
@@ -95,36 +95,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ---------- XP ---------- */
 
 async function loadPlayerXP() {
-    // TODO: API — GET /UserStats?user_ID=<id>
-    // The endpoint exists (App.js:83-98) but currently does NOT project total_xp.
-    // Backend task: add `total_xp` to the SELECT and the JSON response.
-    // Expected response shape: { success, total_xp, ... }
     try {
         const r = await fetch(`${API_BASE}/UserStats?user_ID=${sessionUser.user_ID}`);
         const d = await r.json();
-        if (d && d.success && typeof d.total_xp === 'number') {
-            playerXP = d.total_xp;
+        if (d && d.success) {
+            playerXP = parseInt(d.total_xp) || 0;
             return;
         }
     } catch (err) {
-        console.warn('[cardsUnlock] XP fetch failed, using DEV_XP:', err);
+        console.warn('[cardsUnlock] XP fetch failed:', err);
     }
     playerXP = DEV_XP;
-}
-
-async function spendXP(amount) {
-    playerXP = Math.max(0, playerXP - amount);
-
-    // TODO: API — server should decrement Stats.total_xp authoritatively.
-    // Preferred: fold this into POST /openLootbox so XP deduction and the
-    // User_Collection insert happen in one transaction. Do NOT ship a
-    // standalone /spendXP — that's a trivial abuse vector.
-
-    renderXP();
-
-    const hud = document.getElementById('xpHud');
-    hud.classList.add('flash');
-    setTimeout(() => hud.classList.remove('flash'), 400);
 }
 
 function renderXP() {
@@ -227,23 +208,36 @@ async function openLootbox(tier) {
         return;
     }
 
-    await spendXP(tier.cost);
+    try {
+        const r = await fetch(`${API_BASE}/openLootbox`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_ID:  sessionUser.user_ID, 
+                tier:     tier.id,
+                rarity:   card.rarity,   // send the rolled rarity
+                card_id:  card.id        // send the rolled card id
+            })
+        });
+        const d = await r.json();
 
-    // Optimistic local update so the UI reflects ownership immediately.
-    ownedIds.add(card.id);
+        if (!d.success) {
+            showToastOnly(d.message || 'Failed to open crate.');
+            return;
+        }
 
-    // TODO: API — POST /openLootbox  body: { user_ID, tier: tier.id }
-    // Server performs the authoritative roll, INSERTs into User_Collection,
-    // decrements Stats.total_xp, and returns: { success, card: {...}, new_xp }.
-    // Do NOT trust the client-side roll in production — this fetch exists here
-    // purely so the network call site is wired up for when the endpoint lands.
-    fetch(`${API_BASE}/openLootbox`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_ID: sessionUser.user_ID, tier: tier.id })
-    }).catch(() => { /* placeholder — endpoint not implemented yet */ });
+        playerXP = d.new_xp;
+        renderXP();
+        const hud = document.getElementById('xpHud');
+        hud.classList.add('flash');
+        setTimeout(() => hud.classList.remove('flash'), 400);
+        ownedIds.add(card.id);
+        showReveal(card);
 
-    showReveal(card);
+    } catch (err) {
+        console.error('openLootbox error:', err);
+        showToastOnly('Server error — try again.');
+    }
 }
 
 function rollCard(weights) {
