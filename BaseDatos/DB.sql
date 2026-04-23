@@ -282,3 +282,5 @@ WHERE uc.id_user = 13;
 SELECT id_card, name FROM Cards WHERE id_card IN (1, 2, 3);
 
 SELECT id_card, name FROM Cards ORDER BY id_card LIMIT 5;
+
+UPDATE Stats SET total_xp = best_score WHERE total_xp = 0;

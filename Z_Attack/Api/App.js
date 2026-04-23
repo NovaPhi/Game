@@ -92,8 +92,8 @@ app.get('/UserStats', (req, res) => {
       return;
     }
 
-    const { total_runs, best_score, best_level, playtime } = results[0];
-    res.json({ success: true, total_runs, best_score, best_level, playtime });
+    const { total_runs, best_score, best_level, playtime, total_xp } = results[0];
+    res.json({ success: true, total_runs, best_score, best_level, playtime, total_xp });
   });
 });
 
@@ -348,6 +348,93 @@ app.get('/loadDeck', (req, res) => {
     );
 });
 
+app.get('/getAllCards', (req, res) => {
+    connection.query('SELECT * FROM Cards', [], (err, results) => {
+        if (err) return res.status(500).json({ success: false });
+        const Cards = results.map(c => ({
+            id:             c.id_card,
+            name:           c.name,
+            description:    c.description,
+            rarity:         c.rarity,
+            card_type:      c.card_type,
+            targeting:      c.targeting,
+            modifier:       c.modifier,
+            modifier_value: parseFloat(c.modifier_value),
+            buff_value:     parseFloat(c.buff_value),
+            duration_sec:   parseFloat(c.duration_sec),
+            is_immortal:    c.is_immortal
+        }));
+        res.json({ success: true, Cards });
+    });
+});
+
+app.post('/openLootbox', (req, res) => {
+    const { user_ID, tier, card_id } = req.body;
+
+    const tierCosts = { basic: 900, rare: 1800, legendary: 6000 };
+    const cost = tierCosts[tier];
+    if (!cost) return res.status(400).json({ success: false, message: 'Invalid tier' });
+
+    // Check XP
+    connection.query('SELECT total_xp FROM Stats WHERE id_user = ?', [user_ID], (err, results) => {
+        if (err) return res.status(500).json({ success: false });
+        if (results.length === 0) return res.json({ success: false, message: 'User not found' });
+
+        const currentXP = results[0].total_xp;
+        if (currentXP < cost) return res.json({ success: false, message: 'Not enough XP' });
+
+        // Deduct XP
+        connection.query(
+            'UPDATE Stats SET total_xp = total_xp - ? WHERE id_user = ?',
+            [cost, user_ID],
+            (err) => {
+                if (err) return res.status(500).json({ success: false });
+
+                // Verify card exists and user doesn't own it
+                connection.query(
+                    `SELECT id_card FROM Cards WHERE id_card = ?
+                     AND id_card NOT IN (
+                         SELECT id_card FROM User_Collection WHERE id_user = ?
+                     )`,
+                    [card_id, user_ID],
+                    (err, check) => {
+                        if (err) return res.status(500).json({ success: false });
+                        if (check.length === 0) return res.json({ success: false, message: 'Card not available' });
+
+                        // Add to collection
+                        connection.query(
+                            'INSERT INTO User_Collection (id_user, id_card) VALUES (?, ?)',
+                            [user_ID, card_id],
+                            (err) => {
+                                if (err) return res.status(500).json({ success: false });
+                                res.json({ success: true, new_xp: currentXP - cost });
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    });
+});
+
+
+app.post('/saveStats', (req, res) => {
+    const { user_ID, score, level, playtime } = req.body;
+    connection.query(
+        `UPDATE Stats SET
+            total_runs = total_runs + 1,
+            best_score = GREATEST(best_score, ?),
+            best_level = GREATEST(best_level, ?),
+            playtime   = playtime + ?,
+            total_xp   = total_xp + ?
+        WHERE id_user = ?`,
+        [score, level, playtime, score, user_ID],
+        (err) => {
+            if (err) { console.error(err); return res.status(500).json({ success: false }); }
+            res.json({ success: true });
+        }
+    );
+});
 
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)
