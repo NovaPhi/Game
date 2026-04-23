@@ -1,4 +1,6 @@
 /* Card Unlock / Lootbox page — loaded on top of cards.css which owns the base theme */
+@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
 
 .unlock-subtitle {
     font-size: 0.85rem;

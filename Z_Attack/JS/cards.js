@@ -1,3 +1,13 @@
+(function applySettings() {
+    const brightness = localStorage.getItem('brightness') ?? 100;
+    const colorblind = localStorage.getItem('colorblind') || 'none';
+
+    document.body.style.filter = `brightness(${brightness}%)`;
+
+    document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
+    if (colorblind !== 'none') document.body.classList.add(colorblind);
+})();
+
 "use strict";
 
 const RARITY_COLOR = { common:'#aaaaaa', uncommon:'#4fc34f', rare:'#4a8fff', legendary:'#ff9a00' };
