@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
 const app = express()
+const bcrypt = require('bcrypt')
 const port = 8081
+const SALT_ROUNDS = 10;
 
 app.use(cors());
 app.use(express.json());
@@ -13,8 +15,8 @@ app.use(express.urlencoded({extended: true}));
 const connection = mysql.createConnection({
         host: '127.0.0.1',
         user: 'root',
-        password: 'Alo111204*',
-        database: 'z_attack'
+        password: '1234',
+        database: 'Z_ATTACK'
     });
     connection.connect((err) => {
         if (err) throw err;
@@ -26,36 +28,25 @@ app.post('/Login', (req, res) => {
     const password = req.body.password;
     const date = new Date();
     const ip = req.ip;
-    const device_browser = req.headers['user-agent']
+    const device_browser = req.headers['user-agent'];
 
-    connection.query('SELECT * FROM User WHERE username = ? AND password = ?', [user, password], (err, results) => {
+    connection.query('SELECT * FROM User WHERE username = ?', [user], async (err, results) => {
         if (err) throw err;
+        if (results.length === 0) return res.json({ success: false, message: 'User not found' });
 
-
+        const dbUser = results[0];
         
+        const match = await bcrypt.compare(password, dbUser.password);
+        if (!match) return res.json({ success: false, message: 'User not found' });
 
-        if (results.length === 0) {
-            res.json({ success: false, message: 'User not found' });
-            //console.log('false - user not found');
-            return;
-        }
+        if (dbUser.status != 1) return res.json({ success: false, message: 'Account inactive' });
 
-        const { id_user, username, status, role } = results[0];
-        
-        if (status != 1) {
-            res.json({ success: false, message: 'Account inactive' });
-            ////console.log('false - account inactive');
-            return;
-        }
-
-        res.json({ success: true, user_ID: id_user, username, status, role });
-        //console.log('true -', username, id_user);
-        //console.log(role);
+        res.json({ success: true, user_ID: dbUser.id_user, username: dbUser.username, status: dbUser.status, role: dbUser.role });
 
         connection.query(
             `INSERT INTO Connection_logs (id_user, connection_timestamp, disconnection_timestamp, ip_address, location, device_browser_info)
             VALUES (?, ?, NULL, ?, 'Mexico', ?)`,
-            [id_user, date, ip, device_browser],
+            [dbUser.id_user, date, ip, device_browser],
             (err) => {
                 if (err) console.error('Connection log insert error:', err);
             }
@@ -134,17 +125,21 @@ app.get('/deleteAccount', (req, res) => {
     });
 });
 
-app.post('/SignUp', (req, res) => {
+app.post('/SignUp', async (req, res) => {
+    console.log(req.body);
     const { username, password, email } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     connection.query(
         'INSERT INTO User (username, password, email, role, status) VALUES (?, ?, ?, 2, 1)',
-        [username, password, email],
+        [username, hashedPassword, email],
         (err, results) => {
             if (err) {
-                if (err.code === 'ER_DUP_ENTRY') return res.json({ success: false, message: 'Username or email already exists' });
-                return res.status(500).json({ success: false, message: 'Server error' });
-            }
+            if (err.code === 'ER_DUP_ENTRY') return res.json({ success: false, message: 'Username or email already exists' });
+            console.error('User insert error:', err); // add this
+            return res.status(500).json({ success: false, message: 'Server error' });
+        }
 
             const newUserId = results.insertId;
 
