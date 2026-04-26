@@ -1,5 +1,19 @@
+
+
+(function applySettings() {
+    const brightness = localStorage.getItem('brightness') ?? 100;
+    const colorblind = localStorage.getItem('colorblind') || 'none';
+
+    document.body.style.filter = `brightness(${brightness}%)`;
+
+    document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
+    if (colorblind !== 'none') document.body.classList.add(colorblind);
+})();
+
+
 //Game Z_ATTACK
 //By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
+//Commit de prueba
 
 "use strict";
 
@@ -19,7 +33,8 @@ let playerStats = {
     stage: 0, // Current stage (advances every 3 levels)
     xp: 0, // Total accumulated experience points
     dmgReduction: 0, //Flat damage reduction applied to incoming hits
-    deck: createStarterDeck() //Player's current card hand
+    deck: [] //Player's current card hand
+    
 
 };
 
@@ -28,6 +43,7 @@ function applyHeroStats(heroId) {
     const hero = getHeroById(heroId);
     if (!hero) return;
     playerStats.heroId       = hero.id;
+    playerStats.asset        = hero.asset;
     playerStats.speedMod     = hero.speedMod;
     playerStats.maxHp        = hero.maxHp;
     playerStats.dmgReduction = hero.dmgReduction; // dmgMult is read directly from the hero definition at attack time
@@ -81,6 +97,12 @@ class Player {
         this.speedMod = stats.speedMod;
         this.maxHp = stats.maxHp;
         this.hp = this.maxHp;
+        if(playerStats.asset){
+            this._img = new Image();
+            this._img.src = playerStats.asset;
+        }else{
+            this._img = null;
+        }
     }
 
     // Moves the player and makes wall collisions
@@ -149,8 +171,18 @@ class Player {
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (playerStats.asset && this._img) {
+            if (this._img.complete && this._img.naturalWidth > 0) {
+                ctx.drawImage(this._img, this.x, this.y, this.width, this.height);
+            } else {
+                // fallback while image loads
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        } else {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
@@ -471,12 +503,21 @@ class Burst {
 // Class for the hero selection
 class HeroSelect {
     constructor() {
-        this.active   = true; // True while the selection screen is showing
-        this.hoveredId = null; // Hero ID under the mouse cursor
-        this.heroIds = Object.values(HEROES).map(h => h.id); //1,2,3...
+        this.active    = true;
+        this.hoveredId = null;
+        this.heroIds   = Object.values(HEROES).map(h => h.id);
+        this.images    = {}; // preloaded Image objects keyed by hero id
+
+        // Preload all hero images
+        for (const hero of Object.values(HEROES)) {
+            if (hero.asset) {
+                const img = new Image();
+                img.src = hero.asset; // path comes straight from DB
+                this.images[hero.id] = img;
+            }
+        }
     }
- 
-    // Returns the layout rectangle for hero card i
+
     cardRect(i) {
         const cardW  = 240;
         const cardH  = 340;
@@ -491,8 +532,7 @@ class HeroSelect {
             h: cardH
         };
     }
- 
-    // Called on every mousemove — updates which card is hovered
+
     onMouseMove(mx, my) {
         this.hoveredId = null;
         for (let i = 0; i < this.heroIds.length; i++) {
@@ -503,8 +543,7 @@ class HeroSelect {
             }
         }
     }
- 
-    // Called on mousedown — selects the clicked hero and closes the screen
+
     onMouseDown(mx, my) {
         for (let i = 0; i < this.heroIds.length; i++) {
             const r = this.cardRect(i);
@@ -515,14 +554,17 @@ class HeroSelect {
             }
         }
     }
- 
+
     draw(ctx) {
+        // Background
         ctx.fillStyle = "#111";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.fillStyle = "rgba(255,255,255,0.04)";
         for (let x = 20; x < canvasWidth; x += 40)
             for (let y = 20; y < canvasHeight; y += 40)
                 ctx.fillRect(x, y, 1, 1);
+
+        // Title
         ctx.textAlign = "center";
         ctx.fillStyle = "#fff";
         ctx.font = "36px monospace";
@@ -530,43 +572,56 @@ class HeroSelect {
         ctx.fillStyle = "#555";
         ctx.font = "14px monospace";
         ctx.fillText("click a card to start", canvasWidth / 2, 112);
- 
+
         // Hero cards
         for (let i = 0; i < this.heroIds.length; i++) {
-            const hero = getHeroById(this.heroIds[i]); 
+            const hero    = getHeroById(this.heroIds[i]);
+            if (!hero) continue;                          // ← skip if hero not found
             const r       = this.cardRect(i);
             const hovered = this.hoveredId === hero.id;
- 
+
             // Card background
             ctx.fillStyle = hovered ? "rgba(40,40,40,0.98)" : "rgba(20,20,20,0.95)";
             ctx.fillRect(r.x, r.y, r.w, r.h);
- 
+
             // Card border
             ctx.strokeStyle = hovered ? "#fff" : hero.cardColor;
             ctx.lineWidth   = hovered ? 4 : 2;
             ctx.strokeRect(r.x, r.y, r.w, r.h);
- 
-            // Hero color swatch (small square icon at the top of the card)
-            const swatchSize = 44;
-            const swatchX    = r.x + r.w / 2 - swatchSize / 2;
-            const swatchY    = r.y + 24;
-            ctx.fillStyle    = hero.color;
-            ctx.fillRect(swatchX, swatchY, swatchSize, swatchSize);
+
+            // Hero asset image (replaces the color swatch)
+            const imgW  = 160;
+            const imgH  = 120;
+            const imgX  = r.x + r.w / 2 - imgW / 2;
+            const imgY  = r.y + 16;
+            const img   = this.images[hero.id];
+
+            if (img && img.complete && img.naturalWidth > 0) {
+                // Image loaded — draw it
+                ctx.drawImage(img, imgX, imgY, imgW, imgH);
+            } else {
+                // Fallback — colored rectangle while image loads or if asset is null
+                ctx.fillStyle = hero.cardColor;
+                ctx.fillRect(imgX, imgY, imgW, imgH);
+            }
+
+            // Thin border around the image area
             ctx.strokeStyle = "#fff";
             ctx.lineWidth   = 1.5;
-            ctx.strokeRect(swatchX, swatchY, swatchSize, swatchSize);
- 
+            ctx.strokeRect(imgX, imgY, imgW, imgH);
+
             // Hero name
             ctx.fillStyle = hero.cardColor;
             ctx.font = "20px monospace";
             ctx.textAlign = "center";
-            ctx.fillText(hero.name, r.x + r.w / 2, r.y + 98);
- 
+            //console.log(hero.name);
+            ctx.fillText(hero.name, r.x + r.w / 2, r.y + 152); // ← pushed down for bigger image
+
             // Description — word-wrapped at ~26 chars per line
             ctx.fillStyle = "#aaa";
             ctx.font = "12px monospace";
             const words = hero.description.split(" ");
-            let line = "", ly = r.y + 124;
+            let line = "", ly = r.y + 172;                       // ← pushed down too
             for (const w of words) {
                 const test = line ? line + " " + w : w;
                 if (test.length > 26) {
@@ -576,37 +631,39 @@ class HeroSelect {
                 } else line = test;
             }
             if (line) { ctx.fillText(line, r.x + r.w / 2, ly); ly += 17; }
- 
+
             // Stat bars
             const stats = [
-                { label: "HP",     value: hero.maxHp,       min: 60,  max: 220 },
-                { label: "Speed",  value: hero.speedMod,    min: 0.5, max: 1.6 },
-                { label: "Damage", value: hero.dmgMult,     min: 0.5, max: 1.5 },
-                { label: "Armor",  value: hero.dmgReduction,min: 0,   max: 3   },
+                { label: "HP",     value: hero.maxHp,        min: 60,  max: 220 },
+                { label: "Speed",  value: hero.speedMod,     min: 0.5, max: 1.6 },
+                { label: "Damage", value: hero.dmgMult,      min: 0.5, max: 1.5 },
+                { label: "Armor",  value: hero.dmgReduction, min: 0,   max: 3   },
             ];
- 
+
             const barW  = r.w - 32;
             const barH  = 8;
             const barX  = r.x + 16;
-            let   statY = ly + 16;
- 
+            let   statY = ly + 12;
+
             for (const stat of stats) {
-                const ratio = (stat.value - stat.min) / (stat.max - stat.min);
- 
+                const ratio = Math.min(1, Math.max(0,          // ← clamp 0-1 so bars never overflow
+                    (stat.value - stat.min) / (stat.max - stat.min)
+                ));
+
                 ctx.fillStyle = "#333";
                 ctx.fillRect(barX, statY, barW, barH);
- 
+
                 ctx.fillStyle = hero.cardColor;
                 ctx.fillRect(barX, statY, barW * ratio, barH);
- 
+
                 ctx.fillStyle = "#666";
                 ctx.font = "10px monospace";
                 ctx.textAlign = "left";
                 ctx.fillText(stat.label, barX, statY - 2);
- 
+
                 statY += 24;
             }
- 
+
             ctx.textAlign = "center";
         }
     }
@@ -619,8 +676,7 @@ class Game {
         this.heroSelect = new HeroSelect();
         this.player   = new Player();
         
-        const { cx, cy } = randomBaseCenter(); // Pick a random base position and build the base there
-        this.mainBase = new MainBase(cx, cy);
+        this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
         this.outposts = [];
         this.bullets  = [];
         this.won      = false;
@@ -737,12 +793,12 @@ class Game {
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
     createEventListeners() {
-        window.addEventListener("keydown", (e) => {
-            // Ignore all keyboard input while the hero selection screen is active
+        if (this._keydownHandler) window.removeEventListener("keydown", this._keydownHandler);
+        if (this._keyupHandler)   window.removeEventListener("keyup",   this._keyupHandler);
+
+        this._keydownHandler = (e) => {
             if (this.heroSelect.active) return;
-            // Draft pick takes priority when active — selection is via mouse click
             if (this.won && this.draftChoices) return;
-            // Cancel targeting with E (refund the card)
             if (this.targetingMode && e.code === "KeyE") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
@@ -751,12 +807,11 @@ class Game {
                 this.targetingMode = null;
                 return;
             }
-            // Play card from hand by index 1-5
             if (!this.waiting && !this.won && !this.targetingMode &&
                 ["Digit1","Digit2","Digit3","Digit4","Digit5"].includes(e.code)) {
                 const idx = parseInt(e.code.slice(-1), 10) - 1;
                 if (idx >= 0 && idx < playerStats.deck.length) {
-                    const card = playerStats.deck.splice(idx, 1)[0]; // Remove card from hand
+                    const card = playerStats.deck.splice(idx, 1)[0];
                     if (card.targeting) this._pendingTargetCard = card;
                     card.apply(this);
                 }
@@ -767,24 +822,26 @@ class Game {
             if (e.code === "KeyS") this.player.keys.down  = true;
             if (e.code === "KeyA") this.player.keys.left  = true;
             if (e.code === "KeyD") this.player.keys.right = true;
-        });
-        window.addEventListener("keyup", (e) => {
+        };
+
+        this._keyupHandler = (e) => {
             if (e.code === "KeyW") this.player.keys.up    = false;
             if (e.code === "KeyS") this.player.keys.down  = false;
             if (e.code === "KeyA") this.player.keys.left  = false;
             if (e.code === "KeyD") this.player.keys.right = false;
-        });
+        };
+
+        window.addEventListener("keydown", this._keydownHandler);
+        window.addEventListener("keyup",   this._keyupHandler);
 
         const canvas = document.getElementById("canvas");
         if (canvas) {
-            // Track mouse position in canvas coordinates
             canvas.addEventListener("mousemove", (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
                 const my = (e.clientY - rect.top)  * (canvasHeight / rect.height);
                 this.mouseX = mx;
                 this.mouseY = my;
-                // Forward mouse position to hero select while it is active
                 if (this.heroSelect.active) this.heroSelect.onMouseMove(mx, my);
             });
             canvas.addEventListener("mousedown", (e) => {
@@ -792,18 +849,14 @@ class Game {
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
                 const my = (e.clientY - rect.top)  * (canvasHeight / rect.height);
 
-                // Hero selection intercepts all clicks while active
                 if (this.heroSelect.active) {
                     this.heroSelect.onMouseDown(mx, my);
-                    // If selection just completed, build the player with the chosen hero stats
                     if (!this.heroSelect.active) {
                         this.player = new Player(playerStats);
                         this.spawnPlayer();
                     }
                     return;
                 }
-
-                // Targeting mode that instantly destroys the clicked outpost logic
                 if (this.targetingMode === "destroy_outpost") {
                     for (const o of this.outposts) {
                         if (o.alive &&
@@ -817,7 +870,6 @@ class Game {
                     }
                     return;
                 }
-                // Click detection for one of the 3 displayed cards
                 if (this.won && this.draftChoices) {
                     const cardW = 220, cardH = 280, gap = 30;
                     const startX = (canvasWidth - (3 * cardW + 2 * gap)) / 2;
@@ -825,7 +877,7 @@ class Game {
                     for (let i = 0; i < this.draftChoices.length; i++) {
                         const cx = startX + i * (cardW + gap);
                         if (mx >= cx && mx <= cx + cardW && my >= cardY && my <= cardY + cardH) {
-                            playerStats.deck.push(this.draftChoices[i]); // Add chosen card to hand
+                            playerStats.deck.push(this.draftChoices[i]);
                             this.draftChoices = null;
                             break;
                         }
@@ -834,7 +886,6 @@ class Game {
             });
         }
     }
-
     // Resets all game entities and states for a new round
     startOrRestart() {
         if (this.heroSelect.active) return; // Can't start before picking a hero
@@ -888,6 +939,7 @@ class Game {
 
     update() {
         // Freeze game logic while hero select or any waiting/won state is active
+        
         if (this.heroSelect.active || this.waiting || this.won) return;
 
         const solidWalls = this.mainBase.living;
@@ -990,7 +1042,7 @@ class Game {
                 });
             }
 
-            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0, dmgReduction: 0, deck: createStarterDeck() };
+            playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0, dmgReduction: 0, deck: []};
             applyHeroStats(savedHeroId); // Re-apply hero base stats after reset
             this.draftChoices = null;
             this.targetingMode = null;
@@ -1203,7 +1255,11 @@ class Game {
 
     // Renders the card hand on the bottom of the canvas.
     drawHand(ctx) {
-        const deck = playerStats.deck || [];
+        //if(playerStats.level === 0) return;
+        
+        const deck = (playerStats.deck || []).slice(0,3);
+        //console.log(playerStats.deck);
+
         const cardW = 130, cardH = 60, gap = 10;
         const totalW = deck.length * cardW + Math.max(0, deck.length - 1) * gap;
         const startX = (canvasWidth - totalW) / 2;
@@ -1211,6 +1267,9 @@ class Game {
         ctx.textAlign = "left";
         for (let i = 0; i < deck.length; i++) {
             const c = deck[i];
+            if (!c) continue;
+            const name = c.name || "???";
+            const desc = c.description || c.desc || "";
             const x = startX + i * (cardW + gap);
             ctx.fillStyle = "rgba(0,0,0,0.75)";
             ctx.fillRect(x, y, cardW, cardH);
@@ -1222,7 +1281,7 @@ class Game {
             ctx.fillText(`[${i+1}] ${c.name}`, x + 6, y + 16);
             ctx.fillStyle = "#ccc";
             ctx.font = "10px monospace";
-            const desc = c.description;
+            //const desc = c.description;
             const maxChars = 20;
             let line1 = desc, line2 = "";
             if (desc.length > maxChars) {
@@ -1295,11 +1354,23 @@ class Game {
     }    
 }
 
-function main() {
+async function main() {
     const canvas  = document.getElementById("canvas");
     canvas.width  = canvasWidth;
     canvas.height = canvasHeight;
-    ctx  = canvas.getContext("2d");
+    ctx = canvas.getContext("2d");
+
+    const allAudio = document.querySelectorAll('audio');
+    const savedVolume = Math.min(60, Math.max(0, parseInt(localStorage.getItem('volume')) || 30));
+    allAudio.forEach(a => {
+        a.volume = savedVolume / 100;
+        a.addEventListener('canplay', () => { a.volume = savedVolume / 100; }, { once: true });
+    });
+
+    await loadHeroes();
+    loadCards();
+    await loadPlayerDeck();
+
     game = new Game();
     loop();
 }
@@ -1310,4 +1381,4 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-main();
+document.addEventListener("DOMContentLoaded", main);
