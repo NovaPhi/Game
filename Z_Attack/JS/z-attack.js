@@ -56,6 +56,19 @@ function getDifficultyMult(){
     return Math.pow(2,doublings);
 }
 
+function randomBaseCenter() {
+    const half   = Math.ceil(236 / 2); // 118 px — half the grid size
+    const margin = 20; // extra breathing room from canvas edge
+    const minX   = half + margin;
+    const maxX   = canvasWidth  - half - margin;
+    const minY   = half + margin;
+    const maxY   = canvasHeight - half - margin;
+    return {
+        cx: Math.floor(Math.random() * (maxX - minX + 1)) + minX,
+        cy: Math.floor(Math.random() * (maxY - minY + 1)) + minY,
+    };
+}
+
 let ctx;
 let game;
 
@@ -360,7 +373,7 @@ class Outpost {
 
         // Shoot cooldown scaled by difficulty
         const mult   = getDifficultyMult();
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
+        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ... 
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
         this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
@@ -405,6 +418,80 @@ class Outpost {
         ctx.fillStyle = "#333";
         ctx.fillRect(this.x, this.y - 8, this.width, 5);
         ctx.fillStyle = "#f0f";
+        ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("OUTPOST", this.x + this.width / 2, this.y + this.height / 2 + 4);
+    }
+}
+
+class Burst {
+    constructor(x, y) {
+        this.x      = x;
+        this.y      = y;
+        this.width  = 40;
+        this.height = 40;
+        this.maxHp  = 99;
+        this.hp     = this.maxHp;
+
+        // Shoot cooldown scaled by difficulty
+        const mult   = getDifficultyMult();
+        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ... 
+        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
+        this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
+        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
+
+        this.shootRange = 200; // Detection range
+    }
+
+    get alive() { return this.hp > 0; }
+
+    // Fires at the player if they are in range
+    tryShoot(player) {
+        if (!this.alive) return null;
+
+        const cx = this.x + this.width  / 2;
+        const cy = this.y + this.height / 2;
+        const px = player.x + player.width  / 2;
+        const py = player.y + player.height / 2;
+        const dist = Math.hypot(px - cx, py - cy);
+
+        // Don't shoot if player is within one player-length
+        if (dist < player.width) return null;
+        if (dist > this.shootRange) return null;
+
+        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+
+        this.shootCooldown = this.shootCooldownMax;
+        const bullets = [];
+        const speed = 3;
+        const angle = Math.atan2(py - cy, px - cx);
+        const spread = 0.2;
+        // 1/8 of player max HP
+        for (let i = -1; i <= 1; i++) {
+            const a = angle + i * spread;
+            const vx = Math.cos(a) * speed;
+            const vy = Math.sin(a) * speed;
+
+            bullets.push(
+                new Bullet(cx - 3, cy - 3, vx, vy, 5, "#4af") // ⬅️ color diferente
+            );
+        }
+        return bullets;
+    }
+
+    draw(ctx) {
+        if (!this.alive) return;
+        const ratio = this.hp / this.maxHp;
+        ctx.fillStyle = `rgba(80, 180, 255, ${0.4 + 0.6 * ratio})`;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeStyle = "#4af";
+        ctx.lineWidth   = 2;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.fillStyle = "#333";
+        ctx.fillRect(this.x, this.y - 8, this.width, 5);
+        ctx.fillStyle = "#4af";
         ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
         ctx.fillStyle = "#fff";
         ctx.font = "10px monospace";
@@ -640,7 +727,8 @@ class Game {
     // Places outposts around the map while avoiding the main base and overlapping with each other
     spawnOutposts() { 
         const margin  = 80;
-        const cx = canvasWidth / 2, cy = canvasHeight / 2;
+        const cx = this.mainBase.cx;
+        const cy = this.mainBase.cy;
 
         // Main base bounding box with a padding buffer
         const basePad = 60;
@@ -690,7 +778,11 @@ class Game {
 
             if (valid) {
                 placed.push({ x, y, width: outW, height: outH });
+                if (Math.random() < 0.3) {
+                this.outposts.push(new Burst(x, y)); // 30% burst
+            } else {
                 this.outposts.push(new Outpost(x, y));
+            }
             }
             // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
         }
@@ -803,7 +895,8 @@ class Game {
             this.targetingMode = null;
             this._pendingTargetCard = null;
             this.player   = new Player(playerStats)
-            this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
+            const { cx, cy } = randomBaseCenter();
+            this.mainBase = new MainBase(cx, cy);
             this.outposts = [];
             this.bullets  = [];
             this.won      = false;
@@ -897,8 +990,12 @@ class Game {
 
         // Outposts shoot at player
         for (const outpost of this.outposts) {
-            const b = outpost.tryShoot(this.player);
-            if (b) this.bullets.push(b);
+            const result = outpost.tryShoot(this.player);
+            if (Array.isArray(result)) {
+                this.bullets.push(...result);
+            } else if (result) {
+                this.bullets.push(result);
+            }
         }
 
         // Wall segments shoot at player
