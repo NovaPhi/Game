@@ -392,3 +392,5 @@ SELECT u.id_user,
 FROM User AS u
 JOIN Stats AS s ON s.id_user = u.id_user
 WHERE u.status = 1;
+
+DROP DATABASE IF EXISTS Z_ATTACK;

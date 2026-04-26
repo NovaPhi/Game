@@ -97,26 +97,26 @@ app.get('/UserStats', (req, res) => {
   });
 });
 
-app.post('/saveStats', (req, res) => {
-    const { user_ID, score, level, playtime } = req.body;
-
-    connection.query(
-        `UPDATE Stats SET
-            total_runs = total_runs + 1,
-            best_score = GREATEST(best_score, ?),
-            best_level = GREATEST(best_level, ?),
-            playtime = playtime + ?
-        WHERE id_user = ?`,
-        [score, level, playtime, user_ID],
-        (err) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ success: false });
-            }
-            res.json({ success: true });
-        }
-    );
-});
+//app.post('/saveStats', (req, res) => {
+//    const { user_ID, score, level, playtime } = req.body;
+//
+//    connection.query(
+//        `UPDATE Stats SET
+//            total_runs = total_runs + 1,
+//            best_score = GREATEST(best_score, ?),
+//            best_level = GREATEST(best_level, ?),
+//            playtime = playtime + ?
+//        WHERE id_user = ?`,
+//        [score, level, playtime, user_ID],
+//        (err) => {
+//            if (err) {
+//                console.error(err);
+//                return res.status(500).json({ success: false });
+//            }
+//            res.json({ success: true });
+//        }
+//    );
+//});
 
 app.get('/deleteAccount', (req, res) => {
     const { user_ID } = req.query;
