@@ -15,8 +15,8 @@ app.use(express.urlencoded({extended: true}));
 const connection = mysql.createConnection({
         host: '127.0.0.1',
         user: 'root',
-        password: 'Alo111204*',
-        database: 'z_attack'
+        password: '1234',
+        database: 'Z_ATTACK'
     });
     connection.connect((err) => {
         if (err) throw err;
