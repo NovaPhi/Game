@@ -414,7 +414,7 @@ app.post('/openLootbox', (req, res) => {
 
 
 app.post('/saveStats', (req, res) => {
-    const { user_ID, score, level, playtime } = req.body;
+    const { user_ID, heroId, score, level, stage, playtime } = req.body;
     connection.query(
         `UPDATE Stats SET
             total_runs = total_runs + 1,
@@ -426,7 +426,16 @@ app.post('/saveStats', (req, res) => {
         [score, level, playtime, score, user_ID],
         (err) => {
             if (err) { console.error(err); return res.status(500).json({ success: false }); }
-            res.json({ success: true });
+
+            connection.query(
+                `INSERT INTO Run (id_user, id_hero, status, level, wave, score, started_at, ended_at)
+                 VALUES (?, ?, 'game_over', ?, ?, ?, DATE_SUB(NOW(), INTERVAL ? SECOND), NOW())`,
+                [user_ID, heroId, level, stage, score, playtime],
+                (runErr) => {
+                    if (runErr) { console.error('Run insert error:', runErr); return res.status(500).json({ success: false }); }
+                    res.json({ success: true });
+                }
+            );
         }
     );
 });
