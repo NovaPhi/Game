@@ -440,6 +440,57 @@ app.post('/saveStats', (req, res) => {
     );
 });
 
+app.get('/stats/gamesOverTime', (req, res) => {
+    connection.query(
+        `SELECT DATE(started_at) AS day, COUNT(*) AS games
+         FROM Run
+         GROUP BY DATE(started_at)
+         ORDER BY day ASC`,
+        [],
+        (err, results) => {
+            if (err) { console.error(err); return res.status(500).json({ success: false }); }
+            const labels = results.map(r => r.day instanceof Date ? r.day.toISOString().slice(0, 10) : String(r.day).slice(0, 10)); //Checa si devuelve tipo DATE o tipo String y lo recorta para que solo se quede la fecha y no algo raro
+            const data   = results.map(r => r.games);
+            res.json({ success: true, labels, data });
+        }
+    );
+});
+
+app.get('/stats/highscoreDistribution', (req, res) => {
+    connection.query(
+        `SELECT u.username, s.best_score
+         FROM Stats s
+         JOIN User u ON u.id_user = s.id_user
+         WHERE u.status = 1
+         ORDER BY s.best_score DESC`,
+        [],
+        (err, results) => {
+            if (err) { console.error(err); return res.status(500).json({ success: false }); }
+            const labels = results.map(r => r.username);
+            const data   = results.map(r => r.best_score);
+            res.json({ success: true, labels, data });
+        }
+    );
+});
+
+app.get('/stats/cardsDistribution', (req, res) => {
+    connection.query(
+        `SELECT u.username, COUNT(uc.id_card) AS cards_unlocked
+         FROM User u
+         LEFT JOIN User_Collection uc ON uc.id_user = u.id_user
+         WHERE u.status = 1
+         GROUP BY u.id_user, u.username
+         ORDER BY cards_unlocked DESC`,
+        [],
+        (err, results) => {
+            if (err) { console.error(err); return res.status(500).json({ success: false }); }
+            const labels = results.map(r => r.username);
+            const data   = results.map(r => r.cards_unlocked);
+            res.json({ success: true, labels, data });
+        }
+    );
+});
+
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)
 });
