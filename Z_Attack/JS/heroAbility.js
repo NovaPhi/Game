@@ -9,7 +9,7 @@ const ABILITY_DEFS ={
     },
     1: {
         name: "War Cry",
-        cooldown: 600,
+        cooldown: 1200,
         description: "Speed and Damage +50%, Attack Cooldowns -50% for 4s"
     },
     2: {
@@ -83,11 +83,11 @@ class HeroAbility{
     
     activate(player, mouseX, mouseY){
         if (!this.isReady) return;
-        this.cooldowwn = this.def.cooldown;
+        this.cooldown = this.def.cooldown;
         this.active = true;
-        if (this.heroId == 3) this._activateScout(player, mouseX, mouseY);
-        if (this.heroId == 2) this._activateWarrior(player);
-        if (this.heroId == 1) this._activateTank(player);
+        if (this.heroId == 2) this._activateScout(player, mouseX, mouseY);
+        if (this.heroId == 1) this._activateWarrior(player);
+        if (this.heroId == 3) this._activateTank(player);
     }
 
     _activateScout(player, mouseX, mouseY){
@@ -110,13 +110,20 @@ class HeroAbility{
     _activateWarrior(player){
         this._origSpeed = player.speedMod;
         this._origDmg = player.damage;
-        this._origCdMax = player.attacCooldownMax;
+        this._origCdMax = player.attackCooldownMax;
 
         player.speedMod *= 1.5;
         player.damage *= 1.5;
-        player.attacCooldownMax = Math.max(5, Math.floor(player.attacCooldownMax * 0.66));
+        player.attackCooldownMax = Math.max(5, Math.floor(player.attackCooldownMax * 0.66));
 
         this.timer = 240; //4s
+    }
+
+    _endWarriorBoost(player){
+        if (this._origSpeed  !== null) player.speedMod          = this._origSpeed;
+        if (this._origDmg    !== null) player.damage            = this._origDmg;
+        if (this._origCdMax  !== null) player.attackCooldownMax = this._origCdMax;
+        this._origSpeed = this._origDmg = this._origCdMax = null;
     }
 
     _activateTank(player){
@@ -148,7 +155,7 @@ draw(ctx) {
         }
 
         // Draw warrior boost glow
-        if (this.heroId === 2 && this.active && game && game.player) {
+        if (this.heroId === 1 && this.active && game && game.player) {
             const p  = game.player;
             const cx = p.x + p.width  / 2;
             const cy = p.y + p.height / 2;
