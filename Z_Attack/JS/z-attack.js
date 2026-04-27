@@ -162,6 +162,7 @@ class Player {
                 if (target.hp < 0) target.hp = 0;
                 this.targetHp       = target.hp;
                 this.attackCooldown = this.attackCooldownMax;
+                if(game && game.ability) game.ability.breakInvisibility();
                 return true;
             }
             return false;
@@ -170,6 +171,8 @@ class Player {
     }
 
     draw(ctx) {
+        const invis = game && game.ability && game.ability.isInvisible();
+        ctx.globalAlpha = invis ? 0.3 : 1.0;
         if (playerStats.asset && this._img) {
             if (this._img.complete && this._img.naturalWidth > 0) {
                 ctx.drawImage(this._img, this.x, this.y, this.width, this.height);
@@ -185,6 +188,7 @@ class Player {
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.globalAlpha = 1.0;
     }
 }
 
@@ -939,9 +943,15 @@ class Game {
             if (this.won && this.draftChoices) return;
 
             if (e.code === "KeyE" && !this.waiting && !this.won && !this.targetingMode){
-                this.ability.activate(this.player, this.mouseX, this.mouseY);
+                this.ability.activateOffensive(this.player, this.mouseX, this.mouseY);
                 return;
             }
+            
+            if (e.code === "KeyF" && !this.waiting && !this.won && !this.targetingMode){
+                this.ability.activateDefensive(this.player);
+                return;
+            }
+
             if (this.targetingMode && e.code === "KeyE") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
@@ -1084,6 +1094,7 @@ class Game {
     update(dt = 1) {
         // Freeze game logic while hero select or any waiting/won state is active
         
+
         if (this.heroSelect.active || this.waiting || this.won) return;
 
         const solidWalls = this.mainBase.living;
@@ -1134,12 +1145,14 @@ class Game {
         if (this.notifTimer > 0) this.notifTimer-= dt;
 
         // Outposts shoot at player
-        for (const outpost of this.outposts) {
-            const result = outpost.tryShoot(this.player, dt);
-            if (Array.isArray(result)) {
-                this.bullets.push(...result);
-            } else if (result) {
-                this.bullets.push(result);
+        if(!this.ability.isInvisible()){    
+            for (const outpost of this.outposts) {
+                const result = outpost.tryShoot(this.player, dt);
+                if (Array.isArray(result)) {
+                    this.bullets.push(...result);
+                } else if (result) {
+                    this.bullets.push(result);
+                }
             }
         }
 
