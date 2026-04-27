@@ -105,8 +105,8 @@ class Player {
     }
 
     // Moves the player and makes wall collisions
-    update(walls) {
-        const spd = PLAYER_SPEED * this.speedMod; 
+    update(walls, dt =1) {
+        const spd = PLAYER_SPEED * this.speedMod * dt; 
         let dx = 0, dy = 0;
         if (this.keys.up)    dy -= spd;
         if (this.keys.down)  dy += spd;
@@ -121,7 +121,7 @@ class Player {
         this.y = Math.max(0, Math.min(canvasHeight - this.height, this.y));
         for (const w of walls) if (w.alive && this.overlaps(w)) this.resolveY(w, dy);
 
-        if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.attackCooldown > 0) this.attackCooldown-= dt;
     }
 
     overlaps(rect) {
@@ -157,7 +157,7 @@ class Player {
         if (this.touches(target)) {
             this.isAttacking = true;
             this.targetHp    = target.hp;
-            if (this.attackCooldown === 0) {
+            if (this.attackCooldown <= 0) {
                 target.hp -= this.damage;
                 if (target.hp < 0) target.hp = 0;
                 this.targetHp       = target.hp;
@@ -204,9 +204,9 @@ class Bullet {
         this.dead = false; // Flag for bullet if still active
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
+    update(dt = 1) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
         if (this.x < 0 || this.x > canvasWidth || this.y < 0 || this.y > canvasHeight)
             this.dead = true;
     }
@@ -273,7 +273,7 @@ class WallSegment {
     get alive() { return this.hp > 0; }
 
     // Fires a bullet at the player if they are within range and on the correct side of the wall
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -295,7 +295,7 @@ class WallSegment {
         
         if(!outside) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const speed = 4;
@@ -407,7 +407,7 @@ class Outpost {
     get alive() { return this.hp > 0; }
 
     // Fires at the player if they are in range
-    tryShoot(player) {
+    tryShoot(player , dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -420,7 +420,7 @@ class Outpost {
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const speed = 3;
@@ -471,7 +471,7 @@ class Burst {
     get alive() { return this.hp > 0; }
 
     // Fires at the player if they are in range
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -484,7 +484,7 @@ class Burst {
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const bullets = [];
@@ -546,7 +546,7 @@ class Sniper {
     get alive() { return this.hp > 0; }
 
     // Fires at the player if they are in range
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -559,7 +559,7 @@ class Sniper {
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
-        if (this.idleCooldown == 0) {
+        if (this.idleCooldown <= 0) {
             this.idleCooldown = this.idleCooldownMax; // Reset for next cycle
             this._isWarning   = false;
  
@@ -567,7 +567,7 @@ class Sniper {
             return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, 35, 10, 10, true, "#ff0");
         }
 
-        this.idleCooldown--;
+        this.idleCooldown-= dt;
 
         if (this.idleCooldown <= this.WARN_FRAMES) {
             if (!this._isWarning) {
@@ -1081,21 +1081,21 @@ class Game {
         this.draftChoices = getDraftChoices();
     }
 
-    update() {
+    update(dt = 1) {
         // Freeze game logic while hero select or any waiting/won state is active
         
         if (this.heroSelect.active || this.waiting || this.won) return;
 
         const solidWalls = this.mainBase.living;
-        this.player.update(solidWalls);
-        this.ability.update(this.player, this.mouseX, this.mouseY, this.outposts, this.mainBase);
+        this.player.update(solidWalls, dt);
+        this.ability.update(this.player, this.mouseX, this.mouseY, this.outposts, this.mainBase, dt);
 
         this.player.isAttacking = false;
         this.player.targetHp    = null;
 
         // Player attacks outposts
         for (const outpost of this.outposts) {
-            if (outpost.alive) this.player.tryAttack(outpost);
+            if (outpost.alive) this.player.tryAttack(outpost, dt);
         }
 
         // Player attacks main base only when outposts are cleared
@@ -1131,11 +1131,11 @@ class Game {
             }
         }
             */
-        if (this.notifTimer > 0) this.notifTimer--;
+        if (this.notifTimer > 0) this.notifTimer-= dt;
 
         // Outposts shoot at player
         for (const outpost of this.outposts) {
-            const result = outpost.tryShoot(this.player);
+            const result = outpost.tryShoot(this.player, dt);
             if (Array.isArray(result)) {
                 this.bullets.push(...result);
             } else if (result) {
@@ -1145,13 +1145,13 @@ class Game {
 
         // Wall segments shoot at player
         for (const seg of this.mainBase.living) {
-            const b = seg.tryShoot(this.player);
+            const b = seg.tryShoot(this.player, dt);
             if (b) this.bullets.push(b);
         }
 
         // Move bullets, check hits, cull dead ones
         for (const b of this.bullets) {
-            b.update();
+            b.update(dt);
             if (!b.dead && b.overlaps(this.player)) {
                 if(!this.ability.absorbDamage()){
                     const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
@@ -1525,8 +1525,12 @@ async function main() {
     loop();
 }
 
-function loop() {
-    game.update();
+let lastTime = 0;
+
+function loop(timestamp) {
+    const dt = lastTime ? Math.min((timestamp - lastTime) / (1000/60), 3) : 1;
+    lastTime = timestamp;
+    game.update(dt);
     game.draw(ctx);
     requestAnimationFrame(loop);
 }
