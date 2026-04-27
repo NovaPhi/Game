@@ -20,6 +20,55 @@ body {
     font-family: 'Creepster', cursive;
 }
 
+#intro {
+    position: fixed;
+    inset: 0;
+    background: black;
+    z-index: 9999;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#intro video {
+    display: block;
+    width: 80%;
+    height: 1024px;
+    height: auto;
+}
+
+#skipBtn {
+    position: absolute;
+    bottom: 28px;
+    right: 36px;
+    font-family: 'Creepster', cursive;
+    font-size: 22px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c8e6c9;
+    background: rgba(10, 10, 10, 0.6);
+    border: 2px solid #2e7d32;
+    border-radius: 4px;
+    padding: 8px 22px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10000; 
+}
+
+#skipBtn:hover {
+    color: #4caf50;
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.12);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+}
+
+#title, #mainMenu, #topBar, #footer {
+    display: none;
+}
+
 #title {
     text-align: center;
     margin-bottom: 48px;
