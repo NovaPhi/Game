@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Unlock</title>
+    <link rel="stylesheet" href="/Z_Attack/CSS/cards.css">
+    <link rel="stylesheet" href="/Z_Attack/CSS/cardsUnlock.css">
+    <link rel="stylesheet" href="../CSS/ColorblindChnge.css"/>
+</head>
+<body>
+
+    <nav id="topBar"></nav>
+    <a class="back-btn" href="cards.html">&#8592; Back</a>
+
+    <h1 class="page-title">Card Unlock</h1>
+    <div class="unlock-subtitle">// Spend XP to grow your collection //</div>
+
+    <div class="xp-hud" id="xpHud">XP <span class="xp-value" id="xpValue">0</span></div>
+
+    <div class="lootbox-grid" id="lootboxGrid"></div>
+
+    <div class="reveal-backdrop hidden" id="revealBackdrop">
+        <div class="reveal-header" id="revealHeader"></div>
+        <div class="reveal-card-container" id="revealCardWrap"></div>
+        <div class="reveal-toast" id="revealToast"></div>
+        <button class="reveal-continue" id="revealContinue">Continue</button>
+    </div>
+
+    <div class="dev-banner" id="devBanner" style="display:none">// Using DEV card pool — wire /getAllCards to go live //</div>
+
+    <script src="../Api/main.js"></script>
+    <script src="../JS/cardsUnlock.js"></script>
+</body>
+</html>

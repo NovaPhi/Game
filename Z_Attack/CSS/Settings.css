@@ -1,0 +1,115 @@
+@import url('/Z_Attack/CSS/main.css');
+
+#settingsMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.setting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.setting label {
+    font-family: 'Creepster', cursive;
+    font-size: 28px;
+    color: #c8e6c9;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 280px;
+    height: 6px;
+    background: #2e7d32;
+    border-radius: 4px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #4caf50;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+#colorblindCycle {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+#colorblindCycle button {
+    font-family: 'Creepster', cursive;
+    font-size: 24px;
+    background: rgba(46, 125, 50, 0.08);
+    border: 2px solid #2e7d32;
+    color: #c8e6c9;
+    padding: 6px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.25s ease;
+}
+
+#colorblindCycle button:hover {
+    color: #4caf50;
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.12);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+    transform: scale(1.05);
+}
+
+#colorblindLabel {
+    font-family: 'Creepster', cursive;
+    font-size: 24px;
+    color: #4caf50;
+    letter-spacing: 2px;
+    min-width: 220px;
+    text-align: center;
+}
+
+.back-btn {
+    position: fixed;
+    top: 28px;
+    left: 50px;
+    font-family: 'Creepster', cursive;
+    font-size: 28px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c8e6c9;
+    text-decoration: none;
+    border: 2px solid #2e7d32;
+    border-radius: 4px;
+    background: rgba(46, 125, 50, 0.08);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.1), inset 0 0 20px rgba(0,0,0,0.4);
+    padding: 8px 24px;
+    transition: all 0.25s ease;
+    z-index: 100;
+}
+
+.back-btn:hover {
+    color: #4caf50;
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.12);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3), inset 0 0 20px rgba(0,0,0,0.3);
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+}
+
+body.deuteranopia {
+    filter: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><defs><filter id='d'><feColorMatrix type='matrix' values='0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0'/></filter></defs></svg>#d") !important;
+}
+body.protanopia {
+    filter: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><defs><filter id='p'><feColorMatrix type='matrix' values='0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0'/></filter></defs></svg>#p") !important;
+}
+body.tritanopia {
+    filter: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><defs><filter id='t'><feColorMatrix type='matrix' values='0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0'/></filter></defs></svg>#t") !important;
+}
