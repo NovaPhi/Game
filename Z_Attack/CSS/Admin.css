@@ -90,6 +90,34 @@ body {
   transform: scale(1.05);
 }
 
+/* Graph button */
+.graphButton {
+  display: inline-block;
+  align-self: center;
+  margin-bottom: 24px;
+  font-family: 'Creepster', cursive;
+  font-size: 28px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: rgba(46, 125, 50, 0.08);
+  box-shadow: 0 0 10px rgba(76,175,80,0.1), inset 0 0 20px rgba(0,0,0,0.4);
+  padding: 8px 24px;
+  transition: all 0.25s ease;
+}
+
+.graphButton:hover {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,80,0.12);
+  box-shadow: 0 0 15px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(76,175,80,0.5);
+  transform: scale(1.05);
+}
+
 /* WELCOME */
 .welcome {
   font-family: 'Creepster', cursive;

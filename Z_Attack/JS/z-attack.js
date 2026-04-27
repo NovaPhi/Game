@@ -13,7 +13,6 @@
 
 //Game Z_ATTACK
 //By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
-//Commit de prueba
 
 "use strict";
 
@@ -1035,8 +1034,10 @@ class Game {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_ID: sessionUser.user_ID,
+                        heroId: playerStats.heroId,
                         score: this._deathXP,
                         level: this._deathLevel,
+                        stage: this._deathStage,
                         playtime: playtime
                     })
                 });

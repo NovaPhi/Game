@@ -1,0 +1,108 @@
+:root {
+  --green: #4caf50;
+  --green-dark: #2e7d32;
+  --green-glow: rgba(76, 175, 80, 0.35);
+  --red: #e57373;
+  --red-dark: #b71c1c;
+  --red-glow: rgba(239, 83, 80, 0.3);
+  --text: #c8e6c9;
+  --bg: #050f05;
+  --border: #2e7d32;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(46,125,50,0.15) 0%, transparent 70%),
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(46,125,50,0.03) 40px, rgba(46,125,50,0.03) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(46,125,50,0.03) 40px, rgba(46,125,50,0.03) 41px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  padding: 100px 20px 60px;
+}
+
+/* NAV */
+#topBar {
+  position: fixed;
+  top: 10px;
+  right: 50px;
+  padding: 18px 28px;
+  z-index: 100;
+}
+
+#topBar .nav-btn {
+  font-family: 'Creepster', cursive;
+  font-size: 30px;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: rgba(46, 125, 50, 0.08);
+  box-shadow: 0 0 10px rgba(76,175,80,0.1), inset 0 0 20px rgba(0,0,0,0.4);
+  padding: 8px 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+#topBar .nav-btn:hover {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,80,0.12);
+  box-shadow: 0 0 15px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(76,175,80,0.5);
+  transform: scale(1.05);
+}
+
+.back-btn {
+  position: fixed;
+  top: 28px;
+  left: 50px;
+  font-family: 'Creepster', cursive;
+  font-size: 28px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: rgba(46, 125, 50, 0.08);
+  box-shadow: 0 0 10px rgba(76,175,80,0.1), inset 0 0 20px rgba(0,0,0,0.4);
+  padding: 8px 24px;
+  transition: all 0.25s ease;
+  z-index: 100;
+}
+
+.back-btn:hover {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,80,0.12);
+  box-shadow: 0 0 15px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.3);
+  text-shadow: 0 0 8px rgba(76,175,80,0.5);
+  transform: scale(1.05);
+}
+
+.chart-container {
+  width: 100%;
+  max-width: 900px;
+  height: 500px;
+  margin: 0 auto;
+  padding: 24px;
+  background: rgba(46, 125, 50, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 0 30px rgba(76, 175, 80, 0.08), inset 0 0 60px rgba(0, 0, 0, 0.5);
+  animation: fadeUp 0.6s ease both;
+}
+
+#myChart {
+  width: 100% !important;
+  height: 100% !important;
+}
