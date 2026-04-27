@@ -38,12 +38,12 @@ class HeroAbility{
     get isReady() {return this.cooldown <= 0 && !this.active;}
 
     //called every frame from Game.update()
-    update(player,mouseX,mouseY,outposts, mainBase){
-        if(this.cooldown >0) this.cooldown--;
+    update(player,mouseX,mouseY,outposts, mainBase, dt=1){
+        if(this.cooldown >0) this.cooldown-=dt;
         if(this.active){
-            this.timer--;
+            this.timer-=dt;
             if(this.heroId == 2){
-                for (const b of this.bullets) b.update();
+                for (const b of this.bullets) b.update(dt);
                 for (const b of this.bullets){
                     if(b.dead) continue;
                     for(const o of outposts){
