@@ -1,22 +1,58 @@
-(function applySettings() {
-    const brightness = localStorage.getItem('brightness') ?? 100;
-    const colorblind = localStorage.getItem('colorblind') || 'none';
-
-    document.body.style.filter = `brightness(${brightness}%)`;
-
-    document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
-    if (colorblind !== 'none') document.body.classList.add(colorblind);
-})();
 
 //Game Z_ATTACK — Tutorial
 //By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 
 "use strict";
 
+
+
 const canvasWidth  = 1000;
 const canvasHeight = 750;
-const PLAYER_SPEED = 6;
+const PLAYER_SPEED = 4;
 const PLAYER_DMG   = 100;
+
+
+function createStarterDeck() {
+    return [
+        {
+            id: 'tutorial_heal',
+            name: 'Field Medic',
+            type: 'ability',
+            description: 'Heal 20 HP instantly.',
+            rarity: 'common',
+            color: '#aaaaaa',
+            targeting: false,
+            apply(game) {
+                game.player.hp = Math.min(game.player.hp + 20, game.player.maxHp);
+            }
+        },
+        {
+            id: 'tutorial_speed',
+            name: 'Quick Feet',
+            type: 'powerup',
+            description: '+20% movement speed.',
+            rarity: 'common',
+            color: '#aaaaaa',
+            targeting: false,
+            apply(game) {
+                playerStats.speedMod  += 0.2;
+                game.player.speedMod  += 0.2;
+            }
+        },
+        {
+            id: 'tutorial_armor',
+            name: 'Tin Shield',
+            type: 'powerup',
+            description: '+2 damage reduction.',
+            rarity: 'common',
+            color: '#aaaaaa',
+            targeting: false,
+            apply(game) {
+                playerStats.dmgReduction += 2;
+            }
+        }
+    ];
+}
 
 let playerStats = {
     speedMod:     1.0,
@@ -55,7 +91,7 @@ class Player {
         this.hp    = 50;
     }
 
-    update(walls) {
+    update(walls, dt = 1) {
         if (game.tutorial.active) return;
         const spd = PLAYER_SPEED * this.speedMod;
         let dx = 0, dy = 0;
@@ -72,7 +108,7 @@ class Player {
         this.y = Math.max(0, Math.min(canvasHeight - this.height, this.y));
         for (const w of walls) if (w.alive && this.overlaps(w)) this.resolveY(w, dy);
 
-        if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.attackCooldown > 0) this.attackCooldown-= dt;
     }
 
     overlaps(rect) {
@@ -107,7 +143,7 @@ class Player {
         if (this.touches(target)) {
             this.isAttacking = true;
             this.targetHp    = target.hp;
-            if (this.attackCooldown === 0) {
+            if (this.attackCooldown <= 0) {
                 target.hp -= this.damage;
                 if (target.hp < 0) target.hp = 0;
                 this.targetHp       = target.hp;
@@ -141,9 +177,9 @@ class Bullet {
         this.dead   = false;
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
+    update(dt = 1) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
         if (this.x < 0 || this.x > canvasWidth || this.y < 0 || this.y > canvasHeight)
             this.dead = true;
     }
@@ -185,7 +221,7 @@ class WallSegment {
 
     get alive() { return this.hp > 0; }
 
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -205,7 +241,7 @@ class WallSegment {
 
         if (!outside) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const speed = 4;
@@ -304,7 +340,7 @@ class Outpost {
 
     get alive() { return this.hp > 0; }
 
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -316,7 +352,7 @@ class Outpost {
         if (dist < player.width)    return null;
         if (dist > this.shootRange) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const speed = 3;
@@ -570,11 +606,11 @@ class Game {
         this.instructionsScreen = true;
     }
 
-    update() {
+    update(dt = 1) {
         if (this.waiting || this.won) return;
 
         const solidWalls = this.mainBase.living;
-        this.player.update(solidWalls);
+        this.player.update(solidWalls, dt);
 
         this.player.isAttacking = false;
         this.player.targetHp    = null;
@@ -612,20 +648,20 @@ class Game {
             }
         }
 
-        if (this.notifTimer > 0) this.notifTimer--;
+        if (this.notifTimer > 0) this.notifTimer-= dt;
 
         for (const outpost of this.outposts) {
-            const b = outpost.tryShoot(this.player);
+            const b = outpost.tryShoot(this.player, dt);
             if (b) this.bullets.push(b);
         }
 
         for (const seg of this.mainBase.living) {
-            const b = seg.tryShoot(this.player);
+            const b = seg.tryShoot(this.player, dt);
             if (b) this.bullets.push(b);
         }
 
         for (const b of this.bullets) {
-            b.update();
+            b.update(dt);
             if (!b.dead && b.overlaps(this.player)) {
                 const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
                 this.player.hp -= dmg;
@@ -1040,10 +1076,22 @@ function main() {
     loop();
 }
 
-function loop() {
-    game.update();
+let lastTime = 0;
+function loop(timestamp) {
+    const dt = lastTime ? Math.min((timestamp-lastTime) / (1000/60),3) : 1;
+    lastTime = timestamp;
+    game.update(dt);
     game.draw(ctx);
     requestAnimationFrame(loop);
 }
 
-main();
+document.addEventListener('DOMContentLoaded', function applySettings() {
+    const brightness = localStorage.getItem('brightness') ?? 100;
+    const colorblind = localStorage.getItem('colorblind') || 'none';
+    document.body.style.filter = `brightness(${brightness}%)`;
+    document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
+    if (colorblind !== 'none') document.body.classList.add(colorblind);
+
+});
+
+
