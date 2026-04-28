@@ -119,7 +119,7 @@ class HeroAbility {
 
         if (this.heroId === 1) this._activateWarrior(player);
         if (this.heroId === 2) this._activateScout(player, mouseX, mouseY);
-        if (this.heroId === 3) this._activateHammerSlam(player, outposts, mainBase);
+        if (this.heroId === 3) this._activateHammerSlam(player);
     }
 
     // ACTIVATE DEFENSIVE ABILITIES (F)
@@ -166,11 +166,21 @@ class HeroAbility {
         this._origSpeed = this._origDmg = this._origCdMax = null;
     }
 
-    _activateHammerSlam(player, outposts, mainBase) {
+    _activateHammerSlam(player) {
         const cx     = player.x + player.width  / 2;
         const cy     = player.y + player.height / 2;
-        const radius = 100; // small AoE
+        const radius = 120; // small AoE
         const damage = 200;
+
+        const outposts = game.outposts;
+        const mainBase = game.mainBase;
+
+        console.log("Hammer slam at", cx, cy, "radius", radius);
+        console.log("Outposts in range:", outposts.filter(o => {
+            const ox = o.x + o.width / 2;
+            const oy = o.y + o.height / 2;
+            return o.alive && Math.hypot(ox - cx, oy - cy) <= radius;
+        }).length);
 
         for (const o of outposts) {
             if (!o.alive) continue;
@@ -343,8 +353,9 @@ class HeroAbility {
         ctx.fillText(`[${key}]`, x + 3, y + size - 4);
 
         ctx.fillStyle = "#aaa";
-        ctx.font      = "10px monospace";
-        ctx.fillText(def.name, x + size + 6, y + 14);
+        ctx.font      = "7px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(def.name, x + size /2, y + size - 48);
 
         if (cooldown > 0) {
             const secs = Math.ceil(cooldown / 60);
