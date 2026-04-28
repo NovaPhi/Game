@@ -51,8 +51,8 @@ function applyHeroStats(heroId) {
 
 // Calculates the difficulty multiplier based on the current level (temp)
 function getDifficultyMult(){
-    const doublings = Math.floor(playerStats.level / 3);
-    return Math.pow(2,doublings);
+    const stage = Math.floor(playerStats.level / 3);
+    return 1 + stage * 0.3;
 }
 
 function randomBaseCenter() {
@@ -106,9 +106,9 @@ class Player {
     }
 
     // Moves the player and makes wall collisions
-    update(walls) {
+    update(walls, dt = 1) {
         const paralyzed = performance.now() < this.paralyzedUntil;
-        const spd = paralyzed ? 0 : PLAYER_SPEED * this.speedMod;
+        const spd = paralyzed ? 0 : PLAYER_SPEED * this.speedMod * dt;
         let dx = 0, dy = 0;
         if (this.keys.up)    dy -= spd;
         if (this.keys.down)  dy += spd;
@@ -123,7 +123,7 @@ class Player {
         this.y = Math.max(0, Math.min(canvasHeight - this.height, this.y));
         for (const w of walls) if (w.alive && this.overlaps(w)) this.resolveY(w, dy);
 
-        if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.attackCooldown > 0) this.attackCooldown-= dt;
     }
 
     overlaps(rect) {
@@ -159,11 +159,12 @@ class Player {
         if (this.touches(target)) {
             this.isAttacking = true;
             this.targetHp    = target.hp;
-            if (this.attackCooldown === 0) {
+            if (this.attackCooldown <= 0) {
                 target.hp -= this.damage;
                 if (target.hp < 0) target.hp = 0;
                 this.targetHp       = target.hp;
                 this.attackCooldown = this.attackCooldownMax;
+                if(game && game.ability) game.ability.breakInvisibility();
                 return true;
             }
             return false;
@@ -172,6 +173,8 @@ class Player {
     }
 
     draw(ctx) {
+        const invis = game && game.ability && game.ability.isInvisible();
+        ctx.globalAlpha = invis ? 0.3 : 1.0;
         if (playerStats.asset && this._img) {
             if (this._img.complete && this._img.naturalWidth > 0) {
                 ctx.drawImage(this._img, this.x, this.y, this.width, this.height);
@@ -187,12 +190,13 @@ class Player {
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.globalAlpha = 1.0;
     }
 }
 
 // Class form projectiles fired by outposts or wall segments
 class Bullet {
-    constructor(x, y, vx, vy, damage, color = "#f84") {
+    constructor(x, y, vx, vy, damage, width, height, diamond, color = "#f84") {
         this.x = x;
         this.y = y;
         this.vx = vx;
@@ -200,14 +204,15 @@ class Bullet {
         this.damage = 1;
         this.damage = damage;  // Damage dealt to the player on impact
         this.color = color;
-        this.width = 6;
-        this.height = 6;
+        this.width = width;
+        this.height = height;
+        this.diamond = diamond;
         this.dead = false; // Flag for bullet if still active
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
+    update(dt = 1) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
         if (this.x < 0 || this.x > canvasWidth || this.y < 0 || this.y > canvasHeight)
             this.dead = true;
     }
@@ -222,9 +227,31 @@ class Bullet {
     }
 
     draw(ctx) {
-        if (this.dead) return;
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if(this.diamond == false){
+            if (this.dead) return;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+        else{
+            if (this.dead) return;
+            const cx = this.x + this.width  / 2;
+            const cy = this.y + this.height / 2;
+            const r  = this.width / 2;
+            
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.moveTo(cx,     cy - r);  // top
+            ctx.lineTo(cx + r, cy);      // right
+            ctx.lineTo(cx,     cy + r);  // bottom
+            ctx.lineTo(cx - r, cy);      // left
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 
@@ -252,7 +279,7 @@ class WallSegment {
     get alive() { return this.hp > 0; }
 
     // Fires a bullet at the player if they are within range and on the correct side of the wall
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -274,14 +301,14 @@ class WallSegment {
         
         if(!outside) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const speed = 4;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
         // 1/6 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 ,"#f44");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 , 6, 6, false, "#f44");
     }
 
     draw(ctx) {
@@ -362,6 +389,7 @@ class MainBase {
     }
 }
 
+
 //Class for all the enemy outposts scattered thru the map
 class Outpost {
     constructor(x, y) {
@@ -385,7 +413,7 @@ class Outpost {
     get alive() { return this.hp > 0; }
 
     // Fires at the player if they are in range
-    tryShoot(player) {
+    tryShoot(player , dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -398,14 +426,14 @@ class Outpost {
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const speed = 3;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
         // 1/8 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 ,    "#f84");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 , 6, 6, false,   "#f84");
     }
 
     draw(ctx) {
@@ -449,7 +477,7 @@ class Burst {
     get alive() { return this.hp > 0; }
 
     // Fires at the player if they are in range
-    tryShoot(player) {
+    tryShoot(player, dt = 1) {
         if (!this.alive) return null;
 
         const cx = this.x + this.width  / 2;
@@ -462,7 +490,7 @@ class Burst {
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
-        if (this.shootCooldown > 0) { this.shootCooldown--; return null; }
+        if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
         const bullets = [];
@@ -476,7 +504,7 @@ class Burst {
             const vy = Math.sin(a) * speed;
 
             bullets.push(
-                new Bullet(cx - 3, cy - 3, vx, vy, 5, "#4af") // ⬅️ color diferente
+                new Bullet(cx - 3, cy - 3, vx, vy, 5, 6, 6, false, "#4af") // ⬅️ color diferente
             );
         }
         return bullets;
@@ -498,6 +526,117 @@ class Burst {
         ctx.font = "10px monospace";
         ctx.textAlign = "center";
         ctx.fillText("OUTPOST", this.x + this.width / 2, this.y + this.height / 2 + 4);
+    }
+}
+
+class Sniper {
+    constructor(x, y) {
+        this.x      = x;
+        this.y      = y;
+        this.width  = 40;
+        this.height = 40;
+        this.maxHp  = 200;
+        this.hp     = this.maxHp;
+
+        const mult = getDifficultyMult();
+        this.WARN_FRAMES = 30;
+        this.idleCooldownMax = Math.max(Math.floor(120 / mult), 40);
+        this.idleCooldown = Math.floor(Math.random() * this.idleCooldownMax);
+
+        this.shootRange = 400; // Detection range
+        this._aimNx = 0;
+        this._aimNy = 0;
+        this._isWarning = false;
+    }
+
+    get alive() { return this.hp > 0; }
+
+    // Fires at the player if they are in range
+    tryShoot(player, dt = 1) {
+        if (!this.alive) return null;
+
+        const cx = this.x + this.width  / 2;
+        const cy = this.y + this.height / 2;
+        const px = player.x + player.width  / 2;
+        const py = player.y + player.height / 2;
+        const dist = Math.hypot(px - cx, py - cy);
+
+        // Don't shoot if player is within one player-length
+        if (dist < player.width) return null;
+        if (dist > this.shootRange) return null;
+
+        if (this.idleCooldown <= 0) {
+            this.idleCooldown = this.idleCooldownMax; // Reset for next cycle
+            this._isWarning   = false;
+ 
+            const speed = 10;
+            return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, 35, 10, 10, true, "#ff0");
+        }
+
+        this.idleCooldown-= dt;
+
+        if (this.idleCooldown <= this.WARN_FRAMES) {
+            if (!this._isWarning) {
+                this._isWarning = true;
+                if (dist > 0) {
+                    this._aimNx = (px - cx) / dist;
+                    this._aimNy = (py - cy) / dist;
+                }
+            }
+        } 
+        else {
+            this._isWarning = false;
+            if (dist < player.width || dist > this.shootRange) return null;
+        }
+        return null;
+    }
+    
+    draw(ctx) {
+        if (!this.alive) return;
+        const ratio = this.hp / this.maxHp;
+ 
+        ctx.fillStyle = `rgba(180, 40, 40, ${0.4 + 0.6 * ratio})`;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeStyle = "#ff0";
+        ctx.lineWidth   = 2;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        const cx = this.x + this.width  / 2;
+        const cy = this.y + this.height / 2;
+        ctx.strokeStyle = "#ff0";
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+        ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
+        ctx.stroke();
+        ctx.fillStyle = "#333";
+        ctx.fillRect(this.x, this.y - 8, this.width, 5);
+        ctx.fillStyle = "#ff0";
+        ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
+        ctx.fillStyle = "#fff";
+        ctx.font = "8px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("SNIPER", cx, this.y + this.height - 3);
+        if (this._isWarning) {
+            const progress = 1 - (this.idleCooldown / this.WARN_FRAMES);
+            const pulse = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() / (120 - progress * 80)));
+            const targetX = cx + this._aimNx * this.shootRange;
+            const targetY = cy + this._aimNy * this.shootRange;
+            ctx.strokeStyle = `rgba(255, 60, 60, ${pulse})`;
+            ctx.lineWidth   = 1 + progress * 2; 
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(targetX, targetY);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+            ctx.fillStyle = `rgba(255, 60, 60, ${pulse})`;
+            ctx.beginPath();
+            ctx.arc(targetX, targetY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 
@@ -809,6 +948,7 @@ class Game {
         this._rewardGranted = false;
         this.lastReward = null;
         this._runStartTime = Date.now();
+        this.ability = new HeroAbility(playerStats.heroId || 1);
     }
 
     // Places the player at a random map position, ensuring they do not appear inside or directly besides the main base
@@ -857,10 +997,10 @@ class Game {
             ay + ah + gap > by;
 
             // Random base of 5–10 multiplied by difficulty capped at 60
-            const mult = getDifficultyMult();
+            const mult = Math.floor(playerStats.level / 3);
             const count = Math.min(
-                Math.floor((Math.floor(Math.random() * 6 ) + 5 ) * mult )
-                ,60
+                Math.floor(Math.random() * 6 ) + 5 + mult * 2 
+                ,40
             );
         
 
@@ -883,11 +1023,14 @@ class Game {
 
             if (valid) {
                 placed.push({ x, y, width: outW, height: outH });
-                if (Math.random() < 0.3) {
-                this.outposts.push(new Burst(x, y)); // 30% burst
-            } else {
-                this.outposts.push(new Outpost(x, y));
-            }
+                const roll = Math.random();
+                if (roll < 0.15) {
+                    this.outposts.push(new Sniper(x, y)); // 15% sniper
+                } else if (roll < 0.45) {
+                    this.outposts.push(new Burst(x, y)); // 30% burst
+                } else {
+                    this.outposts.push(new Outpost(x, y)); // 55% normal
+                }
             }
             // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
         }
@@ -979,6 +1122,17 @@ class Game {
         this._keydownHandler = (e) => {
             if (this.heroSelect.active) return;
             if (this.won && this.draftChoices) return;
+
+            if (e.code === "KeyE" && !this.waiting && !this.won && !this.targetingMode){
+                this.ability.activateOffensive(this.player, this.mouseX, this.mouseY);
+                return;
+            }
+            
+            if (e.code === "KeyF" && !this.waiting && !this.won && !this.targetingMode){
+                this.ability.activateDefensive(this.player);
+                return;
+            }
+
             if (this.targetingMode && e.code === "KeyE") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
@@ -1074,7 +1228,8 @@ class Game {
         if (this.waiting || this.won) {
             this.targetingMode = null;
             this._pendingTargetCard = null;
-            this.player   = new Player(playerStats)
+            this.player = new Player(playerStats)
+            this.ability = new HeroAbility(playerStats.heroId);
             const { cx, cy } = randomBaseCenter();
             this.mainBase = new MainBase(cx, cy);
             this.outposts = [];
@@ -1121,20 +1276,22 @@ class Game {
         this.draftChoices = getDraftChoices();
     }
 
-    update() {
+    update(dt = 1) {
         // Freeze game logic while hero select or any waiting/won state is active
         
+
         if (this.heroSelect.active || this.waiting || this.won) return;
 
         const solidWalls = [...this.mainBase.living, ...this.barriers]; // ... significa los elementos de ese array (spread operator)
-        this.player.update(solidWalls);
+        this.player.update(solidWalls, dt);
+        this.ability.update(this.player, this.mouseX, this.mouseY, this.outposts, this.mainBase, dt);
 
         this.player.isAttacking = false;
         this.player.targetHp    = null;
 
         // Player attacks outposts
         for (const outpost of this.outposts) {
-            if (outpost.alive) this.player.tryAttack(outpost);
+            if (outpost.alive) this.player.tryAttack(outpost, dt);
         }
 
         // Player attacks main base only when outposts are cleared
@@ -1170,27 +1327,29 @@ class Game {
             }
         }
             */
-        if (this.notifTimer > 0) this.notifTimer--;
+        if (this.notifTimer > 0) this.notifTimer-= dt;
 
         // Outposts shoot at player
-        for (const outpost of this.outposts) {
-            const result = outpost.tryShoot(this.player);
-            if (Array.isArray(result)) {
-                this.bullets.push(...result);
-            } else if (result) {
-                this.bullets.push(result);
+        if(!this.ability.isInvisible()){    
+            for (const outpost of this.outposts) {
+                const result = outpost.tryShoot(this.player, dt);
+                if (Array.isArray(result)) {
+                    this.bullets.push(...result);
+                } else if (result) {
+                    this.bullets.push(result);
+                }
             }
         }
 
         // Wall segments shoot at player
         for (const seg of this.mainBase.living) {
-            const b = seg.tryShoot(this.player);
+            const b = seg.tryShoot(this.player, dt);
             if (b) this.bullets.push(b);
         }
 
         // Move bullets, check hits, cull dead ones
         for (const b of this.bullets) {
-            b.update();
+            b.update(dt);
             if (b.dead) continue;
             // Barriers absorb bullets before they can reach the player
             for (const bar of this.barriers) {
@@ -1199,11 +1358,12 @@ class Game {
                     break; 
                 }
             }
-            if (b.dead) continue;
-            if (b.overlaps(this.player)) {
-                const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
-                this.player.hp -= dmg;
-                if (this.player.hp < 0) this.player.hp = 0;
+            if (!b.dead && b.overlaps(this.player)) {
+                if(!this.ability.absorbDamage()){
+                    const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
+                    this.player.hp -= dmg;
+                    if (this.player.hp < 0) this.player.hp = 0;
+                }
                 b.dead = true;
             }
         }
@@ -1303,6 +1463,7 @@ class Game {
         for (const outpost of this.outposts) outpost.draw(ctx);
         this.player.draw(ctx);
         for (const b of this.bullets) b.draw(ctx);
+        this.ability.draw(ctx);
 
         this.drawHUD(ctx);
 
@@ -1470,7 +1631,7 @@ class Game {
             ctx.fillStyle = "#aaa";
             ctx.fillText(`DR ${playerStats.dmgReduction}`, barX + 170, barY + 9);
         }
-
+        this.ability.drawHUD(ctx,12 , canvasHeight - 90);
         this.drawHand(ctx);
     }
 
@@ -1596,8 +1757,12 @@ async function main() {
     loop();
 }
 
-function loop() {
-    game.update();
+let lastTime = 0;
+
+function loop(timestamp) {
+    const dt = lastTime ? Math.min((timestamp - lastTime) / (1000/60), 3) : 1;
+    lastTime = timestamp;
+    game.update(dt);
     game.draw(ctx);
     requestAnimationFrame(loop);
 }
