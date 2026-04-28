@@ -41,7 +41,7 @@ const LOOTBOX_TIERS = [
         icon: '◆',
         cost: 1800,
         color: RARITY_COLORS.rare,
-        weights: { common: 0.30, uncommon: 0.45, rare: 0.20, legendary: 0.05 } //probabilidad
+        weights: { common: 0.30, uncommon: 0.45, rare: 0.20, legendary: 0.001 } //probabilidad
     },
     {
         id: 'legendary',
@@ -49,7 +49,7 @@ const LOOTBOX_TIERS = [
         icon: '★',
         cost: 6000,
         color: RARITY_COLORS.legendary,
-        weights: { common: 0.00, uncommon: 0.20, rare: 0.50, legendary: 0.30 } //probabilidad
+        weights: { common: 0.00, uncommon: 0.20, rare: 0.50, legendary: 0.01 } //probabilidad
     }
 ];
 

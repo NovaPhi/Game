@@ -863,7 +863,7 @@ class HeroSelect {
 
     cardRect(i) {
         const cardW  = 240;
-        const cardH  = 340;
+        const cardH  = 400;
         const gap    = 40;
         const count  = this.heroIds.length;
         const totalW = count * cardW + (count - 1) * gap;
@@ -1238,7 +1238,7 @@ class Game {
                 return;
             }
 
-            if (this.targetingMode && e.code === "KeyE") {
+            if (this.targetingMode && e.code === "KeyR") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
                     this._pendingTargetCard = null;
@@ -1736,7 +1736,7 @@ class Game {
             ctx.fillStyle = "#aaa";
             ctx.fillText(`DR ${playerStats.dmgReduction}`, barX + 170, barY + 9);
         }
-        this.ability.drawHUD(ctx,12 , canvasHeight - 90);
+        this.ability.drawHUD(ctx,canvasWidth,canvasHeight);
         this.drawHand(ctx);
     }
 
