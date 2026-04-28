@@ -560,34 +560,46 @@ class Sniper {
         const px = player.x + player.width  / 2;
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
-
-        // Don't shoot if player is within one player-length
-        if (dist < player.width) return null;
-        if (dist > this.shootRange) return null;
+        const inRange = dist > player.width && dist <= this.shootRange;
 
         if (this.idleCooldown <= 0) {
             this.idleCooldown = this.idleCooldownMax; // Reset for next cycle
-            this._isWarning   = false;
+            this._isWarning = false;
  
-            const speed = 10;
-            return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, 35, 10, 10, true, "#ff0");
+            if (this._aimNx !== 0 || this._aimNy !== 0) {
+                const speed = 10;
+                return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, 35, 10, 10, true, "#ff0");
+                this._aimNx = 0;
+                this._aimNy = 0;
+                return bullet;
+            }
+
+        return null;
         }
 
         this.idleCooldown-= dt;
 
         if (this.idleCooldown <= this.WARN_FRAMES) {
             if (!this._isWarning) {
-                this._isWarning = true;
-                if (dist > 0) {
+                if (inRange) {
+                    this._isWarning = true;
                     this._aimNx = (px - cx) / dist;
                     this._aimNy = (py - cy) / dist;
                 }
             }
+            return null;
         } 
-        else {
-            this._isWarning = false;
-            if (dist < player.width || dist > this.shootRange) return null;
+
+        this._isWarning = false;
+ 
+        if (inRange) {
+            this._aimNx = (px - cx) / dist;
+            this._aimNy = (py - cy) / dist;
+        } else {
+            this._aimNx = 0;
+            this._aimNy = 0;
         }
+
         return null;
     }
     
@@ -637,6 +649,97 @@ class Sniper {
             ctx.arc(targetX, targetY, 5, 0, Math.PI * 2);
             ctx.fill();
         }
+    }
+}
+
+class OmniOutpost {
+    constructor(x, y) {
+        this.x      = x;
+        this.y      = y;
+        this.width  = 40;
+        this.height = 40;
+        this.maxHp  = 150;
+        this.hp     = this.maxHp;
+
+        const mult = getDifficultyMult();
+        this.WARN_FRAMES     = 45;
+        this.idleCooldownMax = Math.max(Math.floor(300 / mult), 60);
+        this.idleCooldown    = Math.floor(Math.random() * this.idleCooldownMax);
+        this.NUM_BULLETS     = 12;
+        this._rotAngle       = 0;
+    }
+
+    get alive() { return this.hp > 0; }
+
+    get _isWarning() {
+        return this.idleCooldown <= this.WARN_FRAMES && this.idleCooldown > 0;
+    }
+
+    tryShoot(player, dt = 1) {
+        if (!this.alive) return null;
+        if (this.idleCooldown <= 0) {
+            this.idleCooldown = this.idleCooldownMax; // reiniciar ciclo
+            const bullets = [];
+            const speed   = 2.5;
+            const cx = this.x + this.width / 2;
+            const cy = this.y + this.height / 2;
+ 
+            for (let i = 0; i < this.NUM_BULLETS; i++) {
+                const angle = (i / this.NUM_BULLETS) * Math.PI * 2 + this._rotAngle;
+                bullets.push(new Bullet(cx - 3, cy - 3, Math.cos(angle) * speed, Math.sin(angle) * speed, 8, 6, 6, false, "#f60"));
+            }
+
+            this._rotAngle += Math.PI / this.NUM_BULLETS;
+ 
+            return bullets; 
+        }
+ 
+        this.idleCooldown -= dt;
+        this._rotAngle += this._isWarning ? 0.08 : 0.02;
+        return null;
+    }
+
+    draw(ctx) {
+        if (!this.alive) return;
+        const cx = this.x + this.width  / 2;
+        const cy = this.y + this.height / 2;
+        const ratio = this.hp / this.maxHp;
+        if (this._isWarning) {
+            const progress = 1 - (this.idleCooldown / this.WARN_FRAMES); // 0→1
+            const pulse    = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() / 80));
+            const maxR = 300;
+            const r    = maxR * progress;
+            ctx.strokeStyle = `rgba(255, 80, 0, ${pulse * (1 - progress * 0.5)})`;
+            ctx.lineWidth   = 3 - progress * 1.5; // más fino al expandirse
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+ 
+        ctx.fillStyle = `rgba(60, 30, 0, ${0.7 + 0.3 * ratio})`;
+        ctx.strokeStyle = this._isWarning ? "#f60" : "#a40";
+        ctx.lineWidth   = this._isWarning ? 2.5 : 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+            const r = this.width / 2;
+            i === 0
+                ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+                : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+ 
+        ctx.fillStyle = "#333";
+        ctx.fillRect(this.x, this.y - 8, this.width, 5);
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
+
+        ctx.fillStyle = "#fff";
+        ctx.font      = "7px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("OMNI", cx, this.y + this.height - 3);
     }
 }
 
@@ -1024,12 +1127,14 @@ class Game {
             if (valid) {
                 placed.push({ x, y, width: outW, height: outH });
                 const roll = Math.random();
-                if (roll < 0.15) {
+                if (roll < 0.10) {
+                    this.outposts.push(new OmniOutpost(x, y)); // 10% omni
+                } else if (roll < 0.25) {
                     this.outposts.push(new Sniper(x, y)); // 15% sniper
-                } else if (roll < 0.45) {
-                    this.outposts.push(new Burst(x, y)); // 30% burst
+                } else if (roll < 0.50) {
+                    this.outposts.push(new Burst(x, y)); // 25% burst
                 } else {
-                    this.outposts.push(new Outpost(x, y)); // 55% normal
+                    this.outposts.push(new Outpost(x, y)); // 50% normal
                 }
             }
             // if 200 attempts all fail (extremely rare on this canvas), skip that outpost
