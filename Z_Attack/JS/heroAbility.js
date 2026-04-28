@@ -10,8 +10,8 @@ const ABILITY_DEFS = {
         defensive: { name: "Ghost Step",     cooldown: 720, description: "Turn invisible until you attack" }
     },
     3: { // Tank
-        offensive: { name: "Hammer Slam",    cooldown: 480, description: "AoE slam damages all nearby enemies" },
-        defensive: { name: "Liberty Shield", cooldown: 300, description: "Absorb all damage for 3s" }
+        offensive: { name: "Hammer Slam",    cooldown: 1200, description: "AoE slam damages all nearby enemies" },
+        defensive: { name: "Liberty Shield", cooldown: 600, description: "Absorb all damage for 3s" }
     }
 };
 
@@ -322,14 +322,23 @@ class HeroAbility {
     }
 
 
-    drawHUD(ctx, x, y) {
+    drawHUD(ctx, canvasWidth, canvasHeight) {
         if (!this.def) return;
-        this._drawAbilityIcon(ctx, x,      y, "E", this.def.offensive, this.offCooldown, this.offActive, this.offReady);
-        this._drawAbilityIcon(ctx, x + 54, y, "F", this.def.defensive, this.defCooldown, this.defActive, this.defReady);
+        const size = 54;       // was 44
+        const gap  = 6;
+        const pad  = 12;       // margin from edges
+
+        // anchor to bottom-right
+        const totalWidth = size * 2 + gap;
+        const x = canvasWidth  - totalWidth - pad;
+        const y = canvasHeight - size - pad;
+
+        this._drawAbilityIcon(ctx, x,          y, "E", this.def.offensive, this.offCooldown, this.offActive, this.offReady);
+        this._drawAbilityIcon(ctx, x + size + gap, y, "F", this.def.defensive, this.defCooldown, this.defActive, this.defReady);
     }
 
     _drawAbilityIcon(ctx, x, y, key, def, cooldown, active, ready) {
-        const size = 44;
+        const size = 54;       // was 44
 
         ctx.fillStyle = "#222";
         ctx.fillRect(x, y, size, size);
@@ -347,27 +356,27 @@ class HeroAbility {
         ctx.lineWidth   = 2;
         ctx.strokeRect(x, y, size, size);
 
+        ctx.fillStyle = "#aaa";
+        ctx.font      = "8px monospace";   // was 7px
+        ctx.textAlign = "center";
+        ctx.fillText(def.name, x + size / 2, y + 9);   // moved inside top of box
+
         ctx.fillStyle = "#fff";
-        ctx.font      = "11px monospace";
+        ctx.font      = "13px monospace";  // was 11px
         ctx.textAlign = "left";
         ctx.fillText(`[${key}]`, x + 3, y + size - 4);
 
-        ctx.fillStyle = "#aaa";
-        ctx.font      = "7px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(def.name, x + size /2, y + size - 48);
-
         if (cooldown > 0) {
             const secs = Math.ceil(cooldown / 60);
-            ctx.fillStyle   = "#fff";
-            ctx.font        = "bold 16px monospace";
-            ctx.textAlign   = "center";
-            ctx.fillText(secs, x + size / 2, y + size / 2 + 6);
+            ctx.fillStyle = "#fff";
+            ctx.font      = "bold 20px monospace";  // was 16px
+            ctx.textAlign = "center";
+            ctx.fillText(secs, x + size / 2, y + size / 2 + 7);
         } else if (ready) {
             ctx.fillStyle = "#4af";
-            ctx.font      = "10px monospace";
+            ctx.font      = "12px monospace";  // was 10px
             ctx.textAlign = "center";
-            ctx.fillText("READY", x + size / 2, y + size / 2 + 4);
+            ctx.fillText("READY", x + size / 2, y + size / 2 + 5);
         }
 
         ctx.textAlign = "left";
