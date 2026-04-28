@@ -96,6 +96,7 @@ class Player {
         this.speedMod = stats.speedMod;
         this.maxHp = stats.maxHp;
         this.hp = this.maxHp;
+        this.paralyzedUntil = 0; // bear trap freeze (ms timestamp)
         if(playerStats.asset){
             this._img = new Image();
             this._img.src = playerStats.asset;
@@ -105,8 +106,9 @@ class Player {
     }
 
     // Moves the player and makes wall collisions
-    update(walls, dt =1) {
-        const spd = PLAYER_SPEED * this.speedMod * dt; 
+    update(walls, dt = 1) {
+        const paralyzed = performance.now() < this.paralyzedUntil;
+        const spd = paralyzed ? 0 : PLAYER_SPEED * this.speedMod * dt;
         let dx = 0, dy = 0;
         if (this.keys.up)    dy -= spd;
         if (this.keys.down)  dy += spd;
@@ -638,6 +640,106 @@ class Sniper {
     }
 }
 
+// Barrera indestructible
+// Tamaño random
+class Barrier {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.width  = w;
+        this.height = h;
+        this.alive  = true;
+    }
+
+    overlaps(rect) {
+        return (
+            this.x < rect.x + rect.width  &&
+            this.x + this.width  > rect.x &&
+            this.y < rect.y + rect.height &&
+            this.y + this.height > rect.y
+        );
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = "#777";
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+    }
+}
+
+// Mina de daño al contacto
+class Mine {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width  = 24;
+        this.height = 24;
+        this.damage = 100;
+        this.dead   = false;
+    }
+
+    draw(ctx) {
+        if (this.dead) return;
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
+        const r  = this.width / 2;
+        ctx.fillStyle = "#a00";
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#400";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#ff5";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// Trampa de paralizis
+class BearTrap {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width  = 24;
+        this.height = 24;
+        this.damage = 8;
+        this.paralyzeMs = 3000;
+        this.dead = false;
+    }
+
+    draw(ctx) {
+        if (this.dead) return;
+        ctx.fillStyle = "#aa6a00";
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeStyle = "#3a2200";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        // jagged "teeth" along the top and bottom edges
+        ctx.fillStyle = "#ddd";
+        const teeth = 4;
+        const tw = this.width / teeth;
+        for (let i = 0; i < teeth; i++) {
+            const tx = this.x + i * tw;
+            ctx.beginPath();
+            ctx.moveTo(tx, this.y);
+            ctx.lineTo(tx + tw / 2, this.y + 5);
+            ctx.lineTo(tx + tw, this.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(tx, this.y + this.height);
+            ctx.lineTo(tx + tw / 2, this.y + this.height - 5);
+            ctx.lineTo(tx + tw, this.y + this.height);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+}
+
 // Class for the hero selection
 class HeroSelect {
     constructor() {
@@ -817,10 +919,13 @@ class Game {
         this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
         this.outposts = [];
         this.bullets  = [];
+        this.barriers = [];
+        this.mines    = [];
+        this.traps    = [];
         this.won      = false;
         this.waiting  = true;
         this._died    = false;
-        
+
 
         this.randomEventActive    = false;
         this.randomEventTriggered = false;
@@ -837,6 +942,7 @@ class Game {
         this.mouseY = 0;
 
         this.spawnOutposts();
+        this.spawnObstacles();
         this.spawnPlayer();
         this.createEventListeners();
         this._rewardGranted = false;
@@ -930,7 +1036,82 @@ class Game {
         }
     }
 
-    
+    // Elementos aleatorios del mapa (barreras, minas y trampas)
+    // 30% de posiblidad de que salga cada elemento
+    spawnObstacles() {
+        const level = playerStats.level || 0;
+        // agarra el level actual para checar ya que los elementos saldrán a partir del nivel 3
+        if (level < 3) return;
+
+        const mult = getDifficultyMult();
+        const margin = 60;
+
+        // Checa donde está main base
+        const cx = this.mainBase.cx;
+        const cy = this.mainBase.cy;
+        const basePad = 50;
+        const baseW   = 7 * (32 + 2) - 2;
+        const baseH   = baseW;
+        const baseX   = cx - baseW / 2 - basePad;
+        const baseY   = cy - baseH / 2 - basePad;
+        const baseBW  = baseW + basePad * 2;
+        const baseBH  = baseH + basePad * 2;
+
+        const overlaps = (ax, ay, aw, ah, bx, by, bw, bh, gap = 0) =>
+            ax < bx + bw + gap &&
+            ax + aw + gap > bx &&
+            ay < by + bh + gap &&
+            ay + ah + gap > by;
+
+        // Already-placed entities to avoid (outposts + obstacles accumulate as we go)
+        const placed = this.outposts.map(o => ({ x: o.x, y: o.y, width: o.width, height: o.height }));
+        const minGap = 24;
+
+        const tryPlace = (w, h, gap = minGap) => {
+            for (let attempts = 0; attempts < 200; attempts++) {
+                const x = margin + Math.random() * (canvasWidth  - margin * 2 - w);
+                const y = margin + Math.random() * (canvasHeight - margin * 2 - h);
+                if (overlaps(x, y, w, h, baseX, baseY, baseBW, baseBH)) continue;
+                if (placed.some(p => overlaps(x, y, w, h, p.x, p.y, p.width, p.height, gap))) continue;
+                placed.push({ x, y, width: w, height: h });
+                return { x, y };
+            }
+            return null;
+        };
+
+        const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        // Barriers — random size per instance, count capped lower since they're bigger
+        if (Math.random() >= 0.3) {
+            const barrierCount = Math.min(randInt(2, 5) * mult, 12);
+            for (let i = 0; i < barrierCount; i++) {
+                const w = randInt(30, 90);
+                const h = randInt(30, 90);
+                const pos = tryPlace(w, h);
+                if (pos) this.barriers.push(new Barrier(pos.x, pos.y, w, h));
+            }
+        }
+
+        // Mines
+        if (Math.random() >= 0.3) {
+            const mineCount = Math.min(randInt(1, 3) * mult, 10);
+            for (let i = 0; i < mineCount; i++) {
+                const pos = tryPlace(24, 24);
+                if (pos) this.mines.push(new Mine(pos.x, pos.y));
+            }
+        }
+
+        // Bear traps
+        if (Math.random() >= 0.3) {
+            const trapCount = Math.min(randInt(1, 3) * mult, 10);
+            for (let i = 0; i < trapCount; i++) {
+                const pos = tryPlace(24, 24);
+                if (pos) this.traps.push(new BearTrap(pos.x, pos.y));
+            }
+        }
+    }
+
+
 
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
@@ -1053,6 +1234,9 @@ class Game {
             this.mainBase = new MainBase(cx, cy);
             this.outposts = [];
             this.bullets  = [];
+            this.barriers = [];
+            this.mines    = [];
+            this.traps    = [];
             this.won      = false;
             this.waiting  = false;
             this._died    = false;
@@ -1060,6 +1244,7 @@ class Game {
             this.randomEventTriggered = false;
             this.notifTimer           = 0;
             this.spawnOutposts();
+            this.spawnObstacles();
             this.spawnPlayer();
             this._rewardGranted = false;
             this.lastReward = false;
@@ -1097,7 +1282,7 @@ class Game {
 
         if (this.heroSelect.active || this.waiting || this.won) return;
 
-        const solidWalls = this.mainBase.living;
+        const solidWalls = [...this.mainBase.living, ...this.barriers]; // ... significa los elementos de ese array (spread operator)
         this.player.update(solidWalls, dt);
         this.ability.update(this.player, this.mouseX, this.mouseY, this.outposts, this.mainBase, dt);
 
@@ -1165,6 +1350,14 @@ class Game {
         // Move bullets, check hits, cull dead ones
         for (const b of this.bullets) {
             b.update(dt);
+            if (b.dead) continue;
+            // Barriers absorb bullets before they can reach the player
+            for (const bar of this.barriers) {
+                if (b.overlaps(bar)){ 
+                    b.dead = true; 
+                    break; 
+                }
+            }
             if (!b.dead && b.overlaps(this.player)) {
                 if(!this.ability.absorbDamage()){
                     const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
@@ -1175,6 +1368,29 @@ class Game {
             }
         }
         this.bullets = this.bullets.filter(b => !b.dead);
+
+        // Player vs mines — heavy damage, mine despawns
+        for (const m of this.mines) {
+            if (!m.dead && this.player.overlaps(m)) {
+                const dmg = Math.max(1, m.damage - (playerStats.dmgReduction || 0));
+                this.player.hp -= dmg;
+                if (this.player.hp < 0) this.player.hp = 0;
+                m.dead = true;
+            }
+        }
+        this.mines = this.mines.filter(m => !m.dead);
+
+        // Player vs bear traps — light damage, paralyze 3s, trap despawns
+        for (const t of this.traps) {
+            if (!t.dead && this.player.overlaps(t)) {
+                const dmg = Math.max(1, t.damage - (playerStats.dmgReduction || 0));
+                this.player.hp -= dmg;
+                if (this.player.hp < 0) this.player.hp = 0;
+                this.player.paralyzedUntil = performance.now() + t.paralyzeMs;
+                t.dead = true;
+            }
+        }
+        this.traps = this.traps.filter(t => !t.dead);
 
         // Game over when player HP hits 0
         if (this.player.hp <= 0) {
@@ -1241,6 +1457,9 @@ class Game {
         ctx.textAlign = "center";
         ctx.fillText("ENTER", iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);
 
+        for (const bar of this.barriers) bar.draw(ctx);
+        for (const t of this.traps) t.draw(ctx);
+        for (const m of this.mines) m.draw(ctx);
         for (const outpost of this.outposts) outpost.draw(ctx);
         this.player.draw(ctx);
         for (const b of this.bullets) b.draw(ctx);
