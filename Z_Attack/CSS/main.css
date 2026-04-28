@@ -65,6 +65,35 @@ body {
     transform: scale(1.05);
 }
 
+#replayIntroBtn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    font-family: 'Creepster', cursive;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #4a7a4c;
+    background: rgba(46, 125, 50, 0.06);
+    border: 1px solid #2e7d32;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    opacity: 0.5;
+    z-index: 200;
+}
+
+#replayIntroBtn:hover {
+    color: #4caf50;
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.12);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+    text-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+    opacity: 1;
+}
+
 #title, #mainMenu, #topBar, #footer {
     display: none;
 }
