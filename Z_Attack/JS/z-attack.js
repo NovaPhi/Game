@@ -1,4 +1,5 @@
-
+//Game Z_ATTACK
+//By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 
 (function applySettings() {
     const brightness = localStorage.getItem('brightness') ?? 100;
@@ -9,10 +10,6 @@
     document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
     if (colorblind !== 'none') document.body.classList.add(colorblind);
 })();
-
-
-//Game Z_ATTACK
-//By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 
 "use strict";
 
