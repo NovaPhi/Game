@@ -270,8 +270,9 @@ class WallSegment {
         this.width  = 32;
         this.height = 32;
         this.maxHp  = maxHp;
-        this.hp     = maxHp; 
+        this.hp     = maxHp;
         const mult   = getDifficultyMult();
+        this._bulletDamage = Math.round(5 * mult);
         const cdMin  = Math.max(Math.floor(60  / mult), 10);
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1);
 
@@ -315,7 +316,7 @@ class WallSegment {
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
         // 1/6 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 , 6, 6, false, "#f44");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false, "#f44");
     }
 
     draw(ctx) {
@@ -356,7 +357,7 @@ class MainBase {
                 if (!isEdge) continue;
                 const x = startX + col * step;
                 const y = startY + row * step;
-                const seg = (new WallSegment(x, y, 100));
+                const seg = (new WallSegment(x, y, Math.round(300 * getDifficultyMult())));
 
                  // Assign side so it knows in which direction it is allowed to shoot
                 if (row === 0)        seg.side = "top";
@@ -404,11 +405,12 @@ class Outpost {
         this.y      = y;
         this.width  = 40;
         this.height = 40;
-        this.maxHp  = 99;
+        const mult   = getDifficultyMult();
+        this.maxHp  = Math.round(300 * mult);
         this.hp     = this.maxHp;
+        this._bulletDamage = Math.round(5 * mult);
 
         // Shoot cooldown scaled by difficulty
-        const mult   = getDifficultyMult();
         const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ... 
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
@@ -440,7 +442,7 @@ class Outpost {
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
         // 1/8 of player max HP
-        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, 5 , 6, 6, false,   "#f84");
+        return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false,   "#f84");
     }
 
     draw(ctx) {
@@ -468,11 +470,12 @@ class Burst {
         this.y      = y;
         this.width  = 40;
         this.height = 40;
-        this.maxHp  = 99;
+        const mult   = getDifficultyMult();
+        this.maxHp  = Math.round(450 * mult);
         this.hp     = this.maxHp;
+        this._bulletDamage = Math.round(5 * mult);
 
         // Shoot cooldown scaled by difficulty
-        const mult   = getDifficultyMult();
         const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ... 
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
@@ -511,7 +514,7 @@ class Burst {
             const vy = Math.sin(a) * speed;
 
             bullets.push(
-                new Bullet(cx - 3, cy - 3, vx, vy, 5, 6, 6, false, "#4af") // ⬅️ color diferente
+                new Bullet(cx - 3, cy - 3, vx, vy, this._bulletDamage, 6, 6, false, "#4af") // ⬅️ color diferente
             );
         }
         return bullets;
@@ -542,10 +545,10 @@ class Sniper {
         this.y      = y;
         this.width  = 40;
         this.height = 40;
-        this.maxHp  = 200;
+        const mult   = getDifficultyMult();
+        this.maxHp  = Math.round(750 * mult);
         this.hp     = this.maxHp;
 
-        const mult = getDifficultyMult();
         this.WARN_FRAMES = 30;
         this.idleCooldownMax = Math.max(Math.floor(120 / mult), 40);
         this.idleCooldown = Math.floor(Math.random() * this.idleCooldownMax);
@@ -554,6 +557,7 @@ class Sniper {
         this._aimNx = 0;
         this._aimNy = 0;
         this._isWarning = false;
+        this.bulletDamage = Math.round(35 * mult);
     }
 
     get alive() { return this.hp > 0; }
@@ -575,7 +579,7 @@ class Sniper {
  
             if (this._aimNx !== 0 || this._aimNy !== 0) {
                 const speed = 10;
-                return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, 35, 10, 10, true, "#ff0");
+                return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, this.bulletDamage, 10, 10, true, "#ff0");
                 this._aimNx = 0;
                 this._aimNy = 0;
                 return bullet;
@@ -665,10 +669,11 @@ class OmniOutpost {
         this.y      = y;
         this.width  = 40;
         this.height = 40;
-        this.maxHp  = 150;
+        const mult   = getDifficultyMult();
+        this.maxHp  = Math.round(600 * mult);
         this.hp     = this.maxHp;
+        this._bulletDamage = Math.round(8 * mult);
 
-        const mult = getDifficultyMult();
         this.WARN_FRAMES     = 45;
         this.idleCooldownMax = Math.max(Math.floor(300 / mult), 60);
         this.idleCooldown    = Math.floor(Math.random() * this.idleCooldownMax);
@@ -693,7 +698,7 @@ class OmniOutpost {
  
             for (let i = 0; i < this.NUM_BULLETS; i++) {
                 const angle = (i / this.NUM_BULLETS) * Math.PI * 2 + this._rotAngle;
-                bullets.push(new Bullet(cx - 3, cy - 3, Math.cos(angle) * speed, Math.sin(angle) * speed, 8, 6, 6, false, "#f60"));
+                bullets.push(new Bullet(cx - 3, cy - 3, Math.cos(angle) * speed, Math.sin(angle) * speed, this._bulletDamage, 6, 6, false, "#f60"));
             }
 
             this._rotAngle += Math.PI / this.NUM_BULLETS;
@@ -1181,9 +1186,6 @@ class Game {
     // Elementos aleatorios del mapa (barreras, minas y trampas)
     // 30% de posiblidad de que salga cada elemento
     spawnObstacles() {
-        const level = playerStats.level || 0;
-        // agarra el level actual para checar ya que los elementos saldrán a partir del nivel 3
-        if (level < 3) return;
 
         const mult = getDifficultyMult();
         const margin = 60;
@@ -1849,7 +1851,7 @@ class Game {
 
         ctx.fillStyle = "#aaa";
         ctx.font      = "18px monospace";
-        ctx.fillText(`Reached Level ${this._deathLevel}  —  Stage ${this._deathStage}`, canvasWidth / 2, canvasHeight / 2 + 20);
+        ctx.fillText(`Reached Level ${this._deathLevel +1}  —  Stage ${this._deathStage +1}`, canvasWidth / 2, canvasHeight / 2 + 20);
 
         ctx.fillStyle = "#fff";
         ctx.font      = "22px monospace";
