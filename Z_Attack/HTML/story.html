@@ -15,7 +15,7 @@
 
     <div id="storyContainer">
 
-        <div class="storyPart" onclick="togglePart(this)">
+        <div class="storyPart" data-required-level="0" onclick="togglePart(this)">
             <h2>Introduction</h2>
             <p class="content">
                 ¡The apocalypse has arrived!
@@ -25,14 +25,14 @@
             </p>
         </div>
 
-        <div class="storyPart" onclick="togglePart(this)">
+        <div class="storyPart" data-required-level="4" onclick="togglePart(this)">
             <h2>Part 1 - Newspaper</h2>
             <p class="content">
                 Compound Z is the new invention by scientists to eradicate hunger in the world. People who acquire it will stop feeling hunger and will be able to live a life where they no longer have to worry about eating every day. The future is today!
             </p>
         </div>
 
-        <div class="storyPart" onclick="togglePart(this)">
+        <div class="storyPart" data-required-level="10" onclick="togglePart(this)">
             <h2>Part 2 - Medical Note</h2>
             <p class="content">
                 The first subjects who consumed Compound Z showed no hunger… at first.
@@ -40,7 +40,7 @@
             </p>
         </div>
 
-        <div class="storyPart" onclick="togglePart(this)">
+        <div class="storyPart" data-required-level="16" onclick="togglePart(this)">
             <h2>Part 3 - Letter</h2>
             <p class="content">
                 “Good afternoon ____ thank you very much ___ __ service, the payment ___ ____ __ has been deposited. We hope to count on you for future ______. Signed: Carolina”
@@ -48,7 +48,7 @@
             </p>
         </div>
 
-        <div class="storyPart" onclick="togglePart(this)">
+        <div class="storyPart" data-required-level="22" onclick="togglePart(this)">
             <h2>Part 4 - Confidential File</h2>
             <p class="content">
                 “Compound Z, which was intended to end hunger in humanity, appears to be our downfall. It seems to awaken a voracious hunger in patients that can only be satisfied with human flesh. Time to create a cure is scarce; our only hope lies in the blood of patient zero… Mr. Jake Brown.”
@@ -56,7 +56,7 @@
             </p>
         </div>
 
-        <div class="storyPart" onclick="togglePart(this)">
+        <div class="storyPart" data-required-level="28" onclick="togglePart(this)">
             <h2>Part 5 - Party Invitation</h2>
             <p class="content">
                 “Hi Jake! You’re invited to my super party this Friday, don’t miss it for anything in the world!”
@@ -73,6 +73,7 @@
 
     <script>
         function togglePart(element) {
+            if (element.classList.contains('locked')) return;
             const content = element.querySelector(".content");
             content.classList.toggle("show");
         }

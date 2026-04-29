@@ -92,3 +92,13 @@ body {
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
     color: #c8e6c9;
 }
+
+.locked {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+.locked h2::after {
+    content: " 🔒";
+}
