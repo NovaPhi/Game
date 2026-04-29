@@ -20,6 +20,13 @@ const PLAYER_DMG   = 100; // Player base melee damage per hit
 
 const OUTPOST_COUNT = 50;
 
+const THEMES = [
+    { name: "House",    bg: "../Assets/bg_house.png",    base: "../Assets/base_house.png"    },
+    { name: "Mall",     bg: "../Assets/bg_mall.png",     base: "../Assets/base_mall.png"     },
+    { name: "Hospital", bg: "../Assets/bg_hospital.png", base: "../Assets/base_hospital.png" },
+    { name: "Military", bg: "../Assets/bg_military.png", base: "../Assets/base_military.png" },
+];
+
 let playerStats = {
     heroId: null,
     speedMod: 1.0, // Speed multiplier
@@ -1054,6 +1061,36 @@ class Game {
         this.lastReward = null;
         this._runStartTime = Date.now();
         this.ability = new HeroAbility(playerStats.heroId || 1);
+
+        this._bgImages = THEMES.map(t => {
+            const img = new Image();
+            img.src = t.bg;
+            return img;
+        });
+        this._baseImages = THEMES.map(t => {
+            const img = new Image();
+            img.src = t.base;
+            return img;
+        });
+        this._themeIndex = playerStats.stage % THEMES.length;
+    }
+
+    _drawBackground(ctx) {
+        const img = this._bgImages[this._themeIndex];
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        } else {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            this.drawGrid(ctx);
+        }
+    }
+
+    _drawMainBaseBuilding(ctx) {
+        const img = this._baseImages[this._themeIndex];
+        if (!(img && img.complete && img.naturalWidth > 0)) return;
+        const size = 7 * (32 + 2) - 2; // matches MainBase.buildWall footprint
+        ctx.drawImage(img, this.mainBase.cx - size / 2, this.mainBase.cy - size / 2, size, size);
     }
 
     // Places the player at a random map position, ensuring they do not appear inside or directly besides the main base
@@ -1260,6 +1297,10 @@ class Game {
             if (e.code === "KeyS") this.player.keys.down  = true;
             if (e.code === "KeyA") this.player.keys.left  = true;
             if (e.code === "KeyD") this.player.keys.right = true;
+            if (e.code === "KeyB") {
+                this._themeIndex = (this._themeIndex + 1) % THEMES.length;
+                console.log("Theme:", THEMES[this._themeIndex].name);
+            }
         };
 
         this._keyupHandler = (e) => {
@@ -1543,13 +1584,13 @@ class Game {
             return;
         }
 
-        ctx.fillStyle = "#111";
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        this.drawGrid(ctx);
+        this._drawBackground(ctx);
+        this._drawMainBaseBuilding(ctx);
 
         this.mainBase.draw(ctx);
 
         // Capture zone — always visible
+        /*
         const iz = this.mainBase.innerZone;
         ctx.fillStyle = "rgba(0, 255, 100, 0.25)";
         ctx.fillRect(iz.x, iz.y, iz.width, iz.height);
@@ -1559,7 +1600,7 @@ class Game {
         ctx.fillStyle = "lime";
         ctx.font = "11px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("ENTER", iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);
+        ctx.fillText("ENTER", iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);*/
 
         for (const bar of this.barriers) bar.draw(ctx);
         for (const t of this.traps) t.draw(ctx);
@@ -1845,6 +1886,7 @@ async function main() {
     canvas.width  = canvasWidth;
     canvas.height = canvasHeight;
     ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
 
     const allAudio = document.querySelectorAll('audio');
     const savedVolume = Math.min(60, Math.max(0, parseInt(localStorage.getItem('volume')) || 30));
