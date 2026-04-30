@@ -301,6 +301,7 @@ class Player {
     }
 
     // Draws the player sprite
+    //done with the help of claude
     draw(ctx, heroImages = null) {
         const invis = game && game.ability && game.ability.isInvisible();
         ctx.globalAlpha = invis ? 0.3 : 1.0;
@@ -1796,6 +1797,7 @@ class Game {
         playerStats.level += 1;
         this.levelnum = playerStats.level; 
         playerStats.stage = Math.floor(playerStats.level / 3) // New stage every 3 levels
+        this._themeIndex = this._themeIndex % THEMES.length;
 
         
         // Stage completion XP bonus
