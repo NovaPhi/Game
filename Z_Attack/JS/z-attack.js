@@ -169,8 +169,8 @@ let game;
 // Represents the character. Handles movement, wall collisions, melee attacks, and rendering
 class Player {
     constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
-        this.width  = 28;
-        this.height = 28;
+        this.width  = 70;
+        this.height = 70;
         this.x = 0;
         this.y = 0;
 
@@ -323,10 +323,10 @@ class Player {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y + yBob, this.width, this.height);
         }
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(this.x, this.y + yBob, this.width, this.height);
-        ctx.globalAlpha = 1.0;
+        //ctx.strokeStyle = "#fff";
+        //ctx.lineWidth = 1.5;
+        //ctx.strokeRect(this.x, this.y + yBob, this.width, this.height);
+        //ctx.globalAlpha = 1.0;
     }
 }
 
@@ -541,8 +541,8 @@ class Outpost {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 40;
-        this.height = 40;
+        this.width = 80;
+        this.height = 80;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(300 * mult);
         this.hp = this.maxHp;
@@ -654,8 +654,8 @@ class Burst {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 40;
-        this.height = 40;
+        this.width = 80;
+        this.height = 80;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(450 * mult);
         this.hp = this.maxHp;
@@ -767,8 +767,8 @@ class Sniper {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 40;
-        this.height = 40;
+        this.width = 80;
+        this.height = 80;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(750 * mult);
         this.hp = this.maxHp;
@@ -935,8 +935,8 @@ class OmniOutpost {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 40;
-        this.height = 40;
+        this.width = 80;
+        this.height = 80;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(600 * mult);
         this.hp = this.maxHp;
@@ -1099,8 +1099,8 @@ class Mine {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width  = 24;
-        this.height = 24;
+        this.width  = 54;
+        this.height = 54;
         this.damage = 100;
         // State machine: "idle" -> "activation" -> "disappear" -> fullyDone
         this.state      = "idle";
@@ -1165,8 +1165,8 @@ class BearTrap {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width  = 24;
-        this.height = 24;
+        this.width  = 54;
+        this.height = 54;
         this.damage = 8;
         this.paralyzeMs = 3000; // Duration of the movement freeze in milliseconds
         this.dead = false;
