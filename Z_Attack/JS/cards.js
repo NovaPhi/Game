@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 const RARITY_COLOR = { common:'#aaaaaa', uncommon:'#4fc34f', rare:'#4a8fff', legendary:'#ff9a00' };

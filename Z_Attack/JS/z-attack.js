@@ -1807,6 +1807,7 @@ class Game {
         } else {
             this.lastStageReward = false;
         }
+        this._themeIndex = (this._themeIndex + 1) % THEMES.length;
 
         // Card draft replaces the old random speed/HP reward
         this.lastReward = null;
