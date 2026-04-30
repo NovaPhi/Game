@@ -43,6 +43,36 @@ const MINE_DISAPPEAR_FRAMES  = 24; // ~0.40 sec
 // Bear trap (idle only — no animation in Path 2)
 const BEARTRAP_IDLE_ASSET = "../Assets/beartrap_idle.png";
 
+// Barrier assets per theme — small, medium, large with 2 variants each.
+// Each size maps to a fixed hitbox (w × h) used for collision and placement.
+const BARRIER_SIZES = {
+    small:  { w: 40, h: 20 },
+    medium: { w: 70, h: 40 },
+    large:  { w: 100, h: 55 },
+};
+
+const BARRIER_ASSETS = {
+    House: {
+        small:  ["../Assets/barrier_house_small_1.png",  "../Assets/barrier_house_small_2.png"],
+        medium: ["../Assets/barrier_house_medium_1.png", "../Assets/barrier_house_medium_2.png"],
+        large:  ["../Assets/barrier_house_large_1.png",  "../Assets/barrier_house_large_2.png"],
+    },
+    Mall: {
+        small:  ["../Assets/barrier_mall_small_1.png",  "../Assets/barrier_mall_small_2.png"],
+        medium: ["../Assets/barrier_mall_medium_1.png", "../Assets/barrier_mall_medium_2.png"],
+        large:  ["../Assets/barrier_mall_large_1.png",  "../Assets/barrier_mall_large_2.png"],
+    },
+    Hospital: {
+        small:  ["../Assets/barrier_hospital_small_1.png",  "../Assets/barrier_hospital_small_2.png"],
+        medium: ["../Assets/barrier_hospital_medium_1.png", "../Assets/barrier_hospital_medium_2.png"],
+        large:  ["../Assets/barrier_hospital_large_1.png",  "../Assets/barrier_hospital_large_2.png"],
+    },
+    Military: {
+        small:  ["../Assets/barrier_military_small_1.png", "../Assets/barrier_military_small_2.png"],
+        medium: ["../Assets/barrier_military_medium_1.png", "../Assets/barrier_military_medium_2.png"],
+        large:  ["../Assets/barrier_military_large_1.png", "../Assets/barrier_military_large_2.png"],
+    },
+};
 
 const SPRITE_SCALE = {
     player:  3, 
@@ -1094,7 +1124,7 @@ class OmniOutpost {
     }
 }
 
-// Indestructible barrier that blocks player movement and incoming bullets, providing strategic cover. The size is randomised 
+// Indestructible barrier that blocks player movement and incoming bullets, providing strategic cover.
 class Barrier {
     constructor(x, y, w, h) {
         this.x = x;
@@ -1102,9 +1132,9 @@ class Barrier {
         this.width  = w;
         this.height = h;
         this.alive  = true;
+        this._imgKey = null;
     }
 
-    // Overlap for bullet absorption
     overlaps(rect) {
         return (
             this.x < rect.x + rect.width  &&
@@ -1114,8 +1144,11 @@ class Barrier {
         );
     }
 
-    // Draw barrier
-    draw(ctx) {
+    draw(ctx, img = null) {
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            return;
+        }
         ctx.fillStyle = "#777";
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.strokeStyle = "#222";
@@ -1446,6 +1479,8 @@ class Game {
         this.mouseX = 0;
         this.mouseY = 0;
 
+        this._themeIndex = playerStats.stage % THEMES.length;
+
         this.spawnOutposts();
         this.spawnObstacles();
         this.spawnPlayer();
@@ -1478,6 +1513,18 @@ class Game {
         }
         this._beartrapImage = new Image();
         this._beartrapImage.src = BEARTRAP_IDLE_ASSET;
+        this._barrierImages = {};
+        for (const theme of Object.values(BARRIER_ASSETS)) {
+            for (const variants of Object.values(theme)) {
+                for (const src of variants) {
+                    if (!this._barrierImages[src]) {
+                        const img = new Image();
+                        img.src = src;
+                        this._barrierImages[src] = img;
+                    }
+                }
+            }
+        }
         this._enemyImages = {};
         for (const enemyType of Object.keys(ENEMY_FRAMES)) {
             this._enemyImages[enemyType] = {};
@@ -1496,7 +1543,6 @@ class Game {
                 this._heroImages[heroKey][state] = img;
             }
         }
-        this._themeIndex = playerStats.stage % THEMES.length;
     }
 
     _drawBackground(ctx) {
@@ -1643,14 +1689,23 @@ class Game {
 
         const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-        // Barriers — random size per instance, count capped lower since they're bigger
+        // Barriers — pick a size category and random variant per instance
         if (Math.random() >= 0.3) {
+            const themeName   = THEMES[this._themeIndex].name;
+            const sizeKeys    = Object.keys(BARRIER_SIZES);
             const barrierCount = Math.min(randInt(2, 5) * mult, 12);
             for (let i = 0; i < barrierCount; i++) {
-                const w = randInt(30, 90);
-                const h = randInt(30, 90);
+                const sizeKey = sizeKeys[randInt(0, sizeKeys.length - 1)];
+                const { w, h } = BARRIER_SIZES[sizeKey];
                 const pos = tryPlace(w, h);
-                if (pos) this.barriers.push(new Barrier(pos.x, pos.y, w, h));
+                if (pos) {
+                    const variants = BARRIER_ASSETS[themeName][sizeKey];
+                    const bar = new Barrier(pos.x, pos.y, w, h);
+                    if (variants.length > 0) {
+                        bar._imgKey = variants[randInt(0, variants.length - 1)];
+                    }
+                    this.barriers.push(bar);
+                }
             }
         }
 
@@ -1674,6 +1729,22 @@ class Game {
     }
 
 
+
+    _reassignBarrierImages() {
+        const themeName = THEMES[this._themeIndex].name;
+        const themeAssets = BARRIER_ASSETS[themeName];
+        const sizeKeys = Object.keys(BARRIER_SIZES);
+        for (const bar of this.barriers) {
+            // Match the barrier back to its size category by hitbox dimensions
+            const sizeKey = sizeKeys.find(k =>
+                BARRIER_SIZES[k].w === bar.width && BARRIER_SIZES[k].h === bar.height
+            );
+            const variants = sizeKey ? themeAssets[sizeKey] : [];
+            bar._imgKey = variants.length > 0
+                ? variants[Math.floor(Math.random() * variants.length)]
+                : null;
+        }
+    }
 
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
@@ -1731,6 +1802,7 @@ class Game {
             if (e.code === "KeyB") {
                 this._themeIndex = (this._themeIndex + 1) % THEMES.length;
                 console.log("Theme:", THEMES[this._themeIndex].name);
+                this._reassignBarrierImages();
             }
         };
 
@@ -2022,7 +2094,7 @@ class Game {
         ctx.textAlign = "center";
         ctx.fillText("ENTER", iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);*/
 
-        for (const bar of this.barriers) bar.draw(ctx);
+        for (const bar of this.barriers) bar.draw(ctx, bar._imgKey ? this._barrierImages[bar._imgKey] : null);
         for (const t of this.traps) t.draw(ctx, this._beartrapImage);
         for (const m of this.mines) m.draw(ctx, this._mineImages);
         for (const outpost of this.outposts) {
