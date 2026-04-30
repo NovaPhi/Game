@@ -79,6 +79,7 @@ const SPRITE_SCALE = {
     outpost: 2.2,
     mine:    2,
     trap:    2,
+    barrier: 1.5,
 };
 
 // Enemy attack animation assets (4 states per enemy: idle / windup / peak / recovery)
@@ -1145,8 +1146,15 @@ class Barrier {
     }
 
     draw(ctx, img = null) {
+        const s  = SPRITE_SCALE.barrier;
+        const dw = this.width  * s;
+        const dh = this.height * s;
+        const dx = this.x - (dw - this.width)  / 2;
+        const dy = this.y - (dh - this.height) / 2;
+
+        // Fallback 
         if (img && img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            ctx.drawImage(img, dx, dy, dw, dh);
             return;
         }
         ctx.fillStyle = "#777";

@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
 const app = express()
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const port = 8081
 const SALT_ROUNDS = 10;
 
@@ -15,8 +15,8 @@ app.use(express.urlencoded({extended: true}));
 const connection = mysql.createConnection({
         host: '127.0.0.1',
         user: 'root',
-        password: '1234',
-        database: 'Z_ATTACK'
+        password: 'Alo111204*',
+        database: 'z_attack'
     });
     connection.connect((err) => {
         if (err) throw err;
