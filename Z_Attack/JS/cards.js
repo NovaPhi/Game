@@ -42,6 +42,12 @@ function buildCardFromDb(dbCard) {
                 game.targetingMode = dbCard.modifier;
                 return;
             }
+            if (dbCard.is_immortal){
+                const duration = (dbCard.duration_sec || 8) * 1000;
+                game.player.is_immortal = true;
+                setTimeout(() => game.player.is_immortal = false, duration);
+                return;
+            }
             switch (dbCard.modifier) {
                 case "dmgReduction":    playerStats.dmgReduction += mod;                                                                              break;
                 case "speedMod":        playerStats.speedMod     += mod; game.player.speedMod += mod;                                                 break;
@@ -59,7 +65,7 @@ function buildCardFromDb(dbCard) {
                 }
                 case "destroy_all":     game.outposts.forEach(o => o.hp = 0);                                                                        break;
                 case "restoreWalls":    game.mainBase.segments.forEach(s => s.hp = s.maxHp);                                                         break;
-                case "isImmortal":      game.player.isImmortal = true; setTimeout(() => game.player.isImmortal = false, dbCard.duration_sec * 1000);  break;
+                //case "isImmortal":      game.player.isImmortal = true; setTimeout(() => game.player.isImmortal = false, dbCard.duration_sec * 1000);  break;
                 case "all":
                     game.player.damage       += game.player.damage * mod;
                     playerStats.speedMod     += 0.5; game.player.speedMod += 0.5;

@@ -1523,7 +1523,7 @@ class Game {
                 }
             }
             if (!b.dead && b.overlaps(this.player)) {
-                if(!this.ability.absorbDamage()){
+                if(!this.ability.absorbDamage() && !this.player.is_immortal){
                     const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
                     this.player.hp -= dmg;
                     if (this.player.hp < 0) this.player.hp = 0;
