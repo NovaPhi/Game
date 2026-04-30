@@ -491,6 +491,34 @@ app.get('/stats/cardsDistribution', (req, res) => {
     );
 });
 
+app.get('/leaderboard', (req, res) => {
+    connection.query(`
+        SELECT 
+            u.username,
+            s.best_score,
+            s.best_level,
+            s.total_xp,
+            s.total_runs,
+            s.playtime
+        FROM Stats s
+        JOIN User u ON s.id_user = u.id_user
+        WHERE u.status = 1
+        ORDER BY s.best_score DESC, s.best_level DESC
+        LIMIT 10
+    `, (err, results) => {
+
+        if (err) {
+            console.error('Leaderboard error:', err);
+            return res.json({ success: false });
+        }
+
+        res.json({
+            success: true,
+            leaderboard: results
+        });
+    });
+});
+
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)
 });

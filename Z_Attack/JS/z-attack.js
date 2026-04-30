@@ -1,7 +1,8 @@
 //Game Z_ATTACK
 //By: Luis Jaime Arias Sarabia, Adolfo Hernández Sánchez and Alonso Arechiga Mendoza
 
-(function applySettings() {
+// Apply brightness and colorblind settings from localStorage before the game loads
+(function applySettings() { 
     const brightness = localStorage.getItem('brightness') ?? 100;
     const colorblind = localStorage.getItem('colorblind') || 'none';
 
@@ -13,6 +14,7 @@
 
 "use strict";
 
+// Canvas dimensions
 const canvasWidth  = 1000;
 const canvasHeight = 750;
 const PLAYER_SPEED = 6; // Player base movement speed
@@ -114,6 +116,7 @@ function getHeroFramesKey(hero) {
     return null;
 }
 
+// Global object that tracks all persistent player progress and stats across levels
 let playerStats = {
     heroId: null,
     speedMod: 1.0, // Speed multiplier
@@ -132,10 +135,10 @@ let playerStats = {
 function applyHeroStats(heroId) {
     const hero = getHeroById(heroId);
     if (!hero) return;
-    playerStats.heroId       = hero.id;
-    playerStats.asset        = hero.asset;
-    playerStats.speedMod     = hero.speedMod;
-    playerStats.maxHp        = hero.maxHp;
+    playerStats.heroId = hero.id;
+    playerStats.asset = hero.asset;
+    playerStats.speedMod = hero.speedMod;
+    playerStats.maxHp = hero.maxHp;
     playerStats.dmgReduction = hero.dmgReduction; // dmgMult is read directly from the hero definition at attack time
 }
 
@@ -143,16 +146,17 @@ function applyHeroStats(heroId) {
 // Calculates the difficulty multiplier based on the current level (temp)
 function getDifficultyMult(){
     const stage = Math.floor(playerStats.level / 3);
-    return 1 + stage * 0.3;
+    return 1 + stage * 0.3; // Stage increases every 3 levels, adding 30% difficulty per stage
 }
 
+// Returns a random center coordinate for the main base, keeping it a little away from the canvas edge
 function randomBaseCenter() {
-    const half   = Math.ceil(236 / 2); // 118 px — half the grid size
+    const half = Math.ceil(236 / 2); // 118 px — half the grid size
     const margin = 20; // extra breathing room from canvas edge
-    const minX   = half + margin;
-    const maxX   = canvasWidth  - half - margin;
-    const minY   = half + margin;
-    const maxY   = canvasHeight - half - margin;
+    const minX = half + margin;
+    const maxX = canvasWidth  - half - margin;
+    const minY = half + margin;
+    const maxY = canvasHeight - half - margin;
     return {
         cx: Math.floor(Math.random() * (maxX - minX + 1)) + minX,
         cy: Math.floor(Math.random() * (maxY - minY + 1)) + minY,
@@ -169,20 +173,22 @@ class Player {
         this.height = 28;
         this.x = 0;
         this.y = 0;
-        const hero   = getHeroById(stats.heroId);
-        const mult   = hero ? hero.dmgMult : 1.0;
-        this.damage = (PLAYER_DMG*mult);
-        this.color = hero ? hero.color : "#4af";
-        this.keys   = { up: false, down: false, left: false, right: false };
 
-        this.attackCooldown    = 0;  // Attack cooldown prevents dealing damage every single frame
+        // Look up the hero definition to apply damage multiplier and visual color
+        const hero = getHeroById(stats.heroId);
+        const mult = hero ? hero.dmgMult : 1.0;
+        this.damage = (PLAYER_DMG*mult); // Final melee damage value
+        this.color = hero ? hero.color : "#4af";
+        this.keys = { up: false, down: false, left: false, right: false };
+
+        this.attackCooldown = 0;  // Attack cooldown prevents dealing damage every single frame
         this.attackCooldownMax = 20;
-        this.speedMod          = 1;
-        this.isAttacking       = false;
-        this.targetHp          = null;
+        this.speedMod = 1;
+        this.isAttacking = false;
+        this.targetHp = null;
 
         this.maxHp = 100;
-        this.hp    = this.maxHp;
+        this.hp = this.maxHp;
 
         this.speedMod = stats.speedMod;
         this.maxHp = stats.maxHp;
@@ -239,6 +245,7 @@ class Player {
         this._tickAttackAnim(dt);
     }
 
+    // Returns true if the player rectangle overlaps the given rect
     overlaps(rect) {
         return (
             this.x < rect.x + rect.width  &&
@@ -248,6 +255,7 @@ class Player {
         );
     }
 
+    // Returns true if the player is in pixels of touching the given rect
     touches(rect, margin = 2) {
         return (
             this.x < rect.x + rect.width  + margin &&
@@ -257,11 +265,13 @@ class Player {
         );
     }
 
+    // Pushes the player out of a wall horizontally after a left/right move
     resolveX(wall, dx) {
         if (dx > 0) this.x = wall.x - this.width;
         if (dx < 0) this.x = wall.x + wall.width;
     }
 
+    // Pushes the player out of a wall vertically after an up/down move
     resolveY(wall, dy) {
         if (dy > 0) this.y = wall.y - this.height;
         if (dy < 0) this.y = wall.y + wall.height;
@@ -277,7 +287,7 @@ class Player {
                 if (target.hp < 0) target.hp = 0;
                 this.targetHp       = target.hp;
                 this.attackCooldown = this.attackCooldownMax;
-                if(game && game.ability) game.ability.breakInvisibility();
+                if(game && game.ability) game.ability.breakInvisibility(); // Breaks invisibility on attack (Scout ability)
                 // Trigger attack animation (windup → peak → recovery → idle)
                 if (this.attackState === "idle") {
                     this.attackState = "windup";
@@ -290,6 +300,7 @@ class Player {
         return false;
     }
 
+    // Draws the player sprite
     draw(ctx, heroImages = null) {
         const invis = game && game.ability && game.ability.isInvisible();
         ctx.globalAlpha = invis ? 0.3 : 1.0;
@@ -324,17 +335,17 @@ class Bullet {
     constructor(x, y, vx, vy, damage, width, height, diamond, color = "#f84") {
         this.x = x;
         this.y = y;
-        this.vx = vx;
-        this.vy = vy;
-        this.damage = 1;
+        this.vx = vx; // Horizontal velocity
+        this.vy = vy; // Vertical velocity
         this.damage = damage;  // Damage dealt to the player on impact
         this.color = color;
         this.width = width;
         this.height = height;
-        this.diamond = diamond;
+        this.diamond = diamond; // If true, it renders the bullet in a diamond shape (Sniper bullet)
         this.dead = false; // Flag for bullet if still active
     }
 
+    // Advances the bullet by its velocity and marks it dead if it leaves the canvas
     update(dt = 1) {
         this.x += this.vx * dt;
         this.y += this.vy * dt;
@@ -351,6 +362,7 @@ class Bullet {
         );
     }
 
+    // Draws the bullet as either a diamond (Sniper) or a rectangle
     draw(ctx) {
         if(this.diamond == false){
             if (this.dead) return;
@@ -361,7 +373,7 @@ class Bullet {
             if (this.dead) return;
             const cx = this.x + this.width  / 2;
             const cy = this.y + this.height / 2;
-            const r  = this.width / 2;
+            const r = this.width / 2;
             
             ctx.fillStyle = this.color;
             ctx.beginPath();
@@ -380,28 +392,31 @@ class Bullet {
     }
 }
 
-// Class for the tiles of the main base wall
+// Class for the tiles of the main base wall. Has a side property to show which direction it is allowed to fire
 class WallSegment {
     constructor(x, y, maxHp = 100) {
-        this.x      = x;
-        this.y      = y;
-        this.width  = 32;
+        this.x = x;
+        this.y = y;
+        this.width = 32;
         this.height = 32;
-        this.maxHp  = maxHp;
-        this.hp     = maxHp;
-        const mult   = getDifficultyMult();
-        this._bulletDamage = Math.round(5 * mult);
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);
-        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1);
+        this.maxHp = maxHp;
+        this.hp = maxHp;
 
-        // Logic for scaling the shoot cooldown
+        // Scale bullet damage and shoot rate with current difficulty
+        const mult = getDifficultyMult();
+        this._bulletDamage = Math.round(5 * mult);
+        const cdMin = Math.max(Math.floor(60  / mult), 10);
+        const cdMax = Math.max(Math.floor(180 / mult), cdMin + 1);
+
+        // Randomised cooldown so wall tiles don't all fire in the same frame
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
-        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax); // Random so they don't all fire simultaneously        
-        this.shootRange = 300;
-        this.side = "top";
+        this.shootCooldown = Math.floor(Math.random() * this.shootCooldownMax); // Random so they don't all fire simultaneously        
+        this.shootRange = 300; // Maximum distance at which this tile will fire
+        this.side = "top"; // Which edge of the base this tile belongs to
         
     }
 
+    // Segment is considered alive while it still has HP
     get alive() { return this.hp > 0; }
 
     // Fires a bullet at the player if they are within range and on the correct side of the wall
@@ -419,6 +434,7 @@ class WallSegment {
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
+        // Only fire if the player is on the exterior side of this wall tile
         const outside = 
                 this.side === "top" ? py < cy :
                 this.side === "bottom" ? py > cy:
@@ -433,7 +449,6 @@ class WallSegment {
         const speed = 4;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
-        // 1/6 of player max HP
         return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false, "#f44");
     }
 
@@ -463,10 +478,10 @@ class MainBase {
     // Places WallSegment tiles only on the outer edge
     buildWall(cx, cy) {
         const tileSize = 32;
-        const gap      = 2;
-        const step     = tileSize + gap;
-        const cols     = 7;
-        const rows     = 7;
+        const gap = 2;
+        const step = tileSize + gap;
+        const cols = 7;
+        const rows = 7;
 
         const totalW = cols * step - gap;
         const totalH = rows * step - gap;
@@ -492,20 +507,21 @@ class MainBase {
         }
     }
 
+    // Returns only the segments that are still alive
     get living() { return this.segments.filter(s => s.alive); }
 
     get isDestroyed() { return this.segments.every(s => !s.alive); }
 
     get innerZone() {
         const tileSize = 32;
-        const gap      = 2;
-        const step     = tileSize + gap;
-        const cols     = 7;
-        const rows     = 7;
-        const totalW   = cols * step - gap;
-        const totalH   = rows * step - gap;
-        const startX   = this.cx - totalW / 2;
-        const startY   = this.cy - totalH / 2;
+        const gap = 2;
+        const step = tileSize + gap;
+        const cols = 7;
+        const rows = 7;
+        const totalW = cols * step - gap;
+        const totalH = rows * step - gap;
+        const startX = this.cx - totalW / 2;
+        const startY = this.cy - totalH / 2;
         return {
             x:      startX + step,
             y:      startY + step,
@@ -520,23 +536,23 @@ class MainBase {
 }
 
 
-//Class for all the enemy outposts scattered thru the map
+//Class for all the normal enemy outposts scattered thru the map
 class Outpost {
     constructor(x, y) {
-        this.x      = x;
-        this.y      = y;
-        this.width  = 40;
+        this.x = x;
+        this.y = y;
+        this.width = 40;
         this.height = 40;
-        const mult   = getDifficultyMult();
-        this.maxHp  = Math.round(300 * mult);
-        this.hp     = this.maxHp;
+        const mult = getDifficultyMult();
+        this.maxHp = Math.round(300 * mult);
+        this.hp = this.maxHp;
         this._bulletDamage = Math.round(5 * mult);
 
         // Shoot cooldown scaled by difficulty
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
-        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
+        const cdMin = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
+        const cdMax = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
-        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
+        this.shootCooldown = Math.floor(Math.random() * this.shootCooldownMax);
 
         this.shootRange = 200; // Detection range
 
@@ -575,7 +591,10 @@ class Outpost {
         // Track facing toward player every frame for sprite rotation
         this._facingAngle = Math.atan2(py - cy, px - cx);
 
-        // Don't shoot if player is within one player-length
+        // Track facing toward player every frame for sprite rotation
+        this._facingAngle = Math.atan2(py - cy, px - cx);
+
+        // Don't shoot if player is within one player-length or out of range
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
@@ -593,10 +612,10 @@ class Outpost {
         const speed = 3;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
-        // 1/8 of player max HP
         return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false,   "#f84");
     }
 
+    // Draws the outpost
     draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
@@ -630,22 +649,23 @@ class Outpost {
     }
 }
 
+// Class for the Burst Outpost which fires a 3-bullet spread shot instead of a single bullet (Class mostly based on Outpost)
 class Burst {
     constructor(x, y) {
-        this.x      = x;
-        this.y      = y;
-        this.width  = 40;
+        this.x = x;
+        this.y = y;
+        this.width = 40;
         this.height = 40;
-        const mult   = getDifficultyMult();
-        this.maxHp  = Math.round(450 * mult);
-        this.hp     = this.maxHp;
+        const mult = getDifficultyMult();
+        this.maxHp = Math.round(450 * mult);
+        this.hp = this.maxHp;
         this._bulletDamage = Math.round(5 * mult);
 
-        // Shoot cooldown scaled by difficulty
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
-        const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
+        // Shoot cooldown scaled by difficulty 
+        const cdMin = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
+        const cdMax = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
-        this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
+        this.shootCooldown = Math.floor(Math.random() * this.shootCooldownMax);
 
         this.shootRange = 200; // Detection range
 
@@ -669,7 +689,7 @@ class Burst {
         }
     }
 
-    // Fires at the player if they are in range
+    // Fires at the player if they are in range and this one returns an Array of bullets instead of one
     tryShoot(player, dt = 1) {
         if (!this.alive) return null;
         this._tickAttackAnim(dt);
@@ -710,6 +730,7 @@ class Burst {
         return bullets;
     }
 
+    //Draws the enemy (AI)
     draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
@@ -741,22 +762,22 @@ class Burst {
         ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
     }
 }
-
+ //Class for the Sniper Outpost which fires a fastest and more dangerous bullet that its trayectory is shown with a line
 class Sniper {
     constructor(x, y) {
-        this.x      = x;
-        this.y      = y;
-        this.width  = 40;
+        this.x = x;
+        this.y = y;
+        this.width = 40;
         this.height = 40;
-        const mult   = getDifficultyMult();
-        this.maxHp  = Math.round(750 * mult);
-        this.hp     = this.maxHp;
+        const mult = getDifficultyMult();
+        this.maxHp = Math.round(750 * mult);
+        this.hp = this.maxHp;
 
-        this.WARN_FRAMES = 30;
+        this.warn = 30; // Number of frames the warning line is shown before firing
         this.idleCooldownMax = Math.max(Math.floor(120 / mult), 40);
         this.idleCooldown = Math.floor(Math.random() * this.idleCooldownMax);
 
-        this.shootRange = 400; // Detection range
+        this.shootRange = 400; // Detection range (Longer than the rest)
         this._aimNx = 0;
         this._aimNy = 0;
         this._isWarning = false;
@@ -783,7 +804,7 @@ class Sniper {
         }
     }
 
-    // Fires at the player if they are in range
+    // If the player is in range, it tracks him and stores his postion, then it shows the line in the warning and fires in that direction
     tryShoot(player, dt = 1) {
         if (!this.alive) return null;
         this._tickAttackAnim(dt);
@@ -810,12 +831,13 @@ class Sniper {
                 return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, this.bulletDamage, 10, 10, true, "#ff0");
             }
 
-        return null;
+            return null;
         }
 
         this.idleCooldown-= dt;
 
-        if (this.idleCooldown <= this.WARN_FRAMES) {
+        // Lock aim if the player is in range
+        if (this.idleCooldown <= this.warn) {
             if (!this._isWarning) {
                 if (inRange) {
                     this._isWarning = true;
@@ -830,6 +852,7 @@ class Sniper {
             return null;
         }
 
+        // Tracks player direction
         this._isWarning = false;
         if (this.attackState === "windup") this.attackState = "idle";
 
@@ -844,6 +867,7 @@ class Sniper {
         return null;
     }
 
+    // Renders the sniper (AI)
     draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
@@ -886,7 +910,7 @@ class Sniper {
 
         // Targeting laser telegraph (drawn unrotated, on top of sprite)
         if (this._isWarning) {
-            const progress = 1 - (this.idleCooldown / this.WARN_FRAMES);
+            const progress = 1 - (this.idleCooldown / this.warn);
             const pulse = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() / (120 - progress * 80)));
             const targetX = cx + this._aimNx * this.shootRange;
             const targetY = cy + this._aimNy * this.shootRange;
@@ -906,22 +930,23 @@ class Sniper {
     }
 }
 
+// Class for the Omni Outpost which fires a ring of 12 bullets in all directions at once (mostly based on burst and sniper)
 class OmniOutpost {
     constructor(x, y) {
-        this.x      = x;
-        this.y      = y;
-        this.width  = 40;
+        this.x = x;
+        this.y = y;
+        this.width = 40;
         this.height = 40;
-        const mult   = getDifficultyMult();
-        this.maxHp  = Math.round(600 * mult);
-        this.hp     = this.maxHp;
+        const mult = getDifficultyMult();
+        this.maxHp = Math.round(600 * mult);
+        this.hp = this.maxHp;
         this._bulletDamage = Math.round(8 * mult);
 
-        this.WARN_FRAMES     = 45;
+        this.warn = 45; // Frames for the expanding warning circle
         this.idleCooldownMax = Math.max(Math.floor(300 / mult), 60);
-        this.idleCooldown    = Math.floor(Math.random() * this.idleCooldownMax);
-        this.NUM_BULLETS     = 12;
-        this._rotAngle       = 0;
+        this.idleCooldown = Math.floor(Math.random() * this.idleCooldownMax);
+        this.NUM_BULLETS = 12; // Bullets per burst
+        this._rotAngle = 0; // Accumulated rotation for spiral effect
 
         // Attack-anim state (peak/recovery counted in frames; windup = while _isWarning)
         this.attackState = "idle";
@@ -931,7 +956,7 @@ class OmniOutpost {
     get alive() { return this.hp > 0; }
 
     get _isWarning() {
-        return this.idleCooldown <= this.WARN_FRAMES && this.idleCooldown > 0;
+        return this.idleCooldown <= this.warn && this.idleCooldown > 0;
     }
 
     _tickAttackAnim(dt) {
@@ -947,22 +972,25 @@ class OmniOutpost {
         }
     }
 
+    // Fires a ring of bullets, in each burst it rotates slightly from the last to create a spiral pattern. It also returns an array of Bullet
     tryShoot(player, dt = 1) {
         if (!this.alive) return null;
         this._tickAttackAnim(dt);
 
         if (this.idleCooldown <= 0) {
-            this.idleCooldown = this.idleCooldownMax; // reiniciar ciclo
+            this.idleCooldown = this.idleCooldownMax; // Reset for next cycle
             const bullets = [];
-            const speed   = 2.5;
+            const speed = 2.5;
             const cx = this.x + this.width / 2;
             const cy = this.y + this.height / 2;
 
+            // Distribute bullets evenly around 360° with the current rotation (Mathematic logic helped by AI)
             for (let i = 0; i < this.NUM_BULLETS; i++) {
                 const angle = (i / this.NUM_BULLETS) * Math.PI * 2 + this._rotAngle;
                 bullets.push(new Bullet(cx - 3, cy - 3, Math.cos(angle) * speed, Math.sin(angle) * speed, this._bulletDamage, 6, 6, false, "#f60"));
             }
 
+            // Advance rotation for the next burst (Mathematic logic helped by AI)
             this._rotAngle += Math.PI / this.NUM_BULLETS;
             this.attackState = "peak";
             this.attackTimer = ENEMY_PEAK_FRAMES;
@@ -983,6 +1011,7 @@ class OmniOutpost {
         return null;
     }
 
+    // Draws the omni outpost (AI)
     draw(ctx, images = null) {
         if (!this.alive) return;
         const cx = this.x + this.width  / 2;
@@ -991,7 +1020,7 @@ class OmniOutpost {
 
         // Expanding warning ring (drawn under the sprite)
         if (this._isWarning) {
-            const progress = 1 - (this.idleCooldown / this.WARN_FRAMES); // 0→1
+            const progress = 1 - (this.idleCooldown / this.warn); // 0→1
             const pulse    = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() / 80));
             const maxR = 300;
             const r    = maxR * progress;
@@ -1035,8 +1064,7 @@ class OmniOutpost {
     }
 }
 
-// Barrera indestructible
-// Tamaño random
+// Indestructible barrier that blocks player movement and incoming bullets, providing strategic cover. The size is randomised 
 class Barrier {
     constructor(x, y, w, h) {
         this.x = x;
@@ -1046,6 +1074,7 @@ class Barrier {
         this.alive  = true;
     }
 
+    // Overlap for bullet absorption
     overlaps(rect) {
         return (
             this.x < rect.x + rect.width  &&
@@ -1055,6 +1084,7 @@ class Barrier {
         );
     }
 
+    // Draw barrier
     draw(ctx) {
         ctx.fillStyle = "#777";
         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -1064,7 +1094,7 @@ class Barrier {
     }
 }
 
-// Mina de daño al contacto
+// A mine that on contact deals heavy damage and disappears on trigger
 class Mine {
     constructor(x, y) {
         this.x = x;
@@ -1081,6 +1111,7 @@ class Mine {
         this.dead = false;
     }
 
+    // Draw mine
     // Triggered when player overlaps. Damage already dealt by the caller.
     trigger() {
         if (this.state !== "idle") return;
@@ -1129,7 +1160,7 @@ class Mine {
     }
 }
 
-// Trampa de paralizis
+// A beartrap that on trigger deals little damage and immobilises the player for 3 seconds
 class BearTrap {
     constructor(x, y) {
         this.x = x;
@@ -1137,10 +1168,11 @@ class BearTrap {
         this.width  = 24;
         this.height = 24;
         this.damage = 8;
-        this.paralyzeMs = 3000;
+        this.paralyzeMs = 3000; // Duration of the movement freeze in milliseconds
         this.dead = false;
     }
 
+    // Draw beartrap
     draw(ctx, img = null) {
         if (this.dead) return;
         if (img && img.complete && img.naturalWidth > 0) {
@@ -1177,10 +1209,10 @@ class BearTrap {
 // Class for the hero selection
 class HeroSelect {
     constructor() {
-        this.active    = true;
+        this.active = true;
         this.hoveredId = null;
-        this.heroIds   = Object.values(HEROES).map(h => h.id);
-        this.images    = {}; // preloaded Image objects keyed by hero id
+        this.heroIds = Object.values(HEROES).map(h => h.id);
+        this.images = {}; // preloaded Image objects keyed by hero id
 
         // Preload all hero images
         for (const hero of Object.values(HEROES)) {
@@ -1192,6 +1224,7 @@ class HeroSelect {
         }
     }
 
+     // Returns the bounding rectangle for the hero card
     cardRect(i) {
         const cardW  = 240;
         const cardH  = 400;
@@ -1207,6 +1240,7 @@ class HeroSelect {
         };
     }
 
+    // Tracks which card the mouse is hovering over (for hover highlight)
     onMouseMove(mx, my) {
         this.hoveredId = null;
         for (let i = 0; i < this.heroIds.length; i++) {
@@ -1218,6 +1252,7 @@ class HeroSelect {
         }
     }
 
+    // Detects a card click and triggers hero selection
     onMouseDown(mx, my) {
         for (let i = 0; i < this.heroIds.length; i++) {
             const r = this.cardRect(i);
@@ -1348,23 +1383,17 @@ class HeroSelect {
 class Game {
     constructor() {
         this.heroSelect = new HeroSelect();
-        this.player   = new Player();
+        this.player = new Player();
         
         this.mainBase = new MainBase(canvasWidth / 2, canvasHeight / 2);
-        this.outposts = [];
-        this.bullets  = [];
-        this.barriers = [];
-        this.mines    = [];
-        this.traps    = [];
-        this.won      = false;
-        this.waiting  = true;
-        this._died    = false;
-
-
-        this.randomEventActive    = false;
-        this.randomEventTriggered = false;
-        this.notifTimer           = 0;
-        this.notifDuration        = 180;
+        this.outposts = []; // All outposts of the level
+        this.bullets = []; // Active bullets
+        this.barriers = []; //Barriers of the level
+        this.mines = []; //Mines of the level
+        this.traps = []; //Beartraps of the level
+        this.won = false; 
+        this.waiting = true;
+        this._died = false;
 
         // Card system state
         this.targetingMode = null;
@@ -1381,7 +1410,7 @@ class Game {
         this.createEventListeners();
         this._rewardGranted = false;
         this.lastReward = null;
-        this._runStartTime = Date.now();
+        this._runStartTime = Date.now(); // Used to calculate match playtime on death
         this.ability = new HeroAbility(playerStats.heroId || 1);
 
         this._bgImages = THEMES.map(t => {
@@ -1491,12 +1520,9 @@ class Game {
             ay < by + bh + gap &&
             ay + ah + gap > by;
 
-            // Random base of 5–10 multiplied by difficulty capped at 60
+            // Random base of 5–10, +2 per stage capped at 40
             const mult = Math.floor(playerStats.level / 3);
-            const count = Math.min(
-                Math.floor(Math.random() * 6 ) + 5 + mult * 2 
-                ,40
-            );
+            const count = Math.min(Math.floor(Math.random() * 6 ) + 5 + mult * 2 ,40);
         
 
         for (let i = 0; i < count; i++) {
@@ -1516,7 +1542,7 @@ class Game {
                 valid = true;
             }
 
-            if (valid) {
+            if (valid) { // If the position is valid,  it asigns and outpost type by a random
                 placed.push({ x, y, width: outW, height: outH });
                 const roll = Math.random();
                 if (roll < 0.10) {
@@ -1533,14 +1559,13 @@ class Game {
         }
     }
 
-    // Elementos aleatorios del mapa (barreras, minas y trampas)
-    // 30% de posiblidad de que salga cada elemento
+    // Random element spawn thru the map (barriers, mines, beartraps) with 30% chance for each
     spawnObstacles() {
 
         const mult = getDifficultyMult();
         const margin = 60;
 
-        // Checa donde está main base
+        // Checks main base position
         const cx = this.mainBase.cx;
         const cy = this.mainBase.cy;
         const basePad = 50;
@@ -1561,6 +1586,7 @@ class Game {
         const placed = this.outposts.map(o => ({ x: o.x, y: o.y, width: o.width, height: o.height }));
         const minGap = 24;
 
+        // Tries up to 200 random positions
         const tryPlace = (w, h, gap = minGap) => {
             for (let attempts = 0; attempts < 200; attempts++) {
                 const x = margin + Math.random() * (canvasWidth  - margin * 2 - w);
@@ -1609,24 +1635,28 @@ class Game {
 
     get outpostsCleared() { return this.outposts.every(o => !o.alive); }
 
+    // Attaches keyboard and mouse event listeners.
     createEventListeners() {
         if (this._keydownHandler) window.removeEventListener("keydown", this._keydownHandler);
         if (this._keyupHandler)   window.removeEventListener("keyup",   this._keyupHandler);
 
         this._keydownHandler = (e) => {
             if (this.heroSelect.active) return;
-            if (this.won && this.draftChoices) return;
+            if (this.won && this.draftChoices) return; // Block input during card draft
 
+            // Activate offensive hero ability
             if (e.code === "KeyE" && !this.waiting && !this.won && !this.targetingMode){
                 this.ability.activateOffensive(this.player, this.mouseX, this.mouseY);
                 return;
             }
             
+            // Activate defensive hero ability
             if (e.code === "KeyF" && !this.waiting && !this.won && !this.targetingMode){
                 this.ability.activateDefensive(this.player);
                 return;
             }
 
+            //Cancel targeting mode
             if (this.targetingMode && e.code === "KeyR") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
@@ -1635,8 +1665,10 @@ class Game {
                 this.targetingMode = null;
                 return;
             }
+
+            // Play a card from the hand by index
             if (!this.waiting && !this.won && !this.targetingMode &&
-                ["Digit1","Digit2","Digit3","Digit4","Digit5"].includes(e.code)) {
+                ["Digit1","Digit2","Digit3"].includes(e.code)) {
                 const idx = parseInt(e.code.slice(-1), 10) - 1;
                 if (idx >= 0 && idx < playerStats.deck.length) {
                     const card = playerStats.deck.splice(idx, 1)[0];
@@ -1645,7 +1677,11 @@ class Game {
                 }
                 return;
             }
+
+            // Start or restart the round
             if (e.code === "Space") this.startOrRestart();
+
+            // Movement direction
             if (e.code === "KeyW") this.player.keys.up    = true;
             if (e.code === "KeyS") this.player.keys.down  = true;
             if (e.code === "KeyA") this.player.keys.left  = true;
@@ -1668,6 +1704,7 @@ class Game {
 
         const canvas = document.getElementById("canvas");
         if (canvas) {
+            // Track mouse position in canvas-space
             canvas.addEventListener("mousemove", (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
@@ -1776,8 +1813,6 @@ class Game {
 
     update(dt = 1) {
         // Freeze game logic while hero select or any waiting/won state is active
-        
-
         if (this.heroSelect.active || this.waiting || this.won) return;
 
         const solidWalls = [...this.mainBase.living, ...this.barriers]; // ... significa los elementos de ese array (spread operator)
@@ -1812,19 +1847,6 @@ class Game {
             this.won = true;
         }
 
-        /*
-        // Random event — fires once when any wall segment drops below 50% HP
-        if (!this.randomEventTriggered && this.outpostsCleared) {
-            const triggered = this.mainBase.segments.some(s => s.alive && s.hp < s.maxHp * 0.5);
-            if (triggered) {
-                this.randomEventTriggered = true;
-                this.randomEventActive    = true;
-                this.notifTimer           = this.notifDuration;
-                this.player.speedMod          = 0.7;
-                this.player.attackCooldownMax = 40;
-            }
-        }
-            */
         if (this.notifTimer > 0) this.notifTimer-= dt;
 
         // Outposts shoot at player
@@ -1857,7 +1879,7 @@ class Game {
                 }
             }
             if (!b.dead && b.overlaps(this.player)) {
-                if(!this.ability.absorbDamage()){
+                if(!this.ability.absorbDamage() && !this.player.is_immortal){
                     const dmg = Math.max(1, b.damage - (playerStats.dmgReduction || 0));
                     this.player.hp -= dmg;
                     if (this.player.hp < 0) this.player.hp = 0;
@@ -1896,8 +1918,9 @@ class Game {
             this._deathXP = playerStats.xp;
             this._deathLevel = playerStats.level;
             this._deathStage = playerStats.stage;
-             const savedHeroId = playerStats.heroId;
+            const savedHeroId = playerStats.heroId;
 
+            // POST match statistics to the backend for logged-in users
             const stored = localStorage.getItem('sessionUser');
             const sessionUser = stored ? JSON.parse(stored) : null;
             if (sessionUser && sessionUser.user_ID !== 0) {
@@ -1919,6 +1942,7 @@ class Game {
                 });
             }
 
+            // Full reset of playerStats and re-apply the chosen hero's base values
             playerStats = { speedMod: 1.0, maxHp: 100, bonuses: [], level: 0, stage:0, xp:0, dmgReduction: 0, deck: []};
             applyHeroStats(savedHeroId); // Re-apply hero base stats after reset
             this.draftChoices = null;
@@ -1992,7 +2016,7 @@ class Game {
         }
     }
 
-    // Draws a yellow outline to all living outposts so the player can click one to destroy it (card effect)
+    // Draws a yellow outline to all living outposts so the player can click one to attack it (card effect)
     // Also draws a cursor at the current mouse position
     drawTargeting(ctx) {
         ctx.fillStyle = "rgba(255, 200, 0, 0.08)";
@@ -2145,10 +2169,7 @@ class Game {
 
     // Renders the card hand on the bottom of the canvas.
     drawHand(ctx) {
-        //if(playerStats.level === 0) return;
-        
         const deck = (playerStats.deck || []).slice(0,3);
-        //console.log(playerStats.deck);
 
         const cardW = 130, cardH = 60, gap = 10;
         const totalW = deck.length * cardW + Math.max(0, deck.length - 1) * gap;
@@ -2182,18 +2203,6 @@ class Game {
             ctx.fillText(line1, x + 6, y + 34);
             if (line2) ctx.fillText(line2, x + 6, y + 48);
         }
-    }
-
-    drawEventNotif(ctx) {
-        const alpha = Math.min(1, this.notifTimer / 30);
-        ctx.fillStyle = `rgba(255, 140, 0, ${alpha * 0.85})`;
-        ctx.fillRect(0, canvasHeight / 2 - 60, canvasWidth, 90);
-        ctx.textAlign = "center";
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-        ctx.font = "32px monospace";
-        ctx.fillText(" RANDOM EVENT ACTIVATED", canvasWidth / 2, canvasHeight / 2 - 18);
-        ctx.font = "16px monospace";
-        ctx.fillText("Player speed -30% and attack rate -50%", canvasWidth / 2, canvasHeight / 2 + 16);
     }
 
         drawDeathScreen() {
@@ -2251,6 +2260,7 @@ async function main() {
     ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
 
+    // Apply the saved volume setting to all <audio> elements on the page
     const allAudio = document.querySelectorAll('audio');
     const savedVolume = Math.min(60, Math.max(0, parseInt(localStorage.getItem('volume')) || 30));
     allAudio.forEach(a => {
