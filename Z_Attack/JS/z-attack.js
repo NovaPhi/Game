@@ -43,12 +43,20 @@ const MINE_DISAPPEAR_FRAMES  = 24; // ~0.40 sec
 // Bear trap (idle only — no animation in Path 2)
 const BEARTRAP_IDLE_ASSET = "../Assets/beartrap_idle.png";
 
+const SPRITE_SCALE = {
+    player:  3, 
+    outpost: 2.2,
+    mine:    2,
+    trap:    2,
+    barrier: 1.5
+};
+
 // Barrier assets per theme — small, medium, large with 2 variants each.
 // Each size maps to a fixed hitbox (w × h) used for collision and placement.
 const BARRIER_SIZES = {
-    small:  { w: 40, h: 20 },
-    medium: { w: 70, h: 40 },
-    large:  { w: 100, h: 55 },
+    small:  { w: 80, h: 40 },
+    medium: { w: 140, h: 80 },
+    large:  { w: 240, h: 110 },
 };
 
 const BARRIER_ASSETS = {
@@ -74,12 +82,7 @@ const BARRIER_ASSETS = {
     },
 };
 
-const SPRITE_SCALE = {
-    player:  3, 
-    outpost: 2.2,
-    mine:    2,
-    trap:    2,
-};
+
 
 // Enemy attack animation assets (4 states per enemy: idle / windup / peak / recovery)
 const ENEMY_FRAMES = {
@@ -1145,8 +1148,14 @@ class Barrier {
     }
 
     draw(ctx, img = null) {
+        const s = SPRITE_SCALE.barrier;
+        const dw = this.width * s;
+        const dh = this.height * s;
+        const dx = this.x - (dw - this.width)/2;
+        const dy = this.y - (dh - this.height)/2;
+
         if (img && img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            ctx.drawImage(img, dx, dy, dw, dh);
             return;
         }
         ctx.fillStyle = "#777";
@@ -1910,6 +1919,7 @@ class Game {
         playerStats.level += 1;
         this.levelnum = playerStats.level; 
         playerStats.stage = Math.floor(playerStats.level / 3) // New stage every 3 levels
+        this._themeIndex = (this._themeIndex + 1) % THEMES.length;
 
         
         // Stage completion XP bonus

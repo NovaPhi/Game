@@ -120,7 +120,7 @@ function createStarterDeck() {
 let playerStats = {
     heroId:       null,
     asset:        null,
-    speedMod:     1.0,
+    speedMod:     2.0,
     maxHp:        100,
     level:        0,
     xp:           0,
