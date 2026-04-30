@@ -138,7 +138,7 @@ let game;
 
 
 class Player {
-    constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
+    constructor(stats = { speedMod: 2.0, maxHp: 100 }) {
         this.width  = 28;
         this.height = 28;
         this.x = 0;
@@ -975,7 +975,7 @@ class Game {
             this.drawOverlay("WELCOME TO TUTORIAL", "PRESS SPACE TO START", "#4af");
         } else if (this.won) {
             if (this.instructionsScreen) {
-                this.drawOverlay("GREAT JOB", "Now, when you beat a level, you will be able to select one card for next rounds", "lime");
+                this.drawOverlay("GREAT JOB", "Tutorial Complete", "lime");
             } else if (this.draftChoices) {
                 this.drawDraft(ctx);
             } else {
