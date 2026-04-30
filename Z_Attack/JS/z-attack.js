@@ -21,11 +21,98 @@ const PLAYER_DMG   = 100; // Player base melee damage per hit
 const OUTPOST_COUNT = 50;
 
 const THEMES = [
-    { name: "House",    bg: "../Assets/bg_house.png",    base: "../Assets/base_house.png"    },
-    { name: "Mall",     bg: "../Assets/bg_mall.png",     base: "../Assets/base_mall.png"     },
-    { name: "Hospital", bg: "../Assets/bg_hospital.png", base: "../Assets/base_hospital.png" },
-    { name: "Military", bg: "../Assets/bg_military.png", base: "../Assets/base_military.png" },
+    { name: "House",    bg: "../Assets/bg_house.png",    base: "../Assets/base_house.png",    wall: "../Assets/wall_house.png"    },
+    { name: "Mall",     bg: "../Assets/bg_mall.png",     base: "../Assets/base_mall.png",     wall: "../Assets/wall_mall.png"     },
+    { name: "Hospital", bg: "../Assets/bg_hospital.png", base: "../Assets/base_hospital.png", wall: "../Assets/wall_hospital.png" },
+    { name: "Military", bg: "../Assets/bg_military.png", base: "../Assets/base_military.png", wall: "../Assets/wall_military.png" },
 ];
+
+// Mine animation frames (theme-independent)
+const MINE_FRAMES = {
+    idle:       "../Assets/mine_idle.png",
+    activation: "../Assets/mine_activation.png",
+    disappear:  "../Assets/mine_disappear.png",
+};
+
+// Mine animation timing (frames @ 60fps)
+const MINE_ACTIVATION_FRAMES = 18; // ~0.30 sec
+const MINE_DISAPPEAR_FRAMES  = 24; // ~0.40 sec
+
+// Bear trap (idle only — no animation in Path 2)
+const BEARTRAP_IDLE_ASSET = "../Assets/beartrap_idle.png";
+
+// Enemy attack animation assets (4 states per enemy: idle / windup / peak / recovery)
+const ENEMY_FRAMES = {
+    outpost: {
+        idle:     "../Assets/outpost_idle.png",
+        windup:   "../Assets/outpost_attack_1.png",
+        peak:     "../Assets/outpost_attack_2.png",
+        recovery: "../Assets/outpost_attack_3.png",
+    },
+    burst: {
+        idle:     "../Assets/burst_idle.png",
+        windup:   "../Assets/burst_attack_1.png",
+        peak:     "../Assets/burst_attack_2.png",
+        recovery: "../Assets/burst_attack_3.png",
+    },
+    sniper: {
+        idle:     "../Assets/sniper_idle.png",
+        windup:   "../Assets/sniper_attack_1.png",
+        peak:     "../Assets/sniper_attack_2.png",
+        recovery: "../Assets/sniper_attack_3.png",
+    },
+    turret: {
+        idle:     "../Assets/turret_idle.png",
+        windup:   "../Assets/turret_attack_1.png",
+        peak:     "../Assets/turret_attack_2.png",
+        recovery: "../Assets/turret_attack_3.png",
+    },
+};
+
+// Enemy attack-animation timing (frames @ 60fps)
+// Outpost / Burst trigger windup during the last N frames of their shootCooldown.
+// Sniper / Turret use their existing WARN_FRAMES as the windup duration.
+const ENEMY_WINDUP_FRAMES   = 12;
+const ENEMY_PEAK_FRAMES     = 6;
+const ENEMY_RECOVERY_FRAMES = 8;
+
+// Hero attack frames (4 states per hero: idle / windup / peak / recovery).
+// Path-2 heroes are south-facing only — no rotation, no walk cycle yet.
+const HERO_FRAMES = {
+    warrior: {
+        idle:     "../Assets/warrior_idle.png",
+        windup:   "../Assets/warrior_attack_1.png",
+        peak:     "../Assets/warrior_attack_2.png",
+        recovery: "../Assets/warrior_attack_3.png",
+    },
+    scout: {
+        idle:     "../Assets/scout_idle.png",
+        windup:   "../Assets/scout_attack_1.png",
+        peak:     "../Assets/scout_attack_2.png",
+        recovery: "../Assets/scout_attack_3.png",
+    },
+    tank: {
+        idle:     "../Assets/tank_idle.png",
+        windup:   "../Assets/tank_attack_1.png",
+        peak:     "../Assets/tank_attack_2.png",
+        recovery: "../Assets/tank_attack_3.png",
+    },
+};
+
+// Hero attack-animation timing (frames @ 60fps)
+const HERO_WINDUP_FRAMES   = 4;
+const HERO_PEAK_FRAMES     = 4;
+const HERO_RECOVERY_FRAMES = 8;
+
+// Returns the HERO_FRAMES key for a hero (warrior/scout/tank), or null if no match.
+function getHeroFramesKey(hero) {
+    if (!hero || !hero.name) return null;
+    const n = hero.name.toLowerCase();
+    for (const key of Object.keys(HERO_FRAMES)) {
+        if (n.includes(key)) return key;
+    }
+    return null;
+}
 
 let playerStats = {
     heroId: null,
@@ -101,11 +188,32 @@ class Player {
         this.maxHp = stats.maxHp;
         this.hp = this.maxHp;
         this.paralyzedUntil = 0; // bear trap freeze (ms timestamp)
+
+        // Attack-animation state machine (matches enemy pattern)
+        this.attackState = "idle"; // "idle" | "windup" | "peak" | "recovery"
+        this.attackTimer = 0;
+
         if(playerStats.asset){
             this._img = new Image();
             this._img.src = playerStats.asset;
         }else{
             this._img = null;
+        }
+    }
+
+    _tickAttackAnim(dt) {
+        if (this.attackState === "idle") return;
+        this.attackTimer -= dt;
+        if (this.attackTimer <= 0) {
+            if (this.attackState === "windup") {
+                this.attackState = "peak";
+                this.attackTimer = HERO_PEAK_FRAMES;
+            } else if (this.attackState === "peak") {
+                this.attackState = "recovery";
+                this.attackTimer = HERO_RECOVERY_FRAMES;
+            } else if (this.attackState === "recovery") {
+                this.attackState = "idle";
+            }
         }
     }
 
@@ -128,6 +236,7 @@ class Player {
         for (const w of walls) if (w.alive && this.overlaps(w)) this.resolveY(w, dy);
 
         if (this.attackCooldown > 0) this.attackCooldown-= dt;
+        this._tickAttackAnim(dt);
     }
 
     overlaps(rect) {
@@ -169,6 +278,11 @@ class Player {
                 this.targetHp       = target.hp;
                 this.attackCooldown = this.attackCooldownMax;
                 if(game && game.ability) game.ability.breakInvisibility();
+                // Trigger attack animation (windup → peak → recovery → idle)
+                if (this.attackState === "idle") {
+                    this.attackState = "windup";
+                    this.attackTimer = HERO_WINDUP_FRAMES;
+                }
                 return true;
             }
             return false;
@@ -176,24 +290,31 @@ class Player {
         return false;
     }
 
-    draw(ctx) {
+    draw(ctx, heroImages = null) {
         const invis = game && game.ability && game.ability.isInvisible();
         ctx.globalAlpha = invis ? 0.3 : 1.0;
-        if (playerStats.asset && this._img) {
-            if (this._img.complete && this._img.naturalWidth > 0) {
-                ctx.drawImage(this._img, this.x, this.y, this.width, this.height);
-            } else {
-                // fallback while image loads
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-            }
+
+        // Subtle 1 px vertical bob while moving (compensates for the lack of a
+        // walk cycle in Path 2 — adds liveliness to movement).
+        const moving = this.keys.up || this.keys.down || this.keys.left || this.keys.right;
+        const yBob   = moving ? Math.sin(performance.now() / 80) : 0;
+
+        // Prefer state-driven hero frames (idle/windup/peak/recovery). If not
+        // available (no match for warrior/scout/tank, or images still loading),
+        // fall back to the legacy single-image asset, then to a colored rect.
+        const stateImg = heroImages ? heroImages[this.attackState] : null;
+
+        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
+            ctx.drawImage(stateImg, this.x, this.y + yBob, this.width, this.height);
+        } else if (playerStats.asset && this._img && this._img.complete && this._img.naturalWidth > 0) {
+            ctx.drawImage(this._img, this.x, this.y + yBob, this.width, this.height);
         } else {
             ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillRect(this.x, this.y + yBob, this.width, this.height);
         }
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.strokeRect(this.x, this.y + yBob, this.width, this.height);
         ctx.globalAlpha = 1.0;
     }
 }
@@ -316,13 +437,17 @@ class WallSegment {
         return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false, "#f44");
     }
 
-    draw(ctx) {
+    draw(ctx, wallImg = null) {
         if (!this.alive) return;
-        ctx.fillStyle = "#e8e8e8";
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        if (wallImg && wallImg.complete && wallImg.naturalWidth > 0) {
+            ctx.drawImage(wallImg, this.x, this.y, this.width, this.height);
+        } else {
+            ctx.fillStyle = "#e8e8e8";
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+        }
     }
 }
 
@@ -389,8 +514,8 @@ class MainBase {
         };
     }
 
-    draw(ctx) {
-        for (const seg of this.segments) seg.draw(ctx);
+    draw(ctx, wallImg = null) {
+        for (const seg of this.segments) seg.draw(ctx, wallImg);
     }
 }
 
@@ -408,19 +533,38 @@ class Outpost {
         this._bulletDamage = Math.round(5 * mult);
 
         // Shoot cooldown scaled by difficulty
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ... 
+        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
         this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
 
         this.shootRange = 200; // Detection range
+
+        // Attack-animation state machine
+        this.attackState = "idle"; // "idle" | "windup" | "peak" | "recovery"
+        this.attackTimer = 0;
+        this._facingAngle = Math.PI / 2; // default south
     }
 
     get alive() { return this.hp > 0; }
 
+    _tickAttackAnim(dt) {
+        if (this.attackState === "idle" || this.attackState === "windup") return;
+        this.attackTimer -= dt;
+        if (this.attackTimer <= 0) {
+            if (this.attackState === "peak") {
+                this.attackState = "recovery";
+                this.attackTimer = ENEMY_RECOVERY_FRAMES;
+            } else if (this.attackState === "recovery") {
+                this.attackState = "idle";
+            }
+        }
+    }
+
     // Fires at the player if they are in range
     tryShoot(player , dt = 1) {
         if (!this.alive) return null;
+        this._tickAttackAnim(dt);
 
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
@@ -428,13 +572,24 @@ class Outpost {
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
 
+        // Track facing toward player every frame for sprite rotation
+        this._facingAngle = Math.atan2(py - cy, px - cx);
+
         // Don't shoot if player is within one player-length
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
 
+        // Enter windup during the last N frames before firing
+        if (this.attackState === "idle" && this.shootCooldown > 0 && this.shootCooldown <= ENEMY_WINDUP_FRAMES) {
+            this.attackState = "windup";
+        }
+
         if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
+        this.attackState = "peak";
+        this.attackTimer = ENEMY_PEAK_FRAMES;
+
         const speed = 3;
         const nx = (px - cx) / dist;
         const ny = (py - cy) / dist;
@@ -442,22 +597,36 @@ class Outpost {
         return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false,   "#f84");
     }
 
-    draw(ctx) {
+    draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
-        ctx.fillStyle = `rgba(220, 80, 220, ${0.4 + 0.6 * ratio})`;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = "#f0f";
-        ctx.lineWidth   = 2;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        const cx    = this.x + this.width  / 2;
+        const cy    = this.y + this.height / 2;
+        const stateImg = images ? images[this.attackState] : null;
+
+        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(this._facingAngle - Math.PI / 2);
+            ctx.drawImage(stateImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = `rgba(220, 80, 220, ${0.4 + 0.6 * ratio})`;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = "#f0f";
+            ctx.lineWidth   = 2;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = "#fff";
+            ctx.font = "10px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("OUTPOST", cx, cy + 4);
+        }
+
+        // HP bar — drawn without rotation
         ctx.fillStyle = "#333";
         ctx.fillRect(this.x, this.y - 8, this.width, 5);
         ctx.fillStyle = "#f0f";
         ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("OUTPOST", this.x + this.width / 2, this.y + this.height / 2 + 4);
     }
 }
 
@@ -473,19 +642,37 @@ class Burst {
         this._bulletDamage = Math.round(5 * mult);
 
         // Shoot cooldown scaled by difficulty
-        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ... 
+        const cdMin  = Math.max(Math.floor(60  / mult), 10);   // 60 → 30 → 15 → ...
         const cdMax  = Math.max(Math.floor(180 / mult), cdMin + 1); // 180 → 90 → 45 → ...
         this.shootCooldownMax = Math.floor(Math.random() * (cdMax - cdMin + 1)) + cdMin;
         this.shootCooldown    = Math.floor(Math.random() * this.shootCooldownMax);
 
         this.shootRange = 200; // Detection range
+
+        this.attackState = "idle";
+        this.attackTimer = 0;
+        this._facingAngle = Math.PI / 2;
     }
 
     get alive() { return this.hp > 0; }
 
+    _tickAttackAnim(dt) {
+        if (this.attackState === "idle" || this.attackState === "windup") return;
+        this.attackTimer -= dt;
+        if (this.attackTimer <= 0) {
+            if (this.attackState === "peak") {
+                this.attackState = "recovery";
+                this.attackTimer = ENEMY_RECOVERY_FRAMES;
+            } else if (this.attackState === "recovery") {
+                this.attackState = "idle";
+            }
+        }
+    }
+
     // Fires at the player if they are in range
     tryShoot(player, dt = 1) {
         if (!this.alive) return null;
+        this._tickAttackAnim(dt);
 
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
@@ -493,46 +680,65 @@ class Burst {
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
 
-        // Don't shoot if player is within one player-length
+        this._facingAngle = Math.atan2(py - cy, px - cx);
+
         if (dist < player.width) return null;
         if (dist > this.shootRange) return null;
+
+        if (this.attackState === "idle" && this.shootCooldown > 0 && this.shootCooldown <= ENEMY_WINDUP_FRAMES) {
+            this.attackState = "windup";
+        }
 
         if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
 
         this.shootCooldown = this.shootCooldownMax;
+        this.attackState = "peak";
+        this.attackTimer = ENEMY_PEAK_FRAMES;
+
         const bullets = [];
         const speed = 3;
-        const angle = Math.atan2(py - cy, px - cx);
+        const angle = this._facingAngle;
         const spread = 0.2;
-        // 1/8 of player max HP
         for (let i = -1; i <= 1; i++) {
             const a = angle + i * spread;
             const vx = Math.cos(a) * speed;
             const vy = Math.sin(a) * speed;
-
             bullets.push(
-                new Bullet(cx - 3, cy - 3, vx, vy, this._bulletDamage, 6, 6, false, "#4af") // ⬅️ color diferente
+                new Bullet(cx - 3, cy - 3, vx, vy, this._bulletDamage, 6, 6, false, "#4af")
             );
         }
         return bullets;
     }
 
-    draw(ctx) {
+    draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
-        ctx.fillStyle = `rgba(80, 180, 255, ${0.4 + 0.6 * ratio})`;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = "#4af";
-        ctx.lineWidth   = 2;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        const cx    = this.x + this.width  / 2;
+        const cy    = this.y + this.height / 2;
+        const stateImg = images ? images[this.attackState] : null;
+
+        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(this._facingAngle - Math.PI / 2);
+            ctx.drawImage(stateImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = `rgba(80, 180, 255, ${0.4 + 0.6 * ratio})`;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = "#4af";
+            ctx.lineWidth   = 2;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = "#fff";
+            ctx.font = "10px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("BURST", cx, cy + 4);
+        }
+
         ctx.fillStyle = "#333";
         ctx.fillRect(this.x, this.y - 8, this.width, 5);
         ctx.fillStyle = "#4af";
         ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("OUTPOST", this.x + this.width / 2, this.y + this.height / 2 + 4);
     }
 }
 
@@ -555,13 +761,32 @@ class Sniper {
         this._aimNy = 0;
         this._isWarning = false;
         this.bulletDamage = Math.round(35 * mult);
+
+        // Attack-anim state (peak/recovery counted in frames; windup = while _isWarning)
+        this.attackState = "idle";
+        this.attackTimer = 0;
+        this._facingAngle = Math.PI / 2;
     }
 
     get alive() { return this.hp > 0; }
 
+    _tickAttackAnim(dt) {
+        if (this.attackState === "peak") {
+            this.attackTimer -= dt;
+            if (this.attackTimer <= 0) {
+                this.attackState = "recovery";
+                this.attackTimer = ENEMY_RECOVERY_FRAMES;
+            }
+        } else if (this.attackState === "recovery") {
+            this.attackTimer -= dt;
+            if (this.attackTimer <= 0) this.attackState = "idle";
+        }
+    }
+
     // Fires at the player if they are in range
     tryShoot(player, dt = 1) {
         if (!this.alive) return null;
+        this._tickAttackAnim(dt);
 
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
@@ -570,16 +795,19 @@ class Sniper {
         const dist = Math.hypot(px - cx, py - cy);
         const inRange = dist > player.width && dist <= this.shootRange;
 
+        // Track facing toward player (or last aim if out of range)
+        if (dist > 0) this._facingAngle = Math.atan2(py - cy, px - cx);
+
         if (this.idleCooldown <= 0) {
             this.idleCooldown = this.idleCooldownMax; // Reset for next cycle
             this._isWarning = false;
- 
+
             if (this._aimNx !== 0 || this._aimNy !== 0) {
                 const speed = 10;
+                this.attackState = "peak";
+                this.attackTimer = ENEMY_PEAK_FRAMES;
+                this._facingAngle = Math.atan2(this._aimNy, this._aimNx); // lock facing to actual shot direction
                 return new Bullet(cx - 5, cy - 5, this._aimNx * speed, this._aimNy * speed, this.bulletDamage, 10, 10, true, "#ff0");
-                this._aimNx = 0;
-                this._aimNy = 0;
-                return bullet;
             }
 
         return null;
@@ -595,11 +823,16 @@ class Sniper {
                     this._aimNy = (py - cy) / dist;
                 }
             }
+            // Sprite-state mirrors the warning telegraph
+            if (this._isWarning && this.attackState === "idle") {
+                this.attackState = "windup";
+            }
             return null;
-        } 
+        }
 
         this._isWarning = false;
- 
+        if (this.attackState === "windup") this.attackState = "idle";
+
         if (inRange) {
             this._aimNx = (px - cx) / dist;
             this._aimNy = (py - cy) / dist;
@@ -610,48 +843,61 @@ class Sniper {
 
         return null;
     }
-    
-    draw(ctx) {
+
+    draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
- 
-        ctx.fillStyle = `rgba(180, 40, 40, ${0.4 + 0.6 * ratio})`;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = "#ff0";
-        ctx.lineWidth   = 2;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
-        ctx.strokeStyle = "#ff0";
-        ctx.lineWidth   = 1.5;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
-        ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
-        ctx.stroke();
+        const stateImg = images ? images[this.attackState] : null;
+
+        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(this._facingAngle - Math.PI / 2);
+            ctx.drawImage(stateImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = `rgba(180, 40, 40, ${0.4 + 0.6 * ratio})`;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = "#ff0";
+            ctx.lineWidth   = 2;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = "#ff0";
+            ctx.lineWidth   = 1.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+            ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
+            ctx.stroke();
+            ctx.fillStyle = "#fff";
+            ctx.font = "8px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("SNIPER", cx, this.y + this.height - 3);
+        }
+
+        // HP bar
         ctx.fillStyle = "#333";
         ctx.fillRect(this.x, this.y - 8, this.width, 5);
         ctx.fillStyle = "#ff0";
         ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
-        ctx.fillStyle = "#fff";
-        ctx.font = "8px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("SNIPER", cx, this.y + this.height - 3);
+
+        // Targeting laser telegraph (drawn unrotated, on top of sprite)
         if (this._isWarning) {
             const progress = 1 - (this.idleCooldown / this.WARN_FRAMES);
             const pulse = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() / (120 - progress * 80)));
             const targetX = cx + this._aimNx * this.shootRange;
             const targetY = cy + this._aimNy * this.shootRange;
             ctx.strokeStyle = `rgba(255, 60, 60, ${pulse})`;
-            ctx.lineWidth   = 1 + progress * 2; 
+            ctx.lineWidth   = 1 + progress * 2;
             ctx.setLineDash([6, 4]);
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(targetX, targetY);
             ctx.stroke();
-            ctx.setLineDash([]); 
+            ctx.setLineDash([]);
             ctx.fillStyle = `rgba(255, 60, 60, ${pulse})`;
             ctx.beginPath();
             ctx.arc(targetX, targetY, 5, 0, Math.PI * 2);
@@ -676,6 +922,10 @@ class OmniOutpost {
         this.idleCooldown    = Math.floor(Math.random() * this.idleCooldownMax);
         this.NUM_BULLETS     = 12;
         this._rotAngle       = 0;
+
+        // Attack-anim state (peak/recovery counted in frames; windup = while _isWarning)
+        this.attackState = "idle";
+        this.attackTimer = 0;
     }
 
     get alive() { return this.hp > 0; }
@@ -684,71 +934,104 @@ class OmniOutpost {
         return this.idleCooldown <= this.WARN_FRAMES && this.idleCooldown > 0;
     }
 
+    _tickAttackAnim(dt) {
+        if (this.attackState === "peak") {
+            this.attackTimer -= dt;
+            if (this.attackTimer <= 0) {
+                this.attackState = "recovery";
+                this.attackTimer = ENEMY_RECOVERY_FRAMES;
+            }
+        } else if (this.attackState === "recovery") {
+            this.attackTimer -= dt;
+            if (this.attackTimer <= 0) this.attackState = "idle";
+        }
+    }
+
     tryShoot(player, dt = 1) {
         if (!this.alive) return null;
+        this._tickAttackAnim(dt);
+
         if (this.idleCooldown <= 0) {
             this.idleCooldown = this.idleCooldownMax; // reiniciar ciclo
             const bullets = [];
             const speed   = 2.5;
             const cx = this.x + this.width / 2;
             const cy = this.y + this.height / 2;
- 
+
             for (let i = 0; i < this.NUM_BULLETS; i++) {
                 const angle = (i / this.NUM_BULLETS) * Math.PI * 2 + this._rotAngle;
                 bullets.push(new Bullet(cx - 3, cy - 3, Math.cos(angle) * speed, Math.sin(angle) * speed, this._bulletDamage, 6, 6, false, "#f60"));
             }
 
             this._rotAngle += Math.PI / this.NUM_BULLETS;
- 
-            return bullets; 
+            this.attackState = "peak";
+            this.attackTimer = ENEMY_PEAK_FRAMES;
+
+            return bullets;
         }
- 
+
         this.idleCooldown -= dt;
         this._rotAngle += this._isWarning ? 0.08 : 0.02;
+
+        // Sprite-state mirrors the warning telegraph
+        if (this._isWarning && this.attackState === "idle") {
+            this.attackState = "windup";
+        } else if (!this._isWarning && this.attackState === "windup") {
+            this.attackState = "idle";
+        }
+
         return null;
     }
 
-    draw(ctx) {
+    draw(ctx, images = null) {
         if (!this.alive) return;
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
         const ratio = this.hp / this.maxHp;
+
+        // Expanding warning ring (drawn under the sprite)
         if (this._isWarning) {
             const progress = 1 - (this.idleCooldown / this.WARN_FRAMES); // 0→1
             const pulse    = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() / 80));
             const maxR = 300;
             const r    = maxR * progress;
             ctx.strokeStyle = `rgba(255, 80, 0, ${pulse * (1 - progress * 0.5)})`;
-            ctx.lineWidth   = 3 - progress * 1.5; // más fino al expandirse
+            ctx.lineWidth   = 3 - progress * 1.5;
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.stroke();
         }
- 
-        ctx.fillStyle = `rgba(60, 30, 0, ${0.7 + 0.3 * ratio})`;
-        ctx.strokeStyle = this._isWarning ? "#f60" : "#a40";
-        ctx.lineWidth   = this._isWarning ? 2.5 : 1.5;
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
-            const r = this.width / 2;
-            i === 0
-                ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
-                : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+
+        // Turret sprite — NO rotation (radial firing)
+        const stateImg = images ? images[this.attackState] : null;
+        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
+            ctx.drawImage(stateImg, this.x, this.y, this.width, this.height);
+        } else {
+            ctx.fillStyle = `rgba(60, 30, 0, ${0.7 + 0.3 * ratio})`;
+            ctx.strokeStyle = this._isWarning ? "#f60" : "#a40";
+            ctx.lineWidth   = this._isWarning ? 2.5 : 1.5;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+                const r = this.width / 2;
+                i === 0
+                    ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+                    : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = "#fff";
+            ctx.font      = "7px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("OMNI", cx, this.y + this.height - 3);
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
- 
+
+        // HP bar
         ctx.fillStyle = "#333";
         ctx.fillRect(this.x, this.y - 8, this.width, 5);
         ctx.fillStyle = "#f60";
         ctx.fillRect(this.x, this.y - 8, this.width * ratio, 5);
-
-        ctx.fillStyle = "#fff";
-        ctx.font      = "7px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("OMNI", cx, this.y + this.height - 3);
     }
 }
 
@@ -789,11 +1072,46 @@ class Mine {
         this.width  = 24;
         this.height = 24;
         this.damage = 100;
-        this.dead   = false;
+        // State machine: "idle" -> "activation" -> "disappear" -> fullyDone
+        this.state      = "idle";
+        this.stateTimer = 0;
+        this.fullyDone  = false;
+        // `dead` retained for legacy collision code: true once the mine has been
+        // triggered and should no longer damage the player.
+        this.dead = false;
     }
 
-    draw(ctx) {
-        if (this.dead) return;
+    // Triggered when player overlaps. Damage already dealt by the caller.
+    trigger() {
+        if (this.state !== "idle") return;
+        this.state      = "activation";
+        this.stateTimer = MINE_ACTIVATION_FRAMES;
+        this.dead       = true; // can't damage again
+    }
+
+    update(dt = 1) {
+        if (this.state === "idle" || this.fullyDone) return;
+        this.stateTimer -= dt;
+        if (this.stateTimer <= 0) {
+            if (this.state === "activation") {
+                this.state      = "disappear";
+                this.stateTimer = MINE_DISAPPEAR_FRAMES;
+            } else if (this.state === "disappear") {
+                this.fullyDone = true;
+            }
+        }
+    }
+
+    draw(ctx, images = null) {
+        if (this.fullyDone) return;
+        const img = images ? images[this.state] : null;
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            return;
+        }
+        // Fallback to the original colored circle (only meaningful while idle —
+        // legacy mines without images simply pop out of existence on trigger).
+        if (this.state !== "idle") return;
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
         const r  = this.width / 2;
@@ -823,14 +1141,18 @@ class BearTrap {
         this.dead = false;
     }
 
-    draw(ctx) {
+    draw(ctx, img = null) {
         if (this.dead) return;
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            return;
+        }
+        // Fallback — original colored rect with jagged teeth
         ctx.fillStyle = "#aa6a00";
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.strokeStyle = "#3a2200";
         ctx.lineWidth = 2;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
-        // jagged "teeth" along the top and bottom edges
         ctx.fillStyle = "#ddd";
         const teeth = 4;
         const tw = this.width / teeth;
@@ -1072,6 +1394,37 @@ class Game {
             img.src = t.base;
             return img;
         });
+        this._wallImages = THEMES.map(t => {
+            const img = new Image();
+            img.src = t.wall;
+            return img;
+        });
+        this._mineImages = {};
+        for (const state of Object.keys(MINE_FRAMES)) {
+            const img = new Image();
+            img.src = MINE_FRAMES[state];
+            this._mineImages[state] = img;
+        }
+        this._beartrapImage = new Image();
+        this._beartrapImage.src = BEARTRAP_IDLE_ASSET;
+        this._enemyImages = {};
+        for (const enemyType of Object.keys(ENEMY_FRAMES)) {
+            this._enemyImages[enemyType] = {};
+            for (const state of Object.keys(ENEMY_FRAMES[enemyType])) {
+                const img = new Image();
+                img.src = ENEMY_FRAMES[enemyType][state];
+                this._enemyImages[enemyType][state] = img;
+            }
+        }
+        this._heroImages = {};
+        for (const heroKey of Object.keys(HERO_FRAMES)) {
+            this._heroImages[heroKey] = {};
+            for (const state of Object.keys(HERO_FRAMES[heroKey])) {
+                const img = new Image();
+                img.src = HERO_FRAMES[heroKey][state];
+                this._heroImages[heroKey][state] = img;
+            }
+        }
         this._themeIndex = playerStats.stage % THEMES.length;
     }
 
@@ -1514,16 +1867,17 @@ class Game {
         }
         this.bullets = this.bullets.filter(b => !b.dead);
 
-        // Player vs mines — heavy damage, mine despawns
+        // Player vs mines — heavy damage, then mine plays activation+disappear animation
         for (const m of this.mines) {
             if (!m.dead && this.player.overlaps(m)) {
                 const dmg = Math.max(1, m.damage - (playerStats.dmgReduction || 0));
                 this.player.hp -= dmg;
                 if (this.player.hp < 0) this.player.hp = 0;
-                m.dead = true;
+                m.trigger();
             }
         }
-        this.mines = this.mines.filter(m => !m.dead);
+        for (const m of this.mines) m.update(dt);
+        this.mines = this.mines.filter(m => !m.fullyDone);
 
         // Player vs bear traps — light damage, paralyze 3s, trap despawns
         for (const t of this.traps) {
@@ -1587,7 +1941,7 @@ class Game {
         this._drawBackground(ctx);
         this._drawMainBaseBuilding(ctx);
 
-        this.mainBase.draw(ctx);
+        this.mainBase.draw(ctx, this._wallImages[this._themeIndex]);
 
         // Capture zone — always visible
         /*
@@ -1603,10 +1957,19 @@ class Game {
         ctx.fillText("ENTER", iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);*/
 
         for (const bar of this.barriers) bar.draw(ctx);
-        for (const t of this.traps) t.draw(ctx);
-        for (const m of this.mines) m.draw(ctx);
-        for (const outpost of this.outposts) outpost.draw(ctx);
-        this.player.draw(ctx);
+        for (const t of this.traps) t.draw(ctx, this._beartrapImage);
+        for (const m of this.mines) m.draw(ctx, this._mineImages);
+        for (const outpost of this.outposts) {
+            let imgs = null;
+            if      (outpost instanceof Outpost)     imgs = this._enemyImages.outpost;
+            else if (outpost instanceof Burst)       imgs = this._enemyImages.burst;
+            else if (outpost instanceof Sniper)      imgs = this._enemyImages.sniper;
+            else if (outpost instanceof OmniOutpost) imgs = this._enemyImages.turret;
+            outpost.draw(ctx, imgs);
+        }
+        const heroKey    = getHeroFramesKey(getHeroById(playerStats.heroId));
+        const heroImages = heroKey ? this._heroImages[heroKey] : null;
+        this.player.draw(ctx, heroImages);
         for (const b of this.bullets) b.draw(ctx);
         this.ability.draw(ctx);
 
