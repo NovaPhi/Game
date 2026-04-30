@@ -1317,7 +1317,7 @@ class Game {
         ctx.font      = "56px monospace";
         ctx.fillText(title, canvasWidth / 2, canvasHeight / 2 - 60);
         ctx.fillStyle = "#fff";
-        ctx.font      = "22px monospace";
+        ctx.font      = "18px monospace";
         ctx.fillText(subtitle, canvasWidth / 2, canvasHeight / 2 + 60);
     }
 }
