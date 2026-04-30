@@ -43,6 +43,14 @@ const MINE_DISAPPEAR_FRAMES  = 24; // ~0.40 sec
 // Bear trap (idle only — no animation in Path 2)
 const BEARTRAP_IDLE_ASSET = "../Assets/beartrap_idle.png";
 
+
+const SPRITE_SCALE = {
+    player:  3, 
+    outpost: 2.2,
+    mine:    2,
+    trap:    2,
+};
+
 // Enemy attack animation assets (4 states per enemy: idle / windup / peak / recovery)
 const ENEMY_FRAMES = {
     outpost: {
@@ -169,8 +177,8 @@ let game;
 // Represents the character. Handles movement, wall collisions, melee attacks, and rendering
 class Player {
     constructor(stats = { speedMod: 1.0, maxHp: 100 }) {
-        this.width  = 70;
-        this.height = 70;
+        this.width  = 28;
+        this.height = 28;
         this.x = 0;
         this.y = 0;
 
@@ -243,6 +251,7 @@ class Player {
 
         if (this.attackCooldown > 0) this.attackCooldown-= dt;
         this._tickAttackAnim(dt);
+        
     }
 
     // Returns true if the player rectangle overlaps the given rect
@@ -301,7 +310,6 @@ class Player {
     }
 
     // Draws the player sprite
-    //done with the help of claude
     draw(ctx, heroImages = null) {
         const invis = game && game.ability && game.ability.isInvisible();
         ctx.globalAlpha = invis ? 0.3 : 1.0;
@@ -316,14 +324,21 @@ class Player {
         // fall back to the legacy single-image asset, then to a colored rect.
         const stateImg = heroImages ? heroImages[this.attackState] : null;
 
+        const s = SPRITE_SCALE.player;
+        const dw = this.width  * s;
+        const dh = this.height * s;
+        const dx = this.x - (dw - this.width)  / 2;
+        const offsetY = (dh - this.height) * 0.75;
+        const dy = this.y - offsetY + yBob;
+
         if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
-            ctx.drawImage(stateImg, this.x, this.y + yBob, this.width, this.height);
+            ctx.drawImage(stateImg, dx, dy, dw, dh);
         } else if (playerStats.asset && this._img && this._img.complete && this._img.naturalWidth > 0) {
-            ctx.drawImage(this._img, this.x, this.y + yBob, this.width, this.height);
+            ctx.drawImage(this._img, dx, dy, dw, dh);
         } else {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y + yBob, this.width, this.height);
+            ctx.fillRect(this.x, this.y, this.width, this.height); 
         }
+
         //ctx.strokeStyle = "#fff";
         //ctx.lineWidth = 1.5;
         //ctx.strokeRect(this.x, this.y + yBob, this.width, this.height);
@@ -542,8 +557,8 @@ class Outpost {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 80;
-        this.height = 80;
+        this.width = 40;
+        this.height = 40;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(300 * mult);
         this.hp = this.maxHp;
@@ -623,12 +638,15 @@ class Outpost {
         const cx    = this.x + this.width  / 2;
         const cy    = this.y + this.height / 2;
         const stateImg = images ? images[this.attackState] : null;
+        const s  = SPRITE_SCALE.outpost;
+        const dw = this.width  * s;
+        const dh = this.height * s;
 
         if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(this._facingAngle - Math.PI / 2);
-            ctx.drawImage(stateImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.drawImage(stateImg, -dw / 2, -dh / 2, dw, dh);
             ctx.restore();
         } else {
             ctx.fillStyle = `rgba(220, 80, 220, ${0.4 + 0.6 * ratio})`;
@@ -655,8 +673,8 @@ class Burst {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 80;
-        this.height = 80;
+        this.width = 40;
+        this.height = 40;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(450 * mult);
         this.hp = this.maxHp;
@@ -738,12 +756,15 @@ class Burst {
         const cx    = this.x + this.width  / 2;
         const cy    = this.y + this.height / 2;
         const stateImg = images ? images[this.attackState] : null;
+        const s  = SPRITE_SCALE.outpost;
+        const dw = this.width  * s;
+        const dh = this.height * s;
 
         if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(this._facingAngle - Math.PI / 2);
-            ctx.drawImage(stateImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.drawImage(stateImg, -dw / 2, -dh / 2, dw, dh);
             ctx.restore();
         } else {
             ctx.fillStyle = `rgba(80, 180, 255, ${0.4 + 0.6 * ratio})`;
@@ -768,8 +789,8 @@ class Sniper {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 80;
-        this.height = 80;
+        this.width = 40;
+        this.height = 40;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(750 * mult);
         this.hp = this.maxHp;
@@ -875,12 +896,15 @@ class Sniper {
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
         const stateImg = images ? images[this.attackState] : null;
+        const s  = SPRITE_SCALE.outpost;
+        const dw = this.width  * s;
+        const dh = this.height * s;
 
         if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(this._facingAngle - Math.PI / 2);
-            ctx.drawImage(stateImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.drawImage(stateImg, -dw / 2, -dh / 2, dw, dh);
             ctx.restore();
         } else {
             ctx.fillStyle = `rgba(180, 40, 40, ${0.4 + 0.6 * ratio})`;
@@ -936,8 +960,8 @@ class OmniOutpost {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 80;
-        this.height = 80;
+        this.width = 40;
+        this.height = 40;
         const mult = getDifficultyMult();
         this.maxHp = Math.round(600 * mult);
         this.hp = this.maxHp;
@@ -1018,6 +1042,11 @@ class OmniOutpost {
         const cx = this.x + this.width  / 2;
         const cy = this.y + this.height / 2;
         const ratio = this.hp / this.maxHp;
+        const s  = SPRITE_SCALE.outpost;
+        const dw = this.width  * s;
+        const dh = this.height * s;
+        const dx = cx - dw / 2;
+        const dy = cy - dh / 2;
 
         // Expanding warning ring (drawn under the sprite)
         if (this._isWarning) {
@@ -1035,7 +1064,7 @@ class OmniOutpost {
         // Turret sprite — NO rotation (radial firing)
         const stateImg = images ? images[this.attackState] : null;
         if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
-            ctx.drawImage(stateImg, this.x, this.y, this.width, this.height);
+            ctx.drawImage(stateImg, dx, dy, dw, dh);
         } else {
             ctx.fillStyle = `rgba(60, 30, 0, ${0.7 + 0.3 * ratio})`;
             ctx.strokeStyle = this._isWarning ? "#f60" : "#a40";
@@ -1100,8 +1129,8 @@ class Mine {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width  = 54;
-        this.height = 54;
+        this.width  = 24;
+        this.height = 24;
         this.damage = 100;
         // State machine: "idle" -> "activation" -> "disappear" -> fullyDone
         this.state      = "idle";
@@ -1135,10 +1164,16 @@ class Mine {
     }
 
     draw(ctx, images = null) {
+        const s  = SPRITE_SCALE.mine;
+        const dw = this.width  * s;
+        const dh = this.height * s;
+        const dx = this.x - (dw - this.width)  / 2;
+        const dy = this.y - (dh - this.height) / 2;
+
         if (this.fullyDone) return;
         const img = images ? images[this.state] : null;
         if (img && img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            ctx.drawImage(img, dx, dy, dw, dh);
             return;
         }
         // Fallback to the original colored circle (only meaningful while idle —
@@ -1166,8 +1201,8 @@ class BearTrap {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width  = 54;
-        this.height = 54;
+        this.width  = 24;
+        this.height = 24;
         this.damage = 8;
         this.paralyzeMs = 3000; // Duration of the movement freeze in milliseconds
         this.dead = false;
@@ -1175,9 +1210,15 @@ class BearTrap {
 
     // Draw beartrap
     draw(ctx, img = null) {
+        const s  = SPRITE_SCALE.trap; 
+        const dw = this.width  * s;
+        const dh = this.height * s;
+        const dx = this.x - (dw - this.width)  / 2;
+        const dy = this.y - (dh - this.height) / 2;
+
         if (this.dead) return;
         if (img && img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, this.x, this.y, this.width, this.height);
+            ctx.drawImage(img, dx, dy, dw, dh);
             return;
         }
         // Fallback — original colored rect with jagged teeth
@@ -1797,7 +1838,6 @@ class Game {
         playerStats.level += 1;
         this.levelnum = playerStats.level; 
         playerStats.stage = Math.floor(playerStats.level / 3) // New stage every 3 levels
-        this._themeIndex = this._themeIndex % THEMES.length;
 
         
         // Stage completion XP bonus
