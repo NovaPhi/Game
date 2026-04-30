@@ -16,7 +16,7 @@ const connection = mysql.createConnection({
         host: '127.0.0.1',
         user: 'root',
         password: '1234',
-        database: 'Z_ATTACK'
+        database: 'z_attack'
     });
     connection.connect((err) => {
         if (err) throw err;
@@ -489,6 +489,34 @@ app.get('/stats/cardsDistribution', (req, res) => {
             res.json({ success: true, labels, data });
         }
     );
+});
+
+app.get('/leaderboard', (req, res) => {
+    connection.query(`
+        SELECT 
+            u.username,
+            s.best_score,
+            s.best_level,
+            s.total_xp,
+            s.total_runs,
+            s.playtime
+        FROM Stats s
+        JOIN User u ON s.id_user = u.id_user
+        WHERE u.status = 1
+        ORDER BY s.best_score DESC, s.best_level DESC
+        LIMIT 10
+    `, (err, results) => {
+
+        if (err) {
+            console.error('Leaderboard error:', err);
+            return res.json({ success: false });
+        }
+
+        res.json({
+            success: true,
+            leaderboard: results
+        });
+    });
 });
 
 app.listen(port, () => {
