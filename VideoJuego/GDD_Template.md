@@ -46,16 +46,26 @@
 
 ### **Summary**
 
-A rogue-like base assault game where you control a zombie hero and you must destroy all the enemy outposts in order to unlock the main base and you be able to attack it You can also use cards such as power ups, change stats, abilities, etc.
+Z Attack is a single-player roguelite top-down action game in which the player controls a zombie hero assaulting heavily fortified human bases. Each run is unique thanks to the random outpost layouts and the card system lets players build personalised powerups and stat changes.
 
 ### **Gameplay**
 
-The gameplay will start with the player choosing a hero and getting a random set of cards the can include power ups and abilities. Once in the run the player will have to attack all the enemy outpost trying to dutch all the bullets and attacks they deploy. Once they are all destroyed, he will be able to destroy the main base to beat the level and enter the next one. 
-The player can also use his cards to power up the hero or use a special ability in order to achieve his objective. Once the run is over, the player will be able that with the xp earned, level up the cards he has or unlock new cards to add to his inventory.
+The gameplay will start with the player creating his deck, this will be conformed by the cards he has unlocked until then or the initial cards. Then the player will have to choose a hero, each has different abilties and a different mindset of playing. Once in the run the player will have to attack all the enemy outpost trying to dutch all the bullets and attacks they deploy, this can be achieved with the generation of barriers which you can use to protect yourself. The player also need to look out for different obstacles that can be genereated like mines or beartraps. 
+
+Once all the outposts are destroyed, he will be able to destroy the main base to beat the level and enter the next one, the farthest he gets, the more xp he will earn and the more damage the outposts will do. Every time you beat a level, you will be able to select a card from your deck to have it available to you and use it any time you want. Three levels means one stage and each level will feature a different background for it to differentiate itself and feel the progression, this also comes with a different style for the barriers and main base of the level.
+
+The player can also use his cards to power up the hero or have some stat modified in order to get him the farthest possible, these stat changes are just temporal and will reset on the next run.
+
+Each hero also has two special abilities, one defensive and one offensive, he can use this ones in any time of the run as long as they are not in cooldown. This abilities will help him destroy enemies when he is in a rush or proetect himself if he fills vulnerable.
+
+Once the run is over, the player can keep playing or go to the cards section in order to unlock new cards with the xp he has earned in lootboxes that can give you different types of cards and different categories and add them to his deck as he wishes. 
+
 
 ### **Mindset**
 
 The player adopts an aggressive survival mindset, constantly balancing offense and evasion while making fast real-time decisions. At the same time, they engage in strategic planning through card selection and progression systems, embracing a roguelite loop of experimentation, failure, and improvement.
+
+The deck builder system gives the player the ability to have different mindsets depending on which cards he uses or unlocks. For example, he can play in a defensive style, in a full attack style and many other ways that will help for replayability.
 
 ## _Technical_
 
@@ -65,28 +75,30 @@ The player adopts an aggressive survival mindset, constantly balancing offense a
 
 1. Title Screen
     1. Start Game
-    2. Tutorial
-    3. Story
-    4. Settings
+    2. Cards
+        2.1. Deck Builder
+        2.2. Cards Unlock
+    3. Leaderboard
+    4. Tutorial
+    5. Story
+    6. Settings
+    7. Login
+        7.1. Create Account
+        7.2. User stats / Log off
+        7.3. Admin Panel
+        7.4. Data Graph
 2. Loadout
     1. Hero Selection
     2. Cards Selected Overview
     3. Store(Power ups, Environment cards)
     4. Stats Improve
     5. Start Raid
-3. Pause Screen
-    1. Resume
-    2. End Run
-    3. Settings
-    4. Leave to Menu
-4. Game Over Screen
+3. Game Over Screen
     1. Final Score
     2. Rewards(Total XP you got)
     3. Retry
-    4. Return to Hub
-6. Credits
-    1. Dev Team
-    2. Music/Art credits
+    4. Return to Hub (Z Attack button)
+
 
 ### **Controls**
 
@@ -95,75 +107,237 @@ The player adopts an aggressive survival mindset, constantly balancing offense a
 
 2. Mouse Controls
     1. Left Click
-        1. Select card in between levels
-        2. Destroy outposts with special card
+        1. Select hero at the beggining of the run
+        2. Damage outposts with special card
+        3. Add/Remove cards from deck 
     2. Keyboard
         1. WASD
             1. Move Hero
-        2. Space
-            1. Attack(Hero)
-        3. Esc
-            1. Pause Game
+        2. SPACE
+            1. Start/Restart run
+        3. 1,2,3 num buttons
+            1. Use a card you currently is assigned to that button
+        4. R key
+            1. Exit targeting mode
+        5. E key
+            1. Activate Offensive Ability     
+        6. F key
+            1. Activate Defensive Ability 
 
 
 ### **Mechanics**
 
 The game features a top-down movement and combat system where the player controls a hero with free directional movement and engages enemies through direct contact. The player deals continuous damage when colliding with enemy structures, regulated by an attack cooldown that prevents constant damage. This creates a dynamic where positioning and timing are essential to both survival and efficiency in combat.
 
+The game features three different types of enemies, each with different stats to make the game more dinamic and for the player to have multiple ways of aproaching a run depending on what he wants and the cards he has. This heroes are:
+    Warrior - Speed: 0.8, Hp: 180, Attack: 1.5, Armor: 2
+    Scout - Speed: 1.6, Hp: 60, Attack: 0.7, Armor: 0
+    Tank - Speed: 0.5, Hp: 260, Attack: 0.8, Armor: 5
+
+Each hero also has two special abilities, one defensive and one offensive, he can use this ones in any time of the run as long as they are not in cooldown. The abilities include:
+    Warrior: 
+        - Offensive: War Cry - Increments Speed and Damage +50% and the Attack Cooldowns reduces 50% for 4s
+        - Defensive: Defense Tonic - Gives you Damage Reduction +5 for 5s
+
+    Scout: 
+        - Offensive: Sniper Shot - A Piercing Shot Aimed with the mouse that destroys every outpost it touches (not including main base)
+        - Defensive: Ghost Step - Turns you invisible until you attack an outpost
+
+    Tank: 
+        - Offensive: Hammer Slam - An attack based on area, it slam damages all nearby enemies
+        - Defensive: Liberty Shield - Absorbs all damage for 3s
+
 The enemy system is composed of multiple outposts distributed across the map, each with independent health and type, depending on the type, the outpost will attack one way or other. These outposts will automatically detect the player within a certain range and fire bullets. The player must destroy all active outposts before gaining access to the main base, creating a clear objective for the player to move around the map to destroy all outposts.
+There are many type of Outposts, including:
+    - Normal Outpost: shoots normal
+    - Burst Outpost: Takes a little more to shoot but shoots three bullets at the same time
+    - Sniper Outpost: Shoots a fastest and more powerfull bullet but it marks you the trayectory it will do and takes more to reload 
+    - Omni Outpost: Shoots in every direction every once in a while. 
+
+There is also the possibility of the generation of different obstacles that can either help or complicate the player. This obstacles add to the randomness of the game. This obstacles include:
+    Barriers - Random walls that vary in size and that can block bullets from the outposts, this walls can help the player take a break while thinking what to do next and making a strategy, but they can also screw the player if they are in a bad position.
+    Mine - A mine that makes a lot of damage to the player if he stands on it, adding a precaution to the player on where to move next.
+    Beartrap - A beartrap that if the player steps on, makes him paralyze for 3 seconds, adding an extra thinking to where he moves next and a creation of a strategy for the player on what to do if he steps it.
+
 
 The main base is protected by a series of wall segments that function both as defensive barriers and offensive units. Each segment has its own health and can shoot projectiles at the player when in range. These segments block movement and must be destroyed individually once the outposts are all destoyed. The level is completed when the player successfully enters the inner zone of the base.
 
 The projectile system is based on simple physics where enemy bullets travel in straight lines toward the player’s position at the time of firing. Each projectile deals damage upon collision and is removed either when it hits the player or leaves the stage.
 
-The game incorporates a card-based ability system where the player has access to a deck of cards that can be activated during gameplay. These cards can modify player stats, provide temporary boosts, or trigger special abilities. 
+The game incorporates a card-based ability system where the player has access to a deck of cards that can be activated during gameplay. These cards can modify player stats or have different powerups. Thse cards allow for the player to adapt to multiple playstyles and have multiple mindsets depending on the cards that he ends up unlocking. Each time the player beats a level, he will be able to select one out of the three options of cards presented that are on his deck.
+
+The deck system lets the player build his deck out of the cards he has earned and has available on his collection with a maximum of 10 cards. Once the player builds his deck, it will be able to use them in a run depending of the ones the system returns every time he beats a level. 
+
+Some cards can activate the targeting mode, this mode lets you deal damage by distance to enemy outposts that you click on. This mechanic adds to the different ways a card can act and different strats a player can have.
+
+The card system is composed by 27 different cards, this are conformed by:
+    - COMMON
+        - Iron Skin: +2 flat damage reduction
+        - Quick Feet: +0.1 movement speed
+        - Adrenaline: Reduces attack cooldown by 3 frames
+        - Field Medic: +15 max HP
+        - Steady Hands: +0.1 melee damage multiplier
+        - Reinforced Boots: +0.15 movement speed
+        - Bandage: +20 max HP
+        - Sharpened Blade: +0.2 melee damage multiplier
+        - Padding: +1 flat damage reduction
+        - Stimpack: +25 max HP
+    - UNCOMMON
+        - Battle Hardened: +20 max HP and +3 damage reduction
+        - Overclock: +0.25 movement speed
+        - Combat Veteran: +0.3 melee damage multiplier
+        - Bulwark: +4 flat damage reduction
+        - Surge: Reduces attack cooldown by 6 frames
+        - Orbital Strike: Instantly destroys one outpost of your choice
+        - Supply Drop: Restores 30 HP instantly
+        - Smoke Screen: Halts all bullets on screen for 3 seconds
+    - RARE
+        - Titan Core: +50 max HP and +5 damage reduction
+        - Berserker: +0.5 melee damage multiplier
+        - Phase Stride: +0.4 movement speed
+        - Fortified: +6 flat damage reduction
+        - Lightning Reflex: Reduces attack cooldown by 10 frames
+        - EMP Blast: Destroys 2 random outposts instantly
+        - Full Restore: Restores HP to full
+    - LEGENDARY
+        - Immortal Coil: You cannot die for 5 seconds
+        - God Mode: +1.0 dmg, +0.5 speed, +10 DR, +100 HP
+        - Nuke: Instantly destroys all outposts on the map
+
+
+The card unlocking system depends on lootboxes the player can open with the xp he earns on the runs. This card can be obtained more easily or harder depending on the category os the card, there exists Common, Uncommon, Rare and Legendary. Each lootbox includes a different chance for each type of cards. These lootboxes include:
+    - Basic Crate: 900xp cost and has a 70% of Common, 25% of Uncommon and 5% of Rare
+    - Rare Crate: 1800xp cost and has a 45% of Uncommon, 30% of Common and 20$ of Rare
+    - Legendary Crate: 6000xp cost and has a 50% of Rare, 20% of Uncommon and 1$ of Legendary
+
+The game incorporates a difficulty system, the difficulty increases every couple levels and this modifies, the health of the enemies, the velocity of shooting of the Sniper and the damage dealt by all enemies. This way the farthest the player goes, the hardest the game will get so he better prepare himslef with his cards on early levels to get far.
+
 
 ## _Level Design_
 
 ---
 
-_(Note : These sections can safely be skipped if they&#39;re not relevant, or you&#39;d rather go about it another way. For most games, at least one of them should be useful. But I&#39;ll understand if you don&#39;t want to use them. It&#39;ll only hurt my feelings a little bit.)_
-
 ### **Themes**
 
-1. Forest
+1. House
     1. Mood
-        1. Dark, calm, foreboding
+        1. Disolated, apocaliptic
     2. Objects
         1. _Ambient_
-            1. Fireflies
-            2. Beams of moonlight
-            3. Tall grass
+            1. Streets
+            2. Patches of grass
+            3. Sewers
+            4. Craks
         2. _Interactive_
-            1. Wolves
-            2. Goblins
-            3. Rocks
-2. Castle
-    1. Mood
-        1. Dangerous, tense, active
-    2. Objects
-        1. _Ambient_
-            1. Rodents
-            2. Torches
-            3. Suits of armor
-        2. _Interactive_
-            1. Guards
-            2. Giant rats
-            3. Chests
+            1. Buses
+            2. Trucks
+            3. Cars
+            4. Fences
+            5. Mailposts
+            6. Trashcans
+            7. Mines
+            8. Beartraps
+            9. Normal Outposts
+            10. Burst Outposts
+            11. Sniper Outposts
+            12. Omni Outposts
+            13. Main base wall house
+            14. Main base interior house
 
-_(example)_
+2. Mall 
+    1. Mood
+        1. Apocaliptic, disolated
+    2. Objects
+        1. _Ambient_
+            1. Parking spaces
+            2. Parking symbols
+        2. _Interactive_
+            1. Buses
+            2. Trucks
+            3. Cars
+            4. Vending machines
+            5. Bunch of shopping cards
+            6. Bunch of boxes
+            7. Mines
+            8. Beartraps
+            9. Normal Outposts
+            10. Burst Outposts
+            11. Sniper Outposts
+            12. Omni Outposts
+            13. Main base wall mall
+            14. Main base interior mall
+
+3. Hospital 
+    1. Mood
+        1. Apocaliptic, disolated, ruined, chaos happened here
+    2. Objects
+        1. _Ambient_
+            1. Hospital parking symbols
+            2. Heliporter symbol and space
+            3. Craks
+            4. Stains of blood
+        2. _Interactive_
+            1. Ambulance
+            2. Mobile Medical Unit
+            3. Stretcher
+            4. Toxic waste trashcans
+            5. Tripods with IV bags
+            6. Mines
+            7. Beartraps
+            8. Normal Outposts
+            9. Burst Outposts
+            10. Sniper Outposts
+            11. Omni Outposts
+            12. Main base wall hospital
+            13. Main base interior hospital
+
+4. Military base 
+    1. Mood
+        1. Apocaliptic, disolated, ruined, chaos happened here
+    2. Objects
+        1. _Ambient_
+            1. Military parking symbols
+            2. Heliporter symbol and space
+            3. Craks
+            4. Sewers
+        2. _Interactive_
+            1. Tanks
+            2. Military trucks
+            3. Military boxes of kits
+            4. Sandbag Barricades
+            5. Gasoline containers
+            6. Mines
+            7. Beartraps
+            8. Normal Outposts
+            9. Burst Outposts
+            10. Sniper Outposts
+            11. Omni Outposts
+            12. Main base wall military
+            13. Main base interior military
 
 ### **Game Flow**
 
-1. Player starts in forest
-2. Pond to the left, must move right
-3. To the right is a hill, player jumps to traverse it (&quot;jump&quot; taught)
-4. Player encounters castle - door&#39;s shut and locked
-5. There&#39;s a window within jump height, and a rock on the ground
-6. Player picks up rock and throws at glass (&quot;throw&quot; taught)
-7. … etc.
-
-_(example)_
+1. The player builds his deck with the cards he has unlocked
+2. Player has to choose a hero to play as
+3. He starts in the house level
+4. He goes to defeat all enemy outposts
+5. He tries to avoid all traps (mines and beartraps) (if generated)
+6. He tries to block the bullets with the different barriers (if generated)
+7. Player can use his offensive or defensive ability if needed
+8. Player destroys all enemy outposts
+9. Player attacks main base wall
+10. Player gets into the main base and beats the level
+11. Player chooses a card from his deck (3 random options)
+12. Player starts in the mall level
+13. Player can use the card he has any time he wants to help him
+14. Repeats steps 4-11
+15. Player earns xp and difficulty increases (every 3 levels (1 stage) this happens)
+16. Player starts in the hospital level
+17. Repeats steps 4-11 and 13
+18. Player starts in the military base level
+19. Repeats steps 4-11 and 13
+20. Player restarts into house level
+21. This cycle keeps going until player dies
 
 ## _Development_
 
@@ -174,43 +348,38 @@ _(example)_
 1. Entity
     1. Character
         1. Player
-        2. Troop
-        3. Enemy
-            1. Guard
+        2. Enemy
+            1. Outpost
+            2. Burst
+            3. Sniper
+            4. OmniOutpost
 2. Physics
     1. Movement
     2. Collision
 3. Combat
-    1. Weapon
-    2. Projectile
-    3. Hitbox
+    1. Projectile bullet
+    2. Hitbox
 4. AI
     1. Aggro
-    3. Troop
 5. Card
     1. BuffCard
-        1. AbilityCard
+        1. PowerupCard
         2. StatCard
-    2. TroopCard
-    3. MinMaxCard
-    4. EnemyEventCard
 6. CardSystem
     1. PlayerCardDraft
-    2. EnemyCardTrigger
 7. Outpost
     1. SpawnPoint
     2. CaptureZone
     3. Base
 8. Obstacle
-    1. Cover
-    2. Gate
+    1. Barrier
+    2. Mine
+    3. BearTrap
 9. Interactable
-    1. Pickup
-    2. Trigger
+    1. Trigger
 10. UI
     1. HUD
-    2. Minimap
-    3. CardDraftScreen
+    2. CardDraftScreen
 
 
 ### **Derived Classes / Component Compositions**
@@ -218,44 +387,36 @@ _(example)_
 1. Character
     1. Player
         1. PlayerHero (base controllable hero)
-        2. PlayerHeroUnlockable (unlocked via store)
-    2. Troop
-        1. TroopMelee (absorbs damage, close range attack)
-        2. TroopRanged (absorbs damage, ranged attack)
-        3. TroopUnlockable (unlocked via store)
-    3. Enemy
-        1. Guard (Aggro, ranged attack)
-        2. Commander (EnemyCardTrigger)
+    2. Enemy
+        1. Outpost
+        2. Burst
+        3. Sniper
+        4. OmniOutpost
+        5. WallSegment
 
     1. BuffCard
-        1. AbilityCard (grants/upgrades hero ability)
-        2. StatCard (modifies hero/troop stats)
-    2. TroopCard (spawns additional subtroops)
-    3. MinMaxCard (high risk/reward trade-off)
-    4. EnemyEventCard (triggered on Base damage)
+        1. PowerupCard 
+        2. StatCard 
 
 3. Outpost
-    1. OutpostHouse (House theme, Civilian enemies)
-    2. OutpostMilitary (Military theme, Guard/soldier enemies)
-    3. Base (takes damage, triggers EnemyEventCard)
-    4. CaptureZone (clear condition trigger)
-    5. SpawnPoint (enemy + troop spawn location)
+    1. Base 
+    2. CaptureZone 
+    3. SpawnPoint 
 
 4. Obstacle
-    1. ObstacleWall (static, blocks movement)
-    2. ObstacleGate (opened via Trigger)
-    3. ObstacleCover (reduces incoming damage)
+    1. Barrier
+    2. Mine
+    3. BearTrap
 
 5. Interactable
-    1. InteractablePickup (on-field loot, applies BuffCard)
-    2. InteractableTrigger (activates Gates, CaptureZones)
+    1. InteractableTrigger 
 
 6. UI
     1. HUDHero (hero HP, ability cooldowns)
     2. HUDTroops (troop count, status)
-    3. MinimapOutpost (outpost layout, enemy positions)
-    4. CardDraftScreen (post-stage 3-card selection)
-    5. CardDraftEnemyAlert (enemy card activation notice)
+    3. CardDraftScreen (post-stage 3-card selection)
+    4. HeroSelect
+    5. DeathScreen
 
 
 ## _Graphics_
@@ -264,38 +425,59 @@ _(example)_
 
 ### **Style Attributes**
 
-2D Pixel art game, taking inspiration from different zombie games such as Project Zomboid. An above-view camera angle during the gameplay, similar to a Clash of Clans attack. Heroes will be larger in size than subtroops, and will have more complex designs, making them easy to identify and diferentiate form NPCs. Enemies will have a red outline, making them easy to identify and clasify as the target to be attacked. Make sure to check out the picture found in the Game Presentation (also in this GitHub repository) for a more visual representation of our vision.
+2D Pixel art game, taking inspiration from different zombie games such as Project Zomboid. The art was made with the help of an AI and we tried to do a realistic 2D Pixel art style to reflect the danger and the atmosphere that we imagined in a post-apocaliptic world. 
 
 
 ### **Graphics Needed**
 
-1. Characters
-    1. Zombies
-        1. Base heroe
-        2. Hero type 2 - Tank
-        3. Hero type 3 - Long range
-        4. Regular subtroop
-        5. Brute subtroop
-        6. Long range subtroop
-    2. Humans
-        1. Soldiers
-        2. Strong soldiers
+1. Zombies
+    1. Warrior Hero
+    2. Tank Hero
+    3. Scout Hero
 2. Bases
-    1. Center base (main)
-    2. Center base walls
-    3. Outposts
+    1. House-base
+    2. House-base wall
+    3. Mall-base
+    4. Mall-base wall
+    5. Hospital-base
+    6. Hospital-base wall
+    7. Military-base
+    8. Military-base wall
 3. Ambient
-    1. Grass
-    2. Trees
-    3. Rocks
-    4. Barricades
-    5. TCG terrain elements
-4. Other
-    1. Blood
-    2. Weapons
-    3. TCG Cards illustrations
-
-_(example)_
+    1. House level background
+    2. Mall level background
+    3. Hospital level background
+    4. Military level background
+4. Enemies
+    1. Normal Outpost
+    2. Burst Outpost
+    3. Sniper Outpost
+    4. Omni Outpost
+5. Obstacles
+    1. House level Buses
+    2. House level Trucks
+    3. House level Cars
+    4. Fences
+    5. Mailposts
+    6. Trashcans
+    7. Mall level Buses
+    8. Mall level Trucks
+    9. Mall level Cars
+    10. Vending machines
+    11. Bunch of shopping cards
+    12. Bunch of boxes
+    13. Ambulance
+    14. Mobile Medical Unit
+    15. Stretcher
+    16. Toxic waste trashcans
+    17. Tripods with IV bags
+    18. Tanks
+    19. Military trucks
+    20. Military boxes of kits
+    21. Sandbag Barricades
+    22. Gasoline containers
+    23. Mines
+    24. Beartraps
 
 
 ## _Sounds/Music_
@@ -306,45 +488,10 @@ _(example)_
 
 The Game will feature dark, militaristic, tension driven sound that blends tactical military atmosphere with the zombie element combined with the semi tactical nature of the game pressure our players and introduce stress through sound forcing errors and increasing tension
 
-The music is influenced by other games with similar scores like ready or not, modern war movie scores and subtle horror textures
-
-The instruments we are using are Drums, Snares, brass, war horns, bass strings sub bass pulses and electronic elements,
-
-some elements will be metalic hits, industrial ambiance and synth drones
-
-
-### **Sounds Needed**
-
-1. Effects
-    1. Hero Sounds
-        1. Wet heavy footsteps
-        2. low growls
-        3. impact sounds during attack
-    2. Enemy Sounds
-        1. Boots hitting ground
-        2. Reload clicks
-        3. Radio Chatter
-        4. gunfire
-
-2. Feedback
-    1. rising tone (health)
-    2. muffled hit (attacked)
-    3. Harmonica (Upgrade Selected)
-    4. Low Brass Drop + music cut(died)
-
-_(example)_
-
 ### **Music Needed**
 
-1. Main Menu Theme - Luis Arias
-    1.5 Loadout Theme
-2. Early Game Track
-    2.5 Mid Game Track
-3. Late Game Track
-4. Game Over Theme
-5. Credits Theme
-
-(All the music is made in house and the 5 themes will be our minimum target with possibility to raising it to 7 if time is available)
+1. Title Theme - Luis Arias
+2. Early Game Song - Luis Arias
 
 ## _Schedule_
 
@@ -352,32 +499,42 @@ _(example)_
 
 _(define the main activities and the expected dates when they should be finished. This is only a reference, and can change as the project is developed)_
 
-1. develop base classes
-    1. base entity
-        1. base player
-        2. base enemy
-        3. base block
-  2. base app state
-        1. game world
-        2. menu world
-2. develop player and basic block classes
-    1. physics / collisions
-3. find some smooth controls/physics
-4. develop other derived classes
-    1. blocks
-        1. moving
-        2. falling
-        3. breaking
-        4. cloud
-    2. enemies
-        1. soldier
-        2. rat
-        3. etc.
-5. design levels
-    1. introduce motion/jumping
-    2. introduce throwing
-    3. mind the pacing, let the player play between lessons
-6. design sounds
-7. design music
+1. Pre-production
+    1. Define Game Ideas and core gameplay
+    2. Define core mechanics (cards, deck)
+    3. Define game loop and TCG mechanics
 
-_(example)_
+2. First prototype
+    1. Implement base classes (player, enemy, cards)
+    2. Implement card system mechanic (select a card every level)
+    3. Implement difficulty progression
+    4. Implement bullet logic
+    5. Implement randomization in enemy generation
+    6. Implement attack logic and collisions
+
+3. Advanced prototype
+    1. All different enemies added (burst, sniper, omni)
+    2. All cards added with all logic behind them
+    3. Implement all different heroes
+    4. Implement main base randomized position
+
+4. Deck building
+    1. Add lootbox logic
+    2. Add unlocking cards mechanics
+    3. Add deck building
+    4. Add randomized cards picked each level from deck
+
+5. Final prototype
+    1. Add obstacles (barriers, mines, beartraps)
+    2. Add xp logic
+    3. Add hero abilities
+
+6. Testing and Balancing
+    1. Gameplay balancing (cards, randomness, progression)
+    2. Bug fixing
+    3. Performance optimization
+
+7. Finalization
+    1. Add assets
+    2. Add different level progression
+
