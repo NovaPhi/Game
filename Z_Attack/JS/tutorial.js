@@ -117,6 +117,48 @@ function createStarterDeck() {
     ];
 }
 
+function getDraftChoices() {
+    return [
+        {
+            id: 'tutorial_heal',
+            name: 'Field Medic',
+            type: 'ability',
+            description: 'Heal 20 HP instantly.',
+            rarity: 'common',
+            color: '#aaaaaa',
+            targeting: false,
+            apply(game) {
+                game.player.hp = Math.min(game.player.hp + 20, game.player.maxHp);
+            }
+        },
+        {
+            id: 'tutorial_speed',
+            name: 'Quick Feet',
+            type: 'powerup',
+            description: '+20% movement speed.',
+            rarity: 'common',
+            color: '#aaaaaa',
+            targeting: false,
+            apply(game) {
+                playerStats.speedMod  += 0.2;
+                game.player.speedMod  += 0.2;
+            }
+        },
+        {
+            id: 'tutorial_armor',
+            name: 'Tin Shield',
+            type: 'powerup',
+            description: '+2 damage reduction.',
+            rarity: 'common',
+            color: '#aaaaaa',
+            targeting: false,
+            apply(game) {
+                playerStats.dmgReduction += 2;
+            }
+        }
+    ];
+}
+
 
 let playerStats = {
     heroId:       null,

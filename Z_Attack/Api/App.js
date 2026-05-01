@@ -13,15 +13,19 @@ app.use(express.urlencoded({extended: true}));
 
 
 const connection = mysql.createConnection({
-        host: '127.0.0.1',
-        user: 'root',
-        password: '1234',
-        database: 'Z_ATTACK'
+        host: process.env.DB_HOST ||'127.0.0.1',
+        port: process.env.DB_PORT || 3306,
+        user: process.env.DB_USER || 'root',
+        password: process.env.DB_PASSWORD || '1234',
+        database: process.env.DB_NAME || 'Z_ATTACK',
+        waitForConnections: true,
+        connectionLimit: 10,
     });
-    connection.connect((err) => {
-        if (err) throw err;
-    console.log('Connected to DB');
-});
+
+    connection.query('SELECT 1', (err) => {
+        if (err) {console.log.error('could not connect to database', err.message); process.exit(1);}
+        console.log('connected succesfully');
+    });
 
 app.post('/Login', (req, res) => {
     const user = req.body.Username;
