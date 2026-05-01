@@ -1,0 +1,15 @@
+{
+    "name": "z-attack-api",
+    "version": "1.0.0",
+    "description": "Z_Attack game Backend API",
+    "main": "Api/App.js",
+    "scripts": {
+        "start": "node Api/App.js"
+    },
+    "dependencies": {
+        "bcrypt": "^5.1.1",
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "mysql2": "^3.6.5"
+    }
+}

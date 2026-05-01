@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.env
+.git
+BaseDatos
+Intro
+Music
+Ilustrations
+IngenieriaSoftware
+VideoJuego
+Z_Attack/HTML
+Z_Attack/JS
+Z_Attack/CSS
+Z_Attack/Assets
