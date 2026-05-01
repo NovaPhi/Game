@@ -75,3 +75,7 @@ docker compose restart api
 
 **Port already in use**
 Change `API_PORT` or `FRONTEND_PORT` in your `.env` file and restart.
+
+---
+
+***Md notation done with the help of claude
