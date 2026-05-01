@@ -109,7 +109,7 @@ INSERT INTO Cards (name, description, rarity, card_type, targeting, is_ability, 
 -- UNCOMMON ABILITIES
 ('Orbital Strike',   'Instantly destroys one outpost of your choice','uncommon','ability',    TRUE,  TRUE,  NULL,  'destroy_outpost',NULL,NULL, NULL, FALSE),
 ('Supply Drop',      'Restores 30 HP instantly',                    'uncommon', 'ability',    FALSE, TRUE,  30.00, 'healHp',       NULL, NULL, NULL, FALSE),
---('Smoke Screen',     'Halts all bullets on screen for 3 seconds',   'uncommon', 'ability',    FALSE, TRUE,  NULL,  'clearBullets', NULL, NULL, 3.00, FALSE),
+('Smoke Screen',     'Halts all bullets on screen for 3 seconds',   'uncommon', 'ability',    FALSE, TRUE,  NULL,  'clearBullets', NULL, NULL, 3.00, FALSE),
 -- RARE POWERUPS
 ('Titan Core',       '+50 max HP and +5 damage reduction',          'rare',     'powerup',    FALSE, FALSE, 50.00, 'maxHp',        NULL, 5.00, NULL, FALSE),
 ('Berserker',        '+0.5 melee damage multiplier',                'rare',     'powerup',    FALSE, FALSE, 0.50,  'dmgMult',      NULL, NULL, NULL, FALSE),
