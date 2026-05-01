@@ -48,6 +48,7 @@ services:
       - ./Z_Attack/HTML:/var/www/html:ro
       - ./Z_Attack/JS:/var/www/js:ro
       - ./Z_Attack/CSS:/var/www/css:ro
+      - ./Z_Attack/Api:/var/www/api:ro
       - ./Z_Attack/Assets:/var/www/assets:ro
       - ./Intro:/var/www/intro:ro
       - ./Music:/var/www/music:ro

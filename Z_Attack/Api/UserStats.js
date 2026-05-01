@@ -34,7 +34,7 @@ async function deleteAccount() {
 
     if (data.success) {
         localStorage.setItem('sessionUser', JSON.stringify({ user_ID: 0, username: null }));
-        window.location.href = '../HTML/LogIn.html';
+        window.location.href = 'LogIn.html';
     } else {
         //console.log('failed to delete account');
     }

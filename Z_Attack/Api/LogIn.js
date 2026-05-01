@@ -33,7 +33,7 @@ document.getElementById('btnSignin').addEventListener('click', async () => {
         localStorage
 
         setTimeout(() => {
-            window.location.href = '../HTML/main.html';
+            window.location.href = 'main.html';
         }, 2000);
     } else {
         btn.textContent = 'Access Denied...';

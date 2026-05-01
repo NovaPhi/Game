@@ -1018,7 +1018,7 @@ class Game {
             this.drawOverlay("WELCOME TO TUTORIAL", "PRESS SPACE TO START", "#4af");
         } else if (this.won) {
             if (this.instructionsScreen) {
-                this.drawOverlay("GREAT JOB", "Tutorial Complete", "lime");
+                this.drawOverlay("GREAT JOB", "NOW YOU CAN CHOOSE A CARD FROM A DRAFT BY CLICKING ON IT", "lime");
             } else if (this.draftChoices) {
                 this.drawDraft(ctx);
             } else {

@@ -393,5 +393,3 @@ FROM User AS u
 JOIN Stats AS s ON s.id_user = u.id_user
 WHERE u.status = 1;
 
-SELECT * FROM User;
-UPDATE U
