@@ -77,4 +77,8 @@ Change `API_PORT` or `FRONTEND_PORT` in your `.env` file and restart.
 
 ---
 
+## Accesibility
+
+For accesibility we made a setting where the user if colorblind can choose the colorscheme change depending on the type of colorblindness they have this is because colorblindess is one of the most common issues affecting gamers in the world we felt that this setting would be impactfull to the most people.
+
 ***Md notation done with the help of claude
