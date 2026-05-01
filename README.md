@@ -1,6 +1,6 @@
 # Z_Attack
 
-A web-based card game with a Node.js backend and MariaDB database. Run the full stack locally with Docker — no need to install Node.js or MariaDB.
+A web-based card game with a Node.js backend and MariaDB database. Run the full stack locally with Docker no need to install Node.js or MariaDB.
 
 ---
 
@@ -37,7 +37,6 @@ FRONTEND_PORT=3000
 ```bash
 docker compose up --build
 ```
-First run takes ~2 minutes while the database imports the schema and seed data.
 
 ### Step 4 - Open the game
 ```
