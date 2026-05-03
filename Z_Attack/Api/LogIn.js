@@ -1,3 +1,4 @@
+// Applies brightness and colorblind filter settings from localStorage on page load
 (function applySettings() {
     const brightness = localStorage.getItem('brightness') ?? 100;
     const colorblind = localStorage.getItem('colorblind') || 'none';
@@ -8,6 +9,7 @@
     if (colorblind !== 'none') document.body.classList.add(colorblind);
 })();
 
+// Submits login credentials, gives visual feedback on the button, and redirects on success
 document.getElementById('btnSignin').addEventListener('click', async () => {
     const btn = document.getElementById('btnSignin');
 
@@ -28,6 +30,7 @@ document.getElementById('btnSignin').addEventListener('click', async () => {
         btn.textContent = 'Welcome Back...';
         btn.style.color = '#4caf50';
         btn.style.borderColor = '#4caf50';
+        // AI: helped with text glow effect styling
         btn.style.textShadow = '0 0 8px rgba(76, 175, 80, 0.8)';
 
         localStorage
@@ -48,4 +51,3 @@ document.getElementById('btnSignin').addEventListener('click', async () => {
         }, 2000);
     }
 });
-

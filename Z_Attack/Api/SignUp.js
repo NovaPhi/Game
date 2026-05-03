@@ -1,3 +1,4 @@
+// Applies brightness and colorblind filter settings from localStorage on page load
 (function applySettings() {
     const brightness = localStorage.getItem('brightness') ?? 100;
     const colorblind = localStorage.getItem('colorblind') || 'none';
@@ -8,6 +9,7 @@
     if (colorblind !== 'none') document.body.classList.add(colorblind);
 })();
 
+// Reads the signup form values, sends them to the server, and redirects to login on success
 document.getElementById('btnCreate').addEventListener('click', async () => {
     const username = document.getElementById('Username').value;
     const password = document.getElementById('password').value;

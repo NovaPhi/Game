@@ -7,6 +7,7 @@ const COLORBLIND_MODES = [
 
 let currentModeIdx = 0;
 
+// Loads saved settings and wires up the volume, brightness, and colorblind mode controls
 document.addEventListener('DOMContentLoaded', () => {
     console.log('saved brightness:', localStorage.getItem('brightness'));
     const volumeSlider     = document.getElementById('volumeSlider');
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Applies the selected colorblind mode to the body and saves it to localStorage
 function applyColorblind(mode, labelEl) {
     document.body.classList.remove('deuteranopia', 'protanopia', 'tritanopia');
     if (mode.id !== 'none') document.body.classList.add(mode.id);
@@ -65,6 +67,7 @@ function applyColorblind(mode, labelEl) {
     console.log('Applying colorblind mode:', mode.id); // debug
 }
 
+// Creates or updates a fixed overlay div to simulate brightness adjustment
 function applyBrightness(value) {
     value = Math.min(120, Math.max(50, parseInt(value) || 100));
     

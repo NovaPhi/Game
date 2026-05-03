@@ -10,8 +10,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
-
-
 const connection = mysql.createConnection({
         host: process.env.DB_HOST ||'127.0.0.1',
         port: process.env.DB_PORT || 3306,
@@ -27,6 +25,7 @@ const connection = mysql.createConnection({
         console.log('connected succesfully');
     });
 
+// Authenticates the user, checks account status, and logs the connection
 app.post('/Login', (req, res) => {
     const user = req.body.Username;
     const password = req.body.password;
@@ -58,6 +57,7 @@ app.post('/Login', (req, res) => {
     });
 });
 
+// Sets the disconnection timestamp for the user's most recent active session
 app.get('/Logout', (req, res) => {
     const { user_ID } = req.query;
 
@@ -75,6 +75,7 @@ app.get('/Logout', (req, res) => {
     });
 });
 
+// Returns the stats record for the given user
 app.get('/UserStats', (req, res) => {
   const { user_ID } = req.query; // match the frontend
   //console.log('userId received:', user_ID); // verify it's coming through
@@ -92,27 +93,7 @@ app.get('/UserStats', (req, res) => {
   });
 });
 
-//app.post('/saveStats', (req, res) => {
-//    const { user_ID, score, level, playtime } = req.body;
-//
-//    connection.query(
-//        `UPDATE Stats SET
-//            total_runs = total_runs + 1,
-//            best_score = GREATEST(best_score, ?),
-//            best_level = GREATEST(best_level, ?),
-//            playtime = playtime + ?
-//        WHERE id_user = ?`,
-//        [score, level, playtime, user_ID],
-//        (err) => {
-//            if (err) {
-//                console.error(err);
-//                return res.status(500).json({ success: false });
-//            }
-//            res.json({ success: true });
-//        }
-//    );
-//});
-
+// Sets the user's account status to disabled (3)
 app.get('/deleteAccount', (req, res) => {
     const { user_ID } = req.query;
     //console.log('user_id:', user_ID);  
@@ -129,10 +110,12 @@ app.get('/deleteAccount', (req, res) => {
     });
 });
 
+// Registers a new user and initializes their stats, starter collection, and starter deck
 app.post('/SignUp', async (req, res) => {
     console.log(req.body);
     const { username, password, email } = req.body;
 
+    // AI: helped with bcrypt hashing setup
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     connection.query(
@@ -141,12 +124,13 @@ app.post('/SignUp', async (req, res) => {
         (err, results) => {
             if (err) {
             if (err.code === 'ER_DUP_ENTRY') return res.json({ success: false, message: 'Username or email already exists' });
-            console.error('User insert error:', err); // add this
+            console.error('User insert error:', err);
             return res.status(500).json({ success: false, message: 'Server error' });
         }
 
             const newUserId = results.insertId;
 
+            // AI: helped with chained inserts for Stats, Collection, and Deck on signup
             connection.query(
                 'INSERT INTO Stats (id_user, total_runs, best_score, best_level, playtime) VALUES (?, 0, 0, 0, 0)',
                 [newUserId],
@@ -180,6 +164,7 @@ app.post('/SignUp', async (req, res) => {
     );
 });
 
+// Returns all users with their role and status labels for the admin registry table
 app.get('/UserRegistry', (req, res) => {
     const roleMap = { 1: 'Admin', 2: 'User' };
     const statusMap = { 1: 'Active', 2: 'Banned', 3: 'Disabled' };
@@ -198,6 +183,7 @@ app.get('/UserRegistry', (req, res) => {
     });
 });
 
+// Returns basic user info for the admin panel user list
 app.get('/Admin', (req,res)=>{
     connection.query('SELECT id_user, username, status FROM User',[],(err,results,fields)=>{
         if(err) throw err;
@@ -214,6 +200,7 @@ app.get('/Admin', (req,res)=>{
     
 });
 
+// Returns all connection logs with formatted timestamps
 app.get('/LogsTable', (req,res)=>{
     connection.query('SELECT * FROM Connection_logs',[],(err,results)=>{
         if(err) throw err;
@@ -234,6 +221,7 @@ app.get('/LogsTable', (req,res)=>{
     
 });
 
+// Sets the given user's status to banned (2)
 app.post('/Admin', (req,res)=>{
     const {user_ID} = req.body;
 
@@ -248,6 +236,7 @@ app.post('/Admin', (req,res)=>{
     });
 });
 
+// Returns all hero data including stats and asset info
 app.get('/heroes', (req,res)=>{
     connection.query('SELECT id_hero, hero_name, description, asset, cardColor, speedMod, maxHp, dmgMult, dmgReduction FROM Hero',[],(err,results,fields)=>{
         if(err) throw err;
@@ -271,6 +260,7 @@ app.get('/heroes', (req,res)=>{
     
 });
 
+// Returns all cards in the user's collection for the deck builder
 app.get('/DeckBuilder', (req, res) => {
     const { user_ID } = req.query;  // ← GET uses query params not body
     
@@ -310,6 +300,7 @@ app.get('/DeckBuilder', (req, res) => {
     );
 });
 
+// Clears the user's current deck and saves the new card selection by slot order
 app.post('/saveDeck', (req, res) => {
     const { user_ID, cardIds } = req.body;
 
@@ -329,6 +320,7 @@ app.post('/saveDeck', (req, res) => {
     });
 });
 
+// Returns the user's saved deck cards ordered by slot
 app.get('/loadDeck', (req, res) => {
     const { user_ID } = req.query;
     connection.query(
@@ -347,6 +339,7 @@ app.get('/loadDeck', (req, res) => {
     );
 });
 
+// Returns every card in the database
 app.get('/getAllCards', (req, res) => {
     connection.query('SELECT * FROM Cards', [], (err, results) => {
         if (err) return res.status(500).json({ success: false });
@@ -367,6 +360,7 @@ app.get('/getAllCards', (req, res) => {
     });
 });
 
+// Deducts XP for the selected tier and adds the card to the user's collection if not already owned
 //claude help for card verification 
 app.post('/openLootbox', (req, res) => {
     const { user_ID, tier, card_id } = req.body;
@@ -417,7 +411,7 @@ app.post('/openLootbox', (req, res) => {
     });
 });
 
-
+// Updates the user's stats and inserts a run record at the end of a game
 app.post('/saveStats', (req, res) => {
     const { user_ID, heroId, score, level, stage, playtime } = req.body;
     connection.query(
@@ -445,6 +439,7 @@ app.post('/saveStats', (req, res) => {
     );
 });
 
+// Returns daily game counts grouped by date for the admin stats chart
 app.get('/stats/gamesOverTime', (req, res) => {
     connection.query(
         `SELECT DATE(started_at) AS day, COUNT(*) AS games
@@ -461,6 +456,7 @@ app.get('/stats/gamesOverTime', (req, res) => {
     );
 });
 
+// Returns each active user's best score sorted descending for the highscore chart
 app.get('/stats/highscoreDistribution', (req, res) => {
     connection.query(
         `SELECT u.username, s.best_score
@@ -478,6 +474,7 @@ app.get('/stats/highscoreDistribution', (req, res) => {
     );
 });
 
+// Returns how many cards each active user has unlocked for the collection chart
 app.get('/stats/cardsDistribution', (req, res) => {
     connection.query(
         `SELECT u.username, COUNT(uc.id_card) AS cards_unlocked
@@ -496,6 +493,7 @@ app.get('/stats/cardsDistribution', (req, res) => {
     );
 });
 
+// Returns the top 10 players ranked by best score and level
 app.get('/leaderboard', (req, res) => {
     connection.query(`
         SELECT 
@@ -527,5 +525,3 @@ app.get('/leaderboard', (req, res) => {
 app.listen(port, () => {
     //console.log(`API listening on port ${port}`)
 });
-
- 

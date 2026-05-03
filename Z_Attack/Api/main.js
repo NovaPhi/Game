@@ -41,10 +41,9 @@ if (music) {
 //    }
 //});
 
+// Sets music volume and renders the nav bar link based on the user's session and role
 document.addEventListener('DOMContentLoaded', () => {
-
-
-        const music = document.querySelector('audio');
+    const music = document.querySelector('audio');
     if (music) {
         const savedVolume = localStorage.getItem('volume') ?? 50;
         music.volume = savedVolume / 100;
@@ -65,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Redirects to the game if the player has a deck saved, otherwise sends them to the card selector
 function goToGame() {
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;

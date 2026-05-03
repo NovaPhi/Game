@@ -1,3 +1,4 @@
+// Applies brightness and colorblind filter settings from localStorage on page load
 (function applySettings() {
     const brightness = localStorage.getItem('brightness') ?? 100;
     const colorblind = localStorage.getItem('colorblind') || 'none';
@@ -9,6 +10,7 @@
 })();
 
 
+// Fetches and renders the users, connection logs, and user registry tables on page load
 document.addEventListener('DOMContentLoaded', async () => {
   const stored = localStorage.getItem('sessionUser');
   const sessionUser = stored ? JSON.parse(stored) : null;
@@ -52,7 +54,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const btn = document.createElement("button");
       btn.textContent = "Ban"
       btn.onclick = () => banbutton(user.user_ID);
-      
 
       btnCell.appendChild(btn);
       
@@ -82,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     data.Logs.forEach(log => {
       const row = document.createElement("tr");
 
+      // AI: helped with array-driven cell generation pattern
       const cells = [
         log.log_id,
         log.user_ID,
@@ -144,6 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Sends a ban request for the given user and reloads the page on success
 function banbutton(user_ID) {
     console.log("sending ", user_ID)
     fetch('http://localhost:8081/Admin', {
@@ -161,9 +164,9 @@ function banbutton(user_ID) {
         console.log(data);
     })
     .catch(err => console.error(err));
-    
 };
 
+// Logs out the current user, clears session data, and redirects to the main page
 async function logout(){
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
@@ -179,4 +182,3 @@ async function logout(){
         window.location.href = 'main.html'
     }
 };
-

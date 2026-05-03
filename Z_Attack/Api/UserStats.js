@@ -1,3 +1,4 @@
+// Applies brightness and colorblind filter settings from localStorage on page load
 (function applySettings() {
     const brightness = localStorage.getItem('brightness') ?? 100;
     const colorblind = localStorage.getItem('colorblind') || 'none';
@@ -8,6 +9,7 @@
     if (colorblind !== 'none') document.body.classList.add(colorblind);
 })();
 
+// Logs out the current user, clears session data, and redirects to the main page
 async function logout(){
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
@@ -25,6 +27,7 @@ async function logout(){
     }
 };
 
+// Sends a delete request and redirects to login on success
 async function deleteAccount() {
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
@@ -43,6 +46,7 @@ async function deleteAccount() {
 
 //delete user changes the status of the account from 1-0 and change the login logic so that it also checks account status
 
+// Fetches and displays the user's stats on page load
 document.addEventListener('DOMContentLoaded', async () =>{
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
@@ -56,15 +60,14 @@ document.addEventListener('DOMContentLoaded', async () =>{
         const response = await fetch(`http://localhost:8081/UserStats?user_ID=${sessionUser.user_ID}`);
         const data = await response.json();
         //console.log(data);
-        
-         
+
+        // Converts total seconds into H:M:S format
         function StoH(times){
             var hour = Math.floor(times / 3600);
             var min = Math.floor(times % 3600 / 60);
             var sec = Math.floor(times % 3600 % 60);
             return `${hour.toString()}:${min.toString()}:${sec.toString()}`;
         }
-        
 
         document.getElementById('gamesPlayed').innerHTML = data.total_runs;
         document.getElementById('wins').innerHTML = data.best_score;
@@ -73,17 +76,12 @@ document.addEventListener('DOMContentLoaded', async () =>{
   } catch (err) {
         //console.error('Failed to fetch stats:', err);
   }
-
-    
 });
 
-
+// Displays the logged-in username on page load
 document.addEventListener('DOMContentLoaded', () => {
-    
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null; 
     
     document.getElementById('usernameDisplay').innerHTML = sessionUser.username
-
 });
-
