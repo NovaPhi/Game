@@ -354,4 +354,24 @@ function buildRevealCard(card) {
 }
 
 // Function to show messages when needed.
-// Tier mastered
+// Tier mastered or error opening lootbox.
+// Creates the message element in the HTML. Made with help of AI.
+function showToastOnly(msg) {
+    const backdrop = document.getElementById('revealBackdrop');
+    const cardWrap = document.getElementById('revealCardWrap');
+    const header   = document.getElementById('revealHeader');
+    const toast    = document.getElementById('revealToast');
+
+    backdrop.style.setProperty('--card-color', 'var(--text)');
+    backdrop.style.setProperty('--card-glow',  'var(--green-glow)');
+
+    header.textContent = 'Tier Mastered';
+    cardWrap.innerHTML = '';
+    toast.textContent = msg;
+
+    backdrop.classList.remove('hidden');
+}
+
+function hideReveal() {
+    document.getElementById('revealBackdrop').classList.add('hidden');
+}
