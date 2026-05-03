@@ -257,6 +257,7 @@ class HeroAbility {
         for (const b of this.bullets) b.draw(ctx);
 
         // Tank shield ring
+        //claude help for animation
         if (this.shielded && game && game.player) {
             const p  = game.player;
             const cx = p.x + p.width  / 2;
@@ -321,7 +322,7 @@ class HeroAbility {
         }
     }
 
-
+    //done with the help of claude 
     drawHUD(ctx, canvasWidth, canvasHeight) {
         if (!this.def) return;
         const size = 54;       // was 44
@@ -337,6 +338,7 @@ class HeroAbility {
         this._drawAbilityIcon(ctx, x + size + gap, y, "F", this.def.defensive, this.defCooldown, this.defActive, this.defReady);
     }
 
+    //done with the help of claude 
     _drawAbilityIcon(ctx, x, y, key, def, cooldown, active, ready) {
         const size = 54;       // was 44
 

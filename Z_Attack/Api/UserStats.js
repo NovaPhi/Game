@@ -16,6 +16,7 @@ async function logout(){
 
     const data = await response.json();
 
+    //function done with the help of ai
     if (data.success){
         localStorage.setItem('sessionUser', JSON.stringify({user_ID: 0, username: null}));
         localStorage.removeItem('playerDeck');

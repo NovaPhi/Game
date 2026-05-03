@@ -8,7 +8,8 @@
     if (colorblind !== 'none') document.body.classList.add(colorblind);
 })();
 
-const music = document.getElementById('bgMusic'); 
+const music = document.getElementById('bgMusic');
+//Done with help of claude
 if (music) {
     const savedVolume = Math.min(60, Math.max(0, parseInt(localStorage.getItem('volume')) || 30));
     music.addEventListener('canplay', () => {

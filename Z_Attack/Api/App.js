@@ -367,6 +367,7 @@ app.get('/getAllCards', (req, res) => {
     });
 });
 
+//claude help for card verification 
 app.post('/openLootbox', (req, res) => {
     const { user_ID, tier, card_id } = req.body;
 
