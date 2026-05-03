@@ -11,6 +11,7 @@
 
 
 // Fetches and renders the users, connection logs, and user registry tables on page load
+// HTML table elements creation was done with AI help
 document.addEventListener('DOMContentLoaded', async () => {
   const stored = localStorage.getItem('sessionUser');
   const sessionUser = stored ? JSON.parse(stored) : null;

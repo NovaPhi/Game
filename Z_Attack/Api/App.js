@@ -1,3 +1,9 @@
+/* 
+Main API file.
+In this file we establish our API connection and define all of the system's necesary endpoints.
+*/
+
+// Initial imports
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
@@ -10,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
+// Connection to the DB
 const connection = mysql.createConnection({
         host: process.env.DB_HOST ||'127.0.0.1',
         port: process.env.DB_PORT || 3306,
@@ -265,6 +272,7 @@ app.get('/DeckBuilder', (req, res) => {
     const { user_ID } = req.query;  // ← GET uses query params not body
     
     connection.query(
+        // SQL Query optimized with AI help
         `SELECT c.id_card, c.name, c.description, c.rarity, c.card_type, 
                 c.targeting, c.is_ability, c.modifier_value, c.modifier, c.cooldown_sec, 
                 c.buff_value, c.duration_sec, c.is_immortal
@@ -442,6 +450,7 @@ app.post('/saveStats', (req, res) => {
 // Returns daily game counts grouped by date for the admin stats chart
 app.get('/stats/gamesOverTime', (req, res) => {
     connection.query(
+        // SQL Query made with AI help
         `SELECT DATE(started_at) AS day, COUNT(*) AS games
          FROM Run
          GROUP BY DATE(started_at)
@@ -459,6 +468,7 @@ app.get('/stats/gamesOverTime', (req, res) => {
 // Returns each active user's best score sorted descending for the highscore chart
 app.get('/stats/highscoreDistribution', (req, res) => {
     connection.query(
+        // SQL Query made with AI help
         `SELECT u.username, s.best_score
          FROM Stats s
          JOIN User u ON u.id_user = s.id_user
@@ -477,6 +487,7 @@ app.get('/stats/highscoreDistribution', (req, res) => {
 // Returns how many cards each active user has unlocked for the collection chart
 app.get('/stats/cardsDistribution', (req, res) => {
     connection.query(
+        // SQL Query made with AI help
         `SELECT u.username, COUNT(uc.id_card) AS cards_unlocked
          FROM User u
          LEFT JOIN User_Collection uc ON uc.id_user = u.id_user
