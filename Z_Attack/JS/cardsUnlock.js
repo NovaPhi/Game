@@ -89,6 +89,7 @@ let ownedIds    = new Set(); // Owned cards. Set usage was suggest by AI instead
 let usedDevPool = false; // Using devpool or not. False since we're not using it
 
 
+// Validates session, loads player data from the database, and renders the lootbox UI
 document.addEventListener('DOMContentLoaded', async () => {
     // Checks logged in user and redirects to log in if not logged in
     const stored = localStorage.getItem('sessionUser');
@@ -252,8 +253,8 @@ async function openLootbox(tier) {
             body: JSON.stringify({ 
                 user_ID:  sessionUser.user_ID, 
                 tier:     tier.id,
-                rarity:   card.rarity,   // send the rolled rarity
-                card_id:  card.id        // send the rolled card id
+                rarity:   card.rarity,
+                card_id:  card.id
             })
         });
         const d = await r.json();
@@ -353,24 +354,4 @@ function buildRevealCard(card) {
 }
 
 // Function to show messages when needed.
-// Tier mastered or error opening lootbox.
-// Creates the message element in the HTML. Made with help of AI.
-function showToastOnly(msg) {
-    const backdrop = document.getElementById('revealBackdrop');
-    const cardWrap = document.getElementById('revealCardWrap');
-    const header   = document.getElementById('revealHeader');
-    const toast    = document.getElementById('revealToast');
-
-    backdrop.style.setProperty('--card-color', 'var(--text)');
-    backdrop.style.setProperty('--card-glow',  'var(--green-glow)');
-
-    header.textContent = 'Tier Mastered';
-    cardWrap.innerHTML = '';
-    toast.textContent = msg;
-
-    backdrop.classList.remove('hidden');
-}
-
-function hideReveal() {
-    document.getElementById('revealBackdrop').classList.add('hidden');
-}
+// Tier mastered

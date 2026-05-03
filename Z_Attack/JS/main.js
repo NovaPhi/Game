@@ -3,6 +3,7 @@ const intro = document.getElementById("intro");
 const skipBtn = document.getElementById("skipBtn");
 const menuMusic = document.getElementById("menuMusic");
 
+// Hides the intro, shows the main menu, and fades in the background music
 function showMenu() {
     intro.style.display = "none";
     video.pause();
@@ -23,6 +24,7 @@ function showMenu() {
     });
 }
 
+// Gradually increases audio volume from its current level to the target over the given duration
 function fadeInAudio(audioEl, targetVolume, durationMs) {
     const steps = 30;
     const interval = durationMs / steps;
@@ -66,6 +68,7 @@ function replayIntro() {
 
 const alreadySeen = localStorage.getItem("introSeen"); // Local variable so the intro only plays automatically the first time the player enters the web
  
+// Skips the intro if already seen, otherwise sets up skip and end listeners to mark it as seen
 if (alreadySeen) {
     intro.style.display = "none";
     showMenu();

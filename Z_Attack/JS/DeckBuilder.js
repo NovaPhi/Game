@@ -30,6 +30,7 @@ const RARITY_COLORS = {
     legendary: '#ff9a00'
 };
 
+// Validates session, fetches the user's card collection, and renders the deck builder
 document.addEventListener("DOMContentLoaded", async () => {
     // Checks logged in user. Redirects to log in page if no one is logged in
     const stored = localStorage.getItem('sessionUser');
@@ -132,6 +133,7 @@ function renderCollection() {
     });
 }
 
+// Renders both the deck and the collection
 function render() {
     renderDeck();
     renderCollection();
