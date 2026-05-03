@@ -22,6 +22,7 @@ const PLAYER_DMG   = 100; // Player base melee damage per hit
 
 const OUTPOST_COUNT = 50;
 
+// Asset loading per theme - background, main base and wall style
 const THEMES = [
     { name: "House",    bg: "../Assets/bg_house.png",    base: "../Assets/base_house.png",    wall: "../Assets/wall_house.png"    },
     { name: "Mall",     bg: "../Assets/bg_mall.png",     base: "../Assets/base_mall.png",     wall: "../Assets/wall_mall.png"     },
@@ -40,9 +41,10 @@ const MINE_FRAMES = {
 const MINE_ACTIVATION_FRAMES = 18; // ~0.30 sec
 const MINE_DISAPPEAR_FRAMES  = 24; // ~0.40 sec
 
-// Bear trap (idle only — no animation in Path 2)
+// Bear trap sprite loading
 const BEARTRAP_IDLE_ASSET = "../Assets/beartrap_idle.png";
 
+// Sprite scale up multiplier 
 const SPRITE_SCALE = {
     player:  3, 
     outpost: 2.2,
@@ -51,14 +53,15 @@ const SPRITE_SCALE = {
     barrier: 1.5
 };
 
-// Barrier assets per theme — small, medium, large with 2 variants each.
-// Each size maps to a fixed hitbox (w × h) used for collision and placement.
+
+// Barrier hitbox sizes definition. Dependent on size sprite size.
 const BARRIER_SIZES = {
     small:  { w: 80, h: 40 },
     medium: { w: 140, h: 80 },
     large:  { w: 240, h: 110 },
 };
 
+// Barrier assets per theme: small, medium, large with 2 variants each.
 const BARRIER_ASSETS = {
     House: {
         small:  ["../Assets/barrier_house_small_1.png",  "../Assets/barrier_house_small_2.png"],
@@ -84,7 +87,7 @@ const BARRIER_ASSETS = {
 
 
 
-// Enemy attack animation assets (4 states per enemy: idle / windup / peak / recovery)
+// Enemy attack animation assets (4 states per enemy: idle/windup/peak/recovery)
 const ENEMY_FRAMES = {
     outpost: {
         idle:     "../Assets/outpost_idle.png",
@@ -120,7 +123,6 @@ const ENEMY_PEAK_FRAMES     = 6;
 const ENEMY_RECOVERY_FRAMES = 8;
 
 // Hero attack frames (4 states per hero: idle / windup / peak / recovery).
-// Path-2 heroes are south-facing only — no rotation, no walk cycle yet.
 const HERO_FRAMES = {
     warrior: {
         idle:     "../Assets/warrior_idle.png",
@@ -148,6 +150,7 @@ const HERO_PEAK_FRAMES     = 4;
 const HERO_RECOVERY_FRAMES = 8;
 
 // Returns the HERO_FRAMES key for a hero (warrior/scout/tank), or null if no match.
+// Function made with help of AI
 function getHeroFramesKey(hero) {
     if (!hero || !hero.name) return null;
     const n = hero.name.toLowerCase();
@@ -248,6 +251,8 @@ class Player {
         }
     }
 
+    // Method to update the attack state. Checks previous state and updates accordingly 
+    // Attack sprite animation logic (for player and enemy classes) was made with help of AI
     _tickAttackAnim(dt) {
         if (this.attackState === "idle") return;
         this.attackTimer -= dt;
@@ -266,7 +271,7 @@ class Player {
 
     // Moves the player and makes wall collisions
     update(walls, dt = 1) {
-        const paralyzed = performance.now() < this.paralyzedUntil;
+        const paralyzed = performance.now() < this.paralyzedUntil; // Used for bear trap: Uses a performance.now() timestamp and compares against paralized until to determine if player is paralized or not
         const spd = paralyzed ? 0 : PLAYER_SPEED * this.speedMod * dt;
         let dx = 0, dy = 0;
         if (this.keys.up)    dy -= spd;
@@ -330,7 +335,7 @@ class Player {
                 this.targetHp       = target.hp;
                 this.attackCooldown = this.attackCooldownMax;
                 if(game && game.ability) game.ability.breakInvisibility(); // Breaks invisibility on attack (Scout ability)
-                // Trigger attack animation (windup → peak → recovery → idle)
+                // Trigger attack animation (windup → peak → recovery → idle) by updating attack state machine
                 if (this.attackState === "idle") {
                     this.attackState = "windup";
                     this.attackTimer = HERO_WINDUP_FRAMES;
@@ -344,19 +349,20 @@ class Player {
 
     // Draws the player sprite
     draw(ctx, heroImages = null) {
+        //Invisibility - Scout power
         const invis = game && game.ability && game.ability.isInvisible();
         ctx.globalAlpha = invis ? 0.3 : 1.0;
 
-        // Subtle 1 px vertical bob while moving (compensates for the lack of a
-        // walk cycle in Path 2 — adds liveliness to movement).
+        // Subtle 1 px vertical bob while moving (compensates for the lack of a walking animation with the sprites)
         const moving = this.keys.up || this.keys.down || this.keys.left || this.keys.right;
-        const yBob   = moving ? Math.sin(performance.now() / 80) : 0;
+        const yBob   = moving ? Math.sin(performance.now() / 80) : 0; //Mathematic function for bob was defined with the help of AI
 
-        // Prefer state-driven hero frames (idle/windup/peak/recovery). If not
-        // available (no match for warrior/scout/tank, or images still loading),
-        // fall back to the legacy single-image asset, then to a colored rect.
+        // Priority 1: Attack animation state sprite
+        // If not available, normal idle sprite
+        // If still not availabe, colored rectangle
         const stateImg = heroImages ? heroImages[this.attackState] : null;
 
+        // Adjuts sprite by applying sprite scale multiplier
         const s = SPRITE_SCALE.player;
         const dw = this.width  * s;
         const dh = this.height * s;
@@ -364,18 +370,15 @@ class Player {
         const offsetY = (dh - this.height) * 0.75;
         const dy = this.y - offsetY + yBob;
 
-        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
+        // Sprite drawing using Canvas drawImage method 
+        if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) { // Condition checks if there is an image, if it has finished loading and if its a valid image (width bigger than 0) to avoid 404 problems or loading issues
             ctx.drawImage(stateImg, dx, dy, dw, dh);
-        } else if (playerStats.asset && this._img && this._img.complete && this._img.naturalWidth > 0) {
+        } else if (playerStats.asset && this._img && this._img.complete && this._img.naturalWidth > 0) { // moves to priority 2
             ctx.drawImage(this._img, dx, dy, dw, dh);
         } else {
-            ctx.fillRect(this.x, this.y, this.width, this.height); 
+            ctx.fillRect(this.x, this.y, this.width, this.height); // priority 3
         }
 
-        //ctx.strokeStyle = "#fff";
-        //ctx.lineWidth = 1.5;
-        //ctx.strokeRect(this.x, this.y + yBob, this.width, this.height);
-        //ctx.globalAlpha = 1.0;
     }
 }
 
@@ -476,7 +479,7 @@ class WallSegment {
         const cy = this.y + this.height / 2;
         const px = player.x + player.width  / 2;
         const py = player.y + player.height / 2;
-        const dist = Math.hypot(px - cx, py - cy);
+        const dist = Math.hypot(px - cx, py - cy); // Checks distance
 
 
         // Don't shoot if player is within one player-length
@@ -485,11 +488,11 @@ class WallSegment {
 
         // Only fire if the player is on the exterior side of this wall tile
         const outside = 
-                this.side === "top" ? py < cy :
-                this.side === "bottom" ? py > cy:
-                this.side === "left" ? px < cx: 
-                this.side === "right" ? px > cx: true;
-        
+            this.side === "top" ? py < cy :
+            this.side === "bottom" ? py > cy:
+            this.side === "left" ? px < cx: 
+            this.side === "right" ? px > cx: true;
+    
         if(!outside) return null;
 
         if (this.shootCooldown > 0) { this.shootCooldown-= dt; return null; }
@@ -501,9 +504,10 @@ class WallSegment {
         return new Bullet(cx - 3, cy - 3, nx * speed, ny * speed, this._bulletDamage , 6, 6, false, "#f44");
     }
 
+    // Checks to draw wall sprite or colored rectangle 
     draw(ctx, wallImg = null) {
         if (!this.alive) return;
-        if (wallImg && wallImg.complete && wallImg.naturalWidth > 0) {
+        if (wallImg && wallImg.complete && wallImg.naturalWidth > 0) { // Same condition as before
             ctx.drawImage(wallImg, this.x, this.y, this.width, this.height);
         } else {
             ctx.fillStyle = "#e8e8e8";
@@ -557,7 +561,7 @@ class MainBase {
     }
 
     // Returns only the segments that are still alive
-    get living() { return this.segments.filter(s => s.alive); }
+    get living() { return this.segments.filter(s => s.alive); } // Uses filter method to create the new array with only the alive sgements
 
     get isDestroyed() { return this.segments.every(s => !s.alive); }
 
@@ -580,12 +584,13 @@ class MainBase {
     }
 
     draw(ctx, wallImg = null) {
-        for (const seg of this.segments) seg.draw(ctx, wallImg);
+        for (const seg of this.segments) seg.draw(ctx, wallImg); // Draws every wall segment using the draw method of wall segmentes
     }
 }
 
 
 //Class for all the normal enemy outposts scattered thru the map
+// Sprite rotation in this (and further enemy classes) was made with the help of AI
 class Outpost {
     constructor(x, y) {
         this.x = x;
@@ -608,6 +613,7 @@ class Outpost {
         // Attack-animation state machine
         this.attackState = "idle"; // "idle" | "windup" | "peak" | "recovery"
         this.attackTimer = 0;
+        // Facing angle used for sprite rotation
         this._facingAngle = Math.PI / 2; // default south
     }
 
@@ -636,9 +642,6 @@ class Outpost {
         const px = player.x + player.width  / 2;
         const py = player.y + player.height / 2;
         const dist = Math.hypot(px - cx, py - cy);
-
-        // Track facing toward player every frame for sprite rotation
-        this._facingAngle = Math.atan2(py - cy, px - cx);
 
         // Track facing toward player every frame for sprite rotation
         this._facingAngle = Math.atan2(py - cy, px - cx);
@@ -675,6 +678,7 @@ class Outpost {
         const dw = this.width  * s;
         const dh = this.height * s;
 
+        // Draws sprite if valid, purple rectangle if not
         if (stateImg && stateImg.complete && stateImg.naturalWidth > 0) {
             ctx.save();
             ctx.translate(cx, cy);
@@ -782,7 +786,7 @@ class Burst {
         return bullets;
     }
 
-    //Draws the enemy (AI)
+    //Draws the enemy - checks to see if sprite loads correctly, draws blue rectangle if it doesn't
     draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
@@ -922,7 +926,7 @@ class Sniper {
         return null;
     }
 
-    // Renders the sniper (AI)
+    // Draws the sprite if valid. Draws yellow rectangle if not
     draw(ctx, images = null) {
         if (!this.alive) return;
         const ratio = this.hp / this.maxHp;
@@ -1069,7 +1073,8 @@ class OmniOutpost {
         return null;
     }
 
-    // Draws the omni outpost (AI)
+    // Draws the turret sprite of valid. Orange shape if not
+    // Expansion ring drawing was made with help of AI
     draw(ctx, images = null) {
         if (!this.alive) return;
         const cx = this.x + this.width  / 2;
@@ -1175,11 +1180,11 @@ class Mine {
         this.height = 24;
         this.damage = 100;
         // State machine: "idle" -> "activation" -> "disappear" -> fullyDone
+        // Exploding animation logic made with help of AI
         this.state      = "idle";
         this.stateTimer = 0;
         this.fullyDone  = false;
-        // `dead` retained for legacy collision code: true once the mine has been
-        // triggered and should no longer damage the player.
+        // when dead is set to true, mine no longer deals damage to player
         this.dead = false;
     }
 
@@ -1205,6 +1210,7 @@ class Mine {
         }
     }
 
+    // Checks to validate mine sprite and draws if everything is fine. Draws red circle if not
     draw(ctx, images = null) {
         const s  = SPRITE_SCALE.mine;
         const dw = this.width  * s;
@@ -1218,8 +1224,7 @@ class Mine {
             ctx.drawImage(img, dx, dy, dw, dh);
             return;
         }
-        // Fallback to the original colored circle (only meaningful while idle —
-        // legacy mines without images simply pop out of existence on trigger).
+
         if (this.state !== "idle") return;
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
@@ -1250,7 +1255,7 @@ class BearTrap {
         this.dead = false;
     }
 
-    // Draw beartrap
+    // Checks sprite loading and draws it if correct. Draws original shape if not.
     draw(ctx, img = null) {
         const s  = SPRITE_SCALE.trap; 
         const dw = this.width  * s;
@@ -1263,7 +1268,8 @@ class BearTrap {
             ctx.drawImage(img, dx, dy, dw, dh);
             return;
         }
-        // Fallback — original colored rect with jagged teeth
+        // Original shape: Orange rectangle with teeth-like white triangles
+        // Original shape drawing was made with AI help (specifically the teeth)
         ctx.fillStyle = "#aa6a00";
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.strokeStyle = "#3a2200";
@@ -1348,6 +1354,7 @@ class HeroSelect {
         }
     }
 
+    // Hero selection draw. Certain parts were made with help of AI.
     draw(ctx) {
         // Background
         ctx.fillStyle = "#111";
@@ -1366,9 +1373,9 @@ class HeroSelect {
         ctx.font = "14px monospace";
         ctx.fillText("click a card to start", canvasWidth / 2, 112);
 
-        // Hero cards
+        // Hero cards. Made with AI help.
         for (let i = 0; i < this.heroIds.length; i++) {
-            const hero    = getHeroById(this.heroIds[i]);
+            const hero    = getHeroById(this.heroIds[i]); // getHeroById defined in heroes.js
             if (!hero) continue;                          // ← skip if hero not found
             const r       = this.cardRect(i);
             const hovered = this.hoveredId === hero.id;
@@ -1382,7 +1389,7 @@ class HeroSelect {
             ctx.lineWidth   = hovered ? 4 : 2;
             ctx.strokeRect(r.x, r.y, r.w, r.h);
 
-            // Hero asset image (replaces the color swatch)
+            // Hero asset image (replaces the color shape)
             const imgW  = 160;
             const imgH  = 120;
             const imgX  = r.x + r.w / 2 - imgW / 2;
@@ -1390,10 +1397,10 @@ class HeroSelect {
             const img   = this.images[hero.id];
 
             if (img && img.complete && img.naturalWidth > 0) {
-                // Image loaded — draw it
+                // Image loaded —> draw it
                 ctx.drawImage(img, imgX, imgY, imgW, imgH);
             } else {
-                // Fallback — colored rectangle while image loads or if asset is null
+                // Draws original shape if not
                 ctx.fillStyle = hero.cardColor;
                 ctx.fillRect(imgX, imgY, imgW, imgH);
             }
@@ -1410,7 +1417,7 @@ class HeroSelect {
             //console.log(hero.name);
             ctx.fillText(hero.name, r.x + r.w / 2, r.y + 152); // ← pushed down for bigger image
 
-            // Description — word-wrapped at ~26 chars per line
+            // Description — word-wrapped at aprox 26 chars per line
             ctx.fillStyle = "#aaa";
             ctx.font = "12px monospace";
             const words = hero.description.split(" ");
@@ -1480,15 +1487,15 @@ class Game {
         this._died = false;
 
         // Card system state
-        this.targetingMode = null;
+        this.targetingMode = null; // Used for old, destroy outpost card
         this.draftChoices  = null;
-        this._pendingTargetCard = null;
+        this._pendingTargetCard = null; // Used for old, destroy outpost card
 
         // Mouse cursor position in canvas-space coordinates
         this.mouseX = 0;
         this.mouseY = 0;
 
-        this._themeIndex = playerStats.stage % THEMES.length;
+        this._themeIndex = playerStats.stage % THEMES.length; // Used to alternate themes (house, mall, hospital or military base)
 
         this.spawnOutposts();
         this.spawnObstacles();
@@ -1496,9 +1503,10 @@ class Game {
         this.createEventListeners();
         this._rewardGranted = false;
         this.lastReward = null;
-        this._runStartTime = Date.now(); // Used to calculate match playtime on death
+        this._runStartTime = Date.now(); // Used to calculate match playtime on death -> used for database
         this.ability = new HeroAbility(playerStats.heroId || 1);
 
+        // Sprite loading block. Sprite loading logic for some of the objects was defined with AI help 
         this._bgImages = THEMES.map(t => {
             const img = new Image();
             img.src = t.bg;
@@ -1522,6 +1530,8 @@ class Game {
         }
         this._beartrapImage = new Image();
         this._beartrapImage.src = BEARTRAP_IDLE_ASSET;
+
+        // From this point on (barriers, enemies and heroes) sprite logic was made with help of AI
         this._barrierImages = {};
         for (const theme of Object.values(BARRIER_ASSETS)) {
             for (const variants of Object.values(theme)) {
@@ -1657,6 +1667,7 @@ class Game {
     }
 
     // Random element spawn thru the map (barriers, mines, beartraps) with 30% chance for each
+    // Method created based on spawnOutpost method
     spawnObstacles() {
 
         const mult = getDifficultyMult();
@@ -1684,6 +1695,7 @@ class Game {
         const minGap = 24;
 
         // Tries up to 200 random positions
+        // Random placing logic made with help of AI
         const tryPlace = (w, h, gap = minGap) => {
             for (let attempts = 0; attempts < 200; attempts++) {
                 const x = margin + Math.random() * (canvasWidth  - margin * 2 - w);
@@ -1698,7 +1710,8 @@ class Game {
 
         const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-        // Barriers — pick a size category and random variant per instance
+        // Barriers: pick a size category and random variant 
+        // Barrier placing logic made with help of AI
         if (Math.random() >= 0.3) {
             const themeName   = THEMES[this._themeIndex].name;
             const sizeKeys    = Object.keys(BARRIER_SIZES);
@@ -1738,7 +1751,8 @@ class Game {
     }
 
 
-
+    // Barrier sprite assignation based on size
+    // Made with help of AI
     _reassignBarrierImages() {
         const themeName = THEMES[this._themeIndex].name;
         const themeAssets = BARRIER_ASSETS[themeName];
@@ -1764,7 +1778,7 @@ class Game {
 
         this._keydownHandler = (e) => {
             if (this.heroSelect.active) return;
-            if (this.won && this.draftChoices) return; // Block input during card draft
+            if (this.won && this.draftChoices) return; // Block input during card draft or hero selection
 
             // Activate offensive hero ability
             if (e.code === "KeyE" && !this.waiting && !this.won && !this.targetingMode){
@@ -1778,7 +1792,7 @@ class Game {
                 return;
             }
 
-            //Cancel targeting mode
+            //Cancel targeting mode -> used for old outpost destruction card
             if (this.targetingMode && e.code === "KeyR") {
                 if (this._pendingTargetCard) {
                     playerStats.deck.push(this._pendingTargetCard);
@@ -1791,11 +1805,11 @@ class Game {
             // Play a card from the hand by index
             if (!this.waiting && !this.won && !this.targetingMode &&
                 ["Digit1","Digit2","Digit3"].includes(e.code)) {
-                const idx = parseInt(e.code.slice(-1), 10) - 1;
+                const idx = parseInt(e.code.slice(-1), 10) - 1; // parseInt usage was made with advice of AI
                 if (idx >= 0 && idx < playerStats.deck.length) {
                     const card = playerStats.deck.splice(idx, 1)[0];
                     if (card.targeting) this._pendingTargetCard = card;
-                    card.apply(this);
+                    card.apply(this); //cards' apply method is defined in cards.js
                 }
                 return;
             }
@@ -1808,7 +1822,7 @@ class Game {
             if (e.code === "KeyS") this.player.keys.down  = true;
             if (e.code === "KeyA") this.player.keys.left  = true;
             if (e.code === "KeyD") this.player.keys.right = true;
-            if (e.code === "KeyB") {
+            if (e.code === "KeyB") { // FOR DEVELOPER USE. Changes theme when B is pressed
                 this._themeIndex = (this._themeIndex + 1) % THEMES.length;
                 console.log("Theme:", THEMES[this._themeIndex].name);
                 this._reassignBarrierImages();
@@ -1828,6 +1842,7 @@ class Game {
         const canvas = document.getElementById("canvas");
         if (canvas) {
             // Track mouse position in canvas-space
+            // Mouse tracking made with help of AI
             canvas.addEventListener("mousemove", (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const mx = (e.clientX - rect.left) * (canvasWidth  / rect.width);
@@ -1849,6 +1864,7 @@ class Game {
                     }
                     return;
                 }
+                // Used for old, destroy outpost card
                 if (this.targetingMode === "destroy_outpost") {
                     for (const o of this.outposts) {
                         if (o.alive &&
@@ -1862,6 +1878,7 @@ class Game {
                     }
                     return;
                 }
+                // Card draft after winning level
                 if (this.won && this.draftChoices) {
                     const cardW = 220, cardH = 280, gap = 30;
                     const startX = (canvasWidth - (3 * cardW + 2 * gap)) / 2;
@@ -1881,8 +1898,7 @@ class Game {
     // Resets all game entities and states for a new round
     startOrRestart() {
         if (this.heroSelect.active) return; // Can't start before picking a hero
-        // Block restart while a draft is still pending
-        if (this.won && this.draftChoices) return;
+        if (this.won && this.draftChoices) return; // Block restart while a draft is still pending
         if (this.waiting || this.won) {
             this.targetingMode = null;
             this._pendingTargetCard = null;
@@ -1933,14 +1949,15 @@ class Game {
 
         // Card draft replaces the old random speed/HP reward
         this.lastReward = null;
-        this.draftChoices = getDraftChoices();
+        this.draftChoices = getDraftChoices(); //getDraftChoices defined in cards.js
     }
 
     update(dt = 1) {
         // Freeze game logic while hero select or any waiting/won state is active
         if (this.heroSelect.active || this.waiting || this.won) return;
 
-        const solidWalls = [...this.mainBase.living, ...this.barriers]; // ... significa los elementos de ese array (spread operator)
+        // Spread operator (...) used to merge both arrays into a single one. Made with help of AI
+        const solidWalls = [...this.mainBase.living, ...this.barriers]; 
         this.player.update(solidWalls, dt);
         this.ability.update(this.player, this.mouseX, this.mouseY, this.outposts, this.mainBase, dt);
 
@@ -1975,11 +1992,11 @@ class Game {
         if (this.notifTimer > 0) this.notifTimer-= dt;
 
         // Outposts shoot at player
-        if(!this.ability.isInvisible()){    
+        if(!this.ability.isInvisible()){ // Wont shoot if player is invisible. Scout power   
             for (const outpost of this.outposts) {
                 const result = outpost.tryShoot(this.player, dt);
                 if (Array.isArray(result)) {
-                    this.bullets.push(...result);
+                    this.bullets.push(...result); // Used for burst attack
                 } else if (result) {
                     this.bullets.push(result);
                 }
@@ -2014,19 +2031,19 @@ class Game {
         }
         this.bullets = this.bullets.filter(b => !b.dead);
 
-        // Player vs mines — heavy damage, then mine plays activation+disappear animation
+        // Player touches mines. heavy damage, then mine plays activation+disappear animation
         for (const m of this.mines) {
             if (!m.dead && this.player.overlaps(m)) {
-                const dmg = Math.max(1, m.damage - (playerStats.dmgReduction || 0));
+                const dmg = Math.max(1, m.damage - (playerStats.dmgReduction || 0)); // Checks to see if player has damage reduction and respects it
                 this.player.hp -= dmg;
                 if (this.player.hp < 0) this.player.hp = 0;
-                m.trigger();
+                m.trigger(); // animation
             }
         }
         for (const m of this.mines) m.update(dt);
-        this.mines = this.mines.filter(m => !m.fullyDone);
+        this.mines = this.mines.filter(m => !m.fullyDone); // create new mines array without the ones that the player already activated
 
-        // Player vs bear traps — light damage, paralyze 3s, trap despawns
+        // Player touches bear traps. Light damage, paralyze 3s, trap despawns
         for (const t of this.traps) {
             if (!t.dead && this.player.overlaps(t)) {
                 const dmg = Math.max(1, t.damage - (playerStats.dmgReduction || 0));
@@ -2045,7 +2062,7 @@ class Game {
             this._deathStage = playerStats.stage;
             const savedHeroId = playerStats.heroId;
 
-            // POST match statistics to the backend for logged-in users
+            // POST. Send game statistics to the backend.
             const stored = localStorage.getItem('sessionUser');
             const sessionUser = stored ? JSON.parse(stored) : null;
             if (sessionUser && sessionUser.user_ID !== 0) {
@@ -2092,22 +2109,10 @@ class Game {
 
         this.mainBase.draw(ctx, this._wallImages[this._themeIndex]);
 
-        // Capture zone — always visible
-        /*
-        const iz = this.mainBase.innerZone;
-        ctx.fillStyle = "rgba(0, 255, 100, 0.25)";
-        ctx.fillRect(iz.x, iz.y, iz.width, iz.height);
-        ctx.strokeStyle = "lime";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(iz.x, iz.y, iz.width, iz.height);
-        ctx.fillStyle = "lime";
-        ctx.font = "11px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText("ENTER", iz.x + iz.width / 2, iz.y + iz.height / 2 + 4);*/
-
         for (const bar of this.barriers) bar.draw(ctx, bar._imgKey ? this._barrierImages[bar._imgKey] : null);
         for (const t of this.traps) t.draw(ctx, this._beartrapImage);
         for (const m of this.mines) m.draw(ctx, this._mineImages);
+        // Enemy sprite assignation logic made with help of AI. Specifically instanceof function implementation
         for (const outpost of this.outposts) {
             let imgs = null;
             if      (outpost instanceof Outpost)     imgs = this._enemyImages.outpost;
@@ -2143,6 +2148,7 @@ class Game {
 
     // Draws a yellow outline to all living outposts so the player can click one to attack it (card effect)
     // Also draws a cursor at the current mouse position
+    // Used for old destroy outpost card.
     drawTargeting(ctx) {
         ctx.fillStyle = "rgba(255, 200, 0, 0.08)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -2167,6 +2173,7 @@ class Game {
     }
 
     // Displays the 3-card selection screen after winning a level, cards highlight on hover to indicate interactivity.
+    // Card highlight on hover made with help of AI.
     drawDraft(ctx) {
         ctx.fillStyle = "rgba(0,0,0,0.78)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -2293,6 +2300,7 @@ class Game {
     }
 
     // Renders the card hand on the bottom of the canvas.
+    // Made with help of AI
     drawHand(ctx) {
         const deck = (playerStats.deck || []).slice(0,3);
 
@@ -2330,7 +2338,7 @@ class Game {
         }
     }
 
-        drawDeathScreen() {
+    drawDeathScreen() {
         ctx.fillStyle = "rgba(0,0,0,0.75)";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.textAlign = "center";

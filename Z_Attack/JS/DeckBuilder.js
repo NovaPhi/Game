@@ -1,3 +1,4 @@
+// Settings
 (function applySettings() {
     const brightness = localStorage.getItem('brightness') ?? 100;
     const colorblind = localStorage.getItem('colorblind') || 'none';
@@ -8,14 +9,20 @@
     if (colorblind !== 'none') document.body.classList.add(colorblind);
 })();
 
+/*
+Deck building page and flow logic. This JS has the script for generating some of the elements in the
+deck building page and the logic behing the flow of this same process. 
+*/
 
 "use strict";
 
-const MAX_DECK = 10;
+const MAX_DECK = 10; // Max count for the deck
 
+// Initialize deck and user collection
 let deck = [];
 let collection = [];
 
+// Define rarity colors
 const RARITY_COLORS = {
     common:    '#aaaaaa',
     uncommon:  '#4fc34f',
@@ -24,6 +31,7 @@ const RARITY_COLORS = {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Checks logged in user. Redirects to log in page if no one is logged in
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
 
@@ -32,6 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    // Loads logged in user's collection for the database.
     try {
         const response = await fetch(`http://localhost:8081/DeckBuilder?user_ID=${sessionUser.user_ID}`);
         const data = await response.json();
@@ -41,6 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        // Normalizes db extracted card data into game data and adds it to user's collection array.
         collection = data.Cards.map(c => ({
             ...c,
             id:    c.id || c.id_card,
@@ -56,10 +66,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-function getCardById(id) {
+// Finds a card by its id
+function getCardById(id) { 
     return collection.find(c => c.id == id) || null;
 }
 
+// Creates card element in the HTML
 function createCardElement(card, state) {
     const element = document.createElement('div');
     element.className = `card ${state}`;
@@ -77,39 +89,45 @@ function createCardElement(card, state) {
     return element;
 }
 
+// Renders the player's deck
 function renderDeck() {
+    // Gets the card counter and deck space (grid) from the HTML
     const grid    = document.getElementById('deckGrid');
     const counter = document.getElementById('deckCounter');
 
+    // Full deck -> Update text
     counter.textContent = `${deck.length} / ${MAX_DECK}`;
     counter.classList.toggle('full', deck.length >= MAX_DECK);
     grid.innerHTML = '';
 
+    // Empty deck -> Sends the message to the HTML
     if (deck.length === 0) {
         const msg = document.createElement('div');
         msg.className   = 'empty-msg';
         msg.textContent = 'Your deck is empty — select cards from your collection.';
-        grid.appendChild(msg);
+        grid.appendChild(msg); //appendChild usage was decided with help of AI
         return;
     }
 
+    // Adds the cards to the user's deck
     deck.forEach(id => {
         const card = getCardById(id);
         if (!card) return;
         const el = createCardElement(card, 'deck-card');
-        el.addEventListener('click', () => removeFromDeck(id));
+        el.addEventListener('click', () => removeFromDeck(id)); // On click, removes the cards from the user's deck
         grid.appendChild(el);
     });
 }
 
+// Render the player's collection
 function renderCollection() {
     const grid = document.getElementById('collectionGrid');
     grid.innerHTML = '';
 
     collection.forEach(card => {
-        const inDeck = deck.some(d => d == card.id);
+        const inDeck = deck.some(d => d == card.id); // Checks if the card is in deck. some() method usage was suggested by AI
         const el = createCardElement(card, inDeck ? 'in-deck' : 'available');
-        if (!inDeck) el.addEventListener('click', () => addToDeck(card.id));
+        if (!inDeck) el.addEventListener('click', () => addToDeck(card.id)); // On click, adds the card to deck (given its not already there)
         grid.appendChild(el);
     });
 }
@@ -119,6 +137,7 @@ function render() {
     renderCollection();
 }
 
+// Adds a card to deck (if the deck is not already full or if the card is not already there)
 function addToDeck(id) {
     if (deck.length >= MAX_DECK) return;
     if (deck.some(d => d == id)) return;
@@ -126,13 +145,16 @@ function addToDeck(id) {
     render();
 }
 
+// Removes card from deck
 function removeFromDeck(id) {
-    deck = deck.filter(d => d != id);
+    deck = deck.filter(d => d != id); // Uses filter to recreate the deck array
     render();
 }
 
+// Retrieves the player's current deck (saved in local storage) and shows it as the current deck
+// Made with help of AI
 function loadDeck() {
-    try {
+    try { // Gets the saved deck, makes sure its cards are valid
         const saved = localStorage.getItem('playerDeck');
         if (!saved) return;
         const parsed = JSON.parse(saved);
@@ -150,17 +172,22 @@ function loadDeck() {
             }
         }
         console.log("deck after load:", deck);
-    } catch (e) {
-        deck = [];
+    } catch (e) { // If there's an error while loading, makes the deck empty
+        deck = []; 
     }
 }
+
+// On save button click, saves the player selected deck on both, localStorage and backend
 document.getElementById('saveBtn').addEventListener('click', async () => {
+    // Checks logged in user
     const stored = localStorage.getItem('sessionUser');
     const sessionUser = stored ? JSON.parse(stored) : null;
 
-    const selectedCards = deck.map(id => collection.find(c => c.id == id)).filter(Boolean);
+    // Saves selected deck in localStorage
+    const selectedCards = deck.map(id => collection.find(c => c.id == id)).filter(Boolean); // filter boolean usage suggested by AI to avoid invalid or undefined cards in deck
     localStorage.setItem('playerDeck', JSON.stringify(selectedCards));
 
+    // Saves selected deck in database
     if (sessionUser && sessionUser.user_ID !== 0) {
         try {
             const response = await fetch('http://localhost:8081/saveDeck', {
@@ -175,6 +202,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
         }
     }
 
+    // Shows Saved! on save button and the returns to normal. Flow made with help of AI
     const btn = document.getElementById('saveBtn');
     btn.textContent = 'Saved!';
     btn.classList.add('saved');
