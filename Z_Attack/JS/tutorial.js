@@ -74,7 +74,7 @@ const canvasHeight = 750;
 const PLAYER_SPEED = 1.5;
 const PLAYER_DMG   = 100;
 
-
+// A starter deck created manualy exclusively for the tutorial
 function createStarterDeck() {
     return [
         {
@@ -599,13 +599,14 @@ class Outpost {
     }
 }
 
-
+// Class for the tutorial
 class Tutorial {
     constructor(game) {
         this.game   = game;
         this.active = true;
         this.step   = 0;
 
+        // Array where we declare all the steps of the tutorial
         this.steps = [
             "Use WASD to move",
             "This is an OUTPOST (touch to attack)",
@@ -622,11 +623,13 @@ class Tutorial {
         ];
     }
 
+    // Function to pass thru steps of tutorial
     next() {
         this.step++;
         if (this.step >= this.steps.length) this.active = false;
     }
 
+    // Drawing the steps on screen
     draw(ctx) {
         if (!this.active) return;
         ctx.fillStyle = "rgba(0,0,0,0.7)";

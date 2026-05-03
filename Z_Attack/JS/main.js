@@ -36,6 +36,7 @@ function fadeInAudio(audioEl, targetVolume, durationMs) {
     }, interval);
 }
 
+// Function so that the intro can replay and the menu audio gets muted while it plays (Logic helped by AI)
 function replayIntro() {
     document.getElementById("title").style.display    = "none";
     document.getElementById("mainMenu").style.display = "none";
@@ -49,21 +50,21 @@ function replayIntro() {
     video.currentTime   = 0;
     video.play();
 
-    const onEnd = () => {
+    const onEnd = () => { // For when the intro ends 
         showMenu();
         skipBtn.removeEventListener("click", onSkip);
     };
-    const onSkip = () => {
+    const onSkip = () => { // For when the intro is skipped
         video.pause();
         showMenu();
         video.removeEventListener("ended", onEnd);
     };
 
-    video.addEventListener("ended", onEnd, { once: true });
+    video.addEventListener("ended", onEnd, { once: true }); 
     skipBtn.addEventListener("click", onSkip, { once: true });
 }
 
-const alreadySeen = localStorage.getItem("introSeen");
+const alreadySeen = localStorage.getItem("introSeen"); // Local variable so the intro only plays automatically the first time the player enters the web
  
 if (alreadySeen) {
     intro.style.display = "none";
