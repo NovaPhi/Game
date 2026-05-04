@@ -2,21 +2,21 @@ document.addEventListener("DOMContentLoaded", () => {
     loadLeaderboard();
 });
 
-function formatPlaytime(seconds) {
+function formatPlaytime(seconds) { // Function to display time from the database correctly (helped by AI)
     if (!seconds) return '—';
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function rankLabel(i) {
+function rankLabel(i) { // Function to have an emoji for the first three placements (helped by AI)
     if (i === 0) return '🥇';
     if (i === 1) return '🥈';
     if (i === 2) return '🥉';
     return i + 1;
 }
 
-async function loadLeaderboard() {
+async function loadLeaderboard() { // Function that loads the leaderboard from the database (logic made by ourselfs but helped by AI)
     const loadingMsg = document.getElementById('loading-msg');
     const errorMsg   = document.getElementById('error-msg');
     const table      = document.getElementById('leaderboard-table');

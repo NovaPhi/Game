@@ -1081,7 +1081,7 @@ class Game {
         this.drawHand(ctx);
     }
 
-    drawTutorialHUD(ctx) {
+    drawTutorialHUD(ctx) { // Drawing for all steps
         ctx.save();
 
         ctx.fillStyle = "rgba(0,0,0,0.6)";
